@@ -2,7 +2,7 @@
 
 1. Create a new Railway project from the GitHub repository.
 2. Railway will use the included Dockerfile and start command:
-   `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}`.
+   `python start.py`.
 3. Add environment variables in Railway, not in GitHub:
    - `LICENSE_KEY`
    - `ANTHROPIC_API_KEY`

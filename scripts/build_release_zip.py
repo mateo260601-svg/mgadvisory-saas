@@ -15,6 +15,7 @@ INCLUDE_ROOT_FILES = {
     "railway.json",
     "requirements.txt",
     "runtime.txt",
+    "start.py",
 }
 INCLUDE_DIRS = {"app", "frontend", "templates", "scripts"}
 INCLUDE_PLACEHOLDERS = {"data/.gitkeep", "outputs/.gitkeep"}
