@@ -12,6 +12,7 @@ const state = {
 };
 
 const $ = (id) => document.getElementById(id);
+const ACTIVE_PROJECT_STORAGE_KEY = "mg_advisory_active_project_id";
 
 // ── API helper ────────────────────────────────────────────────────────────────
 async function api(path, options = {}) {
@@ -107,6 +108,7 @@ async function logout() {
   }
   state.unlocked = false;
   state.activeProjectId = null;
+  localStorage.removeItem(ACTIVE_PROJECT_STORAGE_KEY);
   state.projects = [];
   state.user = null;
   renderUserBadge();
@@ -197,8 +199,14 @@ async function refreshWorkspace() {
 async function loadProjects() {
   const payload = await api("/api/projects");
   state.projects = payload.projects || [];
-  if (!state.activeProjectId && state.projects.length) {
-    state.activeProjectId = state.projects[0].id;
+  const storedProjectId = localStorage.getItem(ACTIVE_PROJECT_STORAGE_KEY);
+  const activeStillExists = state.projects.some((p) => p.id === state.activeProjectId);
+  const storedStillExists = state.projects.some((p) => p.id === storedProjectId);
+  if (!activeStillExists) {
+    state.activeProjectId = storedStillExists ? storedProjectId : state.projects[0]?.id || null;
+  }
+  if (state.activeProjectId) {
+    localStorage.setItem(ACTIVE_PROJECT_STORAGE_KEY, state.activeProjectId);
   }
 }
 
@@ -232,6 +240,7 @@ async function createProject() {
       }),
     });
     state.activeProjectId = payload.project.id;
+    localStorage.setItem(ACTIVE_PROJECT_STORAGE_KEY, state.activeProjectId);
     $("createMessage").textContent = "Dossier created.";
     $("companyName").value = "";
     await refreshWorkspace();
@@ -813,6 +822,7 @@ function renderProjectList(targetId, allowSearch, limit) {
   target.querySelectorAll("[data-project-id]").forEach((row) => {
     row.addEventListener("click", () => {
       state.activeProjectId = row.dataset.projectId;
+      localStorage.setItem(ACTIVE_PROJECT_STORAGE_KEY, state.activeProjectId);
       renderAll();
       showView("projectView");
     });
@@ -820,6 +830,10 @@ function renderProjectList(targetId, allowSearch, limit) {
 }
 
 function renderActiveProject() {
+  if (!activeProject() && state.projects.length) {
+    state.activeProjectId = state.projects[0].id;
+    localStorage.setItem(ACTIVE_PROJECT_STORAGE_KEY, state.activeProjectId);
+  }
   const project = activeProject();
   $("emptyProjectState").classList.toggle("hidden", Boolean(project));
   $("projectWorkspace").classList.toggle("hidden", !project);
@@ -836,10 +850,25 @@ function updateExtractionStatus(extraction) {
   if (!el) return;
   if (!extraction) { el.textContent = "Ready"; return; }
   const confidence = extraction.confidence ? ` / ${extraction.confidence}` : "";
-  el.textContent = `${extraction.mode || "local"}${confidence}`;
+  const mode = extraction.mode || "local";
+  if (mode.includes("fallback")) {
+    el.textContent = `Fallback only${confidence}`;
+  } else if (mode === "claude") {
+    el.textContent = `Claude extraction${confidence}`;
+  } else {
+    el.textContent = `${mode}${confidence}`;
+  }
 }
 
-function showView(viewId) {
+async function showView(viewId) {
+  if ((viewId === "bpBuilderView" || viewId === "projectView" || viewId === "outputsView") && !activeProject()) {
+    try {
+      await loadProjects();
+      renderAll();
+    } catch (_) {
+      // The target view will show its empty state if projects cannot be loaded.
+    }
+  }
   state.activeView = viewId;
   document.querySelectorAll(".view").forEach((v) => {
     v.classList.toggle("active-view", v.id === viewId);

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import date, datetime
 from typing import Any
 
 
@@ -18,7 +19,7 @@ LINE_ALIASES = {
 def build_basic_historical_pack(rows: list[dict], source_files: list[str]) -> dict:
     periods = _detect_periods(rows)
     if not periods:
-        periods = ["FY2023", "FY2024", "FY2025"]
+        periods = []
 
     values = defaultdict(lambda: defaultdict(float))
     for row in rows:
@@ -33,17 +34,17 @@ def build_basic_historical_pack(rows: list[dict], source_files: list[str]) -> di
     return {
         "periods": periods,
         "income_statement": [
-            _line("Revenue", values["revenue"], periods, fallback=1000000),
-            _line("COGS", values["cogs"], periods, fallback=-450000),
-            _line("Opex", values["opex"], periods, fallback=-250000),
-            _line("EBITDA", values["ebitda"], periods, fallback=300000),
+            _line("Revenue", values["revenue"], periods),
+            _line("COGS", values["cogs"], periods),
+            _line("Opex", values["opex"], periods),
+            _line("EBITDA", values["ebitda"], periods),
         ],
         "balance_sheet": [
-            _line("Cash", values["cash"], periods, fallback=120000),
-            _line("Receivables", values["receivables"], periods, fallback=180000),
-            _line("Inventory", values["inventory"], periods, fallback=90000),
-            _line("Payables", values["payables"], periods, fallback=140000),
-            _line("Debt", values["debt"], periods, fallback=500000),
+            _line("Cash", values["cash"], periods),
+            _line("Receivables", values["receivables"], periods),
+            _line("Inventory", values["inventory"], periods),
+            _line("Payables", values["payables"], periods),
+            _line("Debt", values["debt"], periods),
         ],
         "cash_flow": [],
         "source_files": source_files,
@@ -54,10 +55,10 @@ def _detect_periods(rows: list[dict]) -> list[str]:
     candidates = []
     for row in rows:
         for key in row.keys():
-            text = str(key).strip()
-            if text.upper().startswith("FY") or text.isdigit():
-                candidates.append(text if text.upper().startswith("FY") else f"FY{text}")
-    return sorted(set(candidates))[-5:]
+            period = _period_label(key)
+            if period:
+                candidates.append(period)
+    return sorted(set(candidates))[-8:]
 
 
 def _row_label(row: dict) -> str:
@@ -90,8 +91,28 @@ def _coerce_number(value: Any) -> float:
         return 0.0
 
 
-def _line(name: str, values: dict, periods: list[str], fallback: float) -> dict:
+def _line(name: str, values: dict, periods: list[str]) -> dict:
     if any(values.get(period) for period in periods):
         return {"name": name, "values": {period: values.get(period, 0.0) for period in periods}}
-    return {"name": name, "values": {period: fallback for period in periods}}
+    return {"name": name, "values": {period: 0.0 for period in periods}}
 
+
+def _period_label(value: Any) -> str | None:
+    if isinstance(value, (date, datetime)):
+        return f"FY{value.year}"
+    text = str(value or "").strip()
+    if not text:
+        return None
+    upper = text.upper().replace(" ", "")
+    if upper.startswith("FY") and any(char.isdigit() for char in upper):
+        digits = "".join(char for char in upper if char.isdigit())
+        if len(digits) == 2:
+            return f"FY20{digits}"
+        if len(digits) >= 4:
+            return f"FY{digits[:4]}"
+    if text.isdigit() and len(text) == 4 and 1990 <= int(text) <= 2100:
+        return f"FY{text}"
+    for token in ["2021", "2022", "2023", "2024", "2025", "2026", "2027", "2028", "2029", "2030"]:
+        if token in text:
+            return f"FY{token}"
+    return None

@@ -1,6 +1,7 @@
 import csv
 import json
 from pathlib import Path
+from datetime import date, datetime
 
 from app.engines.historical_accounts_engine import build_basic_historical_pack
 from app.services.ai_service import extract_financial_historicals
@@ -75,20 +76,60 @@ def _read_xlsx_rows(path: Path) -> list[dict]:
     rows = []
     try:
         workbook = load_workbook(path, data_only=True, read_only=True)
-        sheet = workbook.worksheets[0]
-        values = list(sheet.iter_rows(values_only=True))
-        if not values:
-            return []
-        headers = [str(cell or "").strip() for cell in values[0]]
-        for values_row in values[1:]:
-            row = {}
-            for index, header in enumerate(headers):
-                if header:
-                    row[header] = values_row[index] if index < len(values_row) else None
-            rows.append(row)
+        for sheet in workbook.worksheets[:12]:
+            values = list(sheet.iter_rows(values_only=True, max_row=250, max_col=80))
+            rows.extend(_extract_sheet_rows(sheet.title, values))
     except Exception:
         return []
     return rows
+
+
+def _extract_sheet_rows(sheet_name: str, values: list[tuple]) -> list[dict]:
+    extracted = []
+    if not values:
+        return extracted
+
+    header_candidates = []
+    for idx, row in enumerate(values[:80]):
+        period_cells = [_period_label(cell) for cell in row]
+        period_count = sum(1 for period in period_cells if period)
+        if period_count >= 2:
+            header_candidates.append((idx, period_cells))
+
+    if header_candidates:
+        header_idx, period_cells = header_candidates[0]
+        period_columns = [(col_idx, period) for col_idx, period in enumerate(period_cells) if period]
+        for row_idx, row in enumerate(values[header_idx + 1 :], start=header_idx + 2):
+            label = _best_row_label(row)
+            if not label:
+                continue
+            item = {"Source Sheet": sheet_name, "Source Row": row_idx, "Line Item": label}
+            has_value = False
+            for col_idx, period in period_columns:
+                value = row[col_idx] if col_idx < len(row) else None
+                number = _coerce_number(value)
+                if number is not None:
+                    item[period] = number
+                    has_value = True
+            if has_value:
+                extracted.append(item)
+        return extracted
+
+    # Fallback for flat files where first row is a conventional header.
+    headers = [str(cell or "").strip() for cell in values[0]]
+    for row_idx, values_row in enumerate(values[1:], start=2):
+        row = {"Source Sheet": sheet_name, "Source Row": row_idx}
+        has_value = False
+        for index, header in enumerate(headers):
+            if not header:
+                continue
+            value = values_row[index] if index < len(values_row) else None
+            row[_period_label(header) or header] = value
+            if value not in (None, ""):
+                has_value = True
+        if has_value:
+            extracted.append(row)
+    return extracted
 
 
 def _read_pdf_text(path: Path) -> str:
@@ -119,6 +160,52 @@ def _document_summary(path: Path, rows: list[dict], text: str = "") -> dict:
     }
 
 
+def _best_row_label(row: tuple) -> str:
+    for cell in row[:12]:
+        if isinstance(cell, str):
+            text = cell.strip()
+            if text and not _period_label(text) and not _looks_numeric(text):
+                return text[:180]
+    return ""
+
+
+def _period_label(value) -> str | None:
+    if isinstance(value, (date, datetime)):
+        return f"FY{value.year}"
+    text = str(value or "").strip()
+    if not text:
+        return None
+    upper = text.upper().replace(" ", "")
+    if upper.startswith("FY") and any(char.isdigit() for char in upper):
+        digits = "".join(char for char in upper if char.isdigit())
+        if len(digits) == 2:
+            return f"FY20{digits}"
+        if len(digits) >= 4:
+            return f"FY{digits[:4]}"
+    if text.isdigit() and len(text) == 4 and 1990 <= int(text) <= 2100:
+        return f"FY{text}"
+    for token in ["2021", "2022", "2023", "2024", "2025", "2026", "2027", "2028", "2029", "2030"]:
+        if token in text:
+            return f"FY{token}"
+    return None
+
+
+def _coerce_number(value):
+    if isinstance(value, (int, float)):
+        return float(value)
+    if value in (None, ""):
+        return None
+    text = str(value).strip().replace(",", "").replace(" ", "").replace("(", "-").replace(")", "")
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def _looks_numeric(value: str) -> bool:
+    return _coerce_number(value) is not None
+
+
 def _run_ai_historical_extraction(
     project_id: str,
     documents: list[Path],
@@ -127,7 +214,7 @@ def _run_ai_historical_extraction(
 ) -> dict | None:
     context = {
         "source_files": [path.name for path in documents],
-        "structured_rows": rows[:250],
+        "structured_rows": rows[:1200],
         "documents": document_summaries,
     }
     project = get_project(project_id) or {"id": project_id}

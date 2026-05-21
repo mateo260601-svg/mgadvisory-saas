@@ -250,7 +250,10 @@ def _fallback_extraction(document_context: dict) -> dict:
         "debt": [],
         "working_capital": [],
         "confidence": "low",
-        "issues": ["Claude is not configured; local extraction only was used."],
+        "issues": [
+            "Claude is not configured or failed; no AI extraction was performed.",
+            "No synthetic financial values were inserted. Configure ANTHROPIC_API_KEY for real AI extraction.",
+        ],
         "source_files": document_context.get("source_files", []),
     }
 

@@ -8,9 +8,10 @@ import os
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data"
+STORAGE_DIR = Path(os.getenv("STORAGE_DIR", str(BASE_DIR))).resolve()
+DATA_DIR = STORAGE_DIR / "data"
 PROJECTS_DIR = DATA_DIR / "projects"
-OUTPUTS_DIR = BASE_DIR / "outputs"
+OUTPUTS_DIR = STORAGE_DIR / "outputs"
 FRONTEND_DIR = BASE_DIR / "frontend"
 TEMPLATES_DIR = BASE_DIR / "templates"
 

@@ -6,4 +6,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN mkdir -p data/projects outputs
 ENV PYTHONPATH=/app
+ENV STORAGE_DIR=/app
 CMD ["python", "start.py"]

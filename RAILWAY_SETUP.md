@@ -15,4 +15,16 @@
    `https://YOUR-RAILWAY-DOMAIN/auth/callback`
 5. Redeploy after changing variables.
 
+## Persistent projects on Railway
+
+Railway containers can be rebuilt. To keep uploaded documents, projects and generated outputs after redeploys:
+
+1. Add a Railway Volume.
+2. Mount it at `/data`.
+3. Add this Railway variable:
+   - `STORAGE_DIR=/data`
+4. Redeploy.
+
+Without a volume, the app works, but project files created inside the container may disappear after rebuilds.
+
 Never commit `.env` files or API secrets.
