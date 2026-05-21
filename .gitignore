@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment secrets — NEVER commit these
+.env
+.env.local
+.env.production
+
+# User data — never goes to git
+data/projects/
+outputs/*.xlsx
+outputs/*.pptx
+outputs/*.pdf
+outputs/*.docx
+
+# Large reference template files (21MB+ — store externally)
+templates/pptx/*.pptx
+templates/legacy/*.pptx
+templates/legacy/*.pdf
+
+# The manifest JSON is small and useful — keep it
+!templates/pptx/template_manifest.json
+!templates/pptx/README.md
+
+# Legacy reference folder (local only)
+legacy_reference/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+uvicorn.log
