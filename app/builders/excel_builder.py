@@ -7,6 +7,7 @@ from app.engines.debt_engine import debt_type_options
 PERIODS = 60
 MAX_DEBT_TRANCHES = 10
 FIRST_PERIOD_COL = 4
+FINANCIAL_MONTHLY_COL = 10
 ENTITIES = ["Group", "OpCo", "HoldCo"]
 INPUT_FILL = "D9EAF7"
 HEADER_FILL = "1F4E78"
@@ -35,6 +36,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     cover = wb.create_sheet("Cover")
     data_room = wb.create_sheet("Data Room")
     control = wb.create_sheet("Control Panel")
+    assumption_map = wb.create_sheet("Assumption Input Map")
     historical = wb.create_sheet("Historical Inputs")
     historical_bridge = wb.create_sheet("Historical Bridge")
     entity_input_sheets = [wb.create_sheet(f"{entity} Data Input") for entity in ENTITIES]
@@ -68,6 +70,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_cover(cover, project, styles)
     _build_data_room(data_room, project, financials, styles)
     _build_control(control, project, styles, DataValidation, assumptions)
+    _build_assumption_input_map(assumption_map, assumptions, styles)
     _build_historical(historical, financials, styles)
     _build_historical_bridge(historical_bridge, styles)
     for idx, sheet in enumerate(entity_input_sheets):
@@ -246,6 +249,30 @@ def _build_control(ws, project: dict, styles: dict, DataValidation, assumptions:
     _write_period_headers(ws, 17, styles, source_sheet="'Lists & Dates'")
 
 
+def _build_assumption_input_map(ws, assumptions: dict, styles: dict) -> None:
+    ws["B2"] = "Assumption Input Map"
+    ws["B2"].font = styles["section_font"]
+    ws["B3"] = "All BP Builder parameters saved from the SaaS are mirrored here before flowing into operating tabs."
+    _table_header(ws, 5, ["Category", "Parameter", "Value", "Input Type", "Model Destination"], styles)
+    destination_map = {
+        "model": "Control Panel",
+        "revenue_streams": "Revenue Drivers / Product Build",
+        "cost_base": "Product Build / Opex",
+        "cost_items": "Opex",
+        "headcount": "Headcount",
+        "working_capital": "Working Capital",
+        "capex": "Capex D&A",
+        "debt_tranches": "Debt Config / Debt Schedule",
+        "covenants": "Covenants",
+    }
+    for row, (category, key, value) in enumerate(_flatten_assumptions(assumptions), start=6):
+        ws.cell(row, 2, category)
+        ws.cell(row, 3, key)
+        _input(ws, row, 4, value, styles)
+        ws.cell(row, 5, _assumption_type(value))
+        ws.cell(row, 6, destination_map.get(category.split("[")[0], "Model workbook"))
+
+
 def _build_historical(ws, financials: dict, styles: dict) -> None:
     ws["B2"] = "Historical Inputs"
     ws["B2"].font = styles["section_font"]
@@ -328,6 +355,8 @@ def _build_entity_input(ws, entity: str, styles: dict) -> None:
         for col_idx in _period_cols():
             col = _col(col_idx)
             formula = template.format(col=col)
+            if label == "Closing Debt":
+                formula = template.format(col=_financial_monthly_col(col_idx))
             if entity != "Group":
                 if label in ["Revenue", "COGS", "EBITDA", "Receivables", "Inventory", "Payables"]:
                     formula = f"=({formula.lstrip('=')})*'Group Assumptions'!$C${weight_row}"
@@ -668,7 +697,7 @@ def _build_debt_schedule(ws, styles: dict) -> None:
             _formula(ws, pik_interest, c, f'=IF({letter}{active},MAX(0,{letter}{opening}*(\'Debt Config\'!$K{cfg}+\'Debt Config\'!$L{cfg})/12-{letter}{cash_interest}),0)', styles)
             _formula(ws, amort, c, f'=IF({letter}{active},IF({letter}{month}<=\'Debt Config\'!$I{cfg},0,IF(OR(\'Debt Config\'!$M{cfg}="Bullet",\'Debt Config\'!$M{cfg}="PIK",\'Debt Config\'!$M{cfg}="Revolver"),0,IF(\'Debt Config\'!$M{cfg}="Annuity",PMT((\'Debt Config\'!$K{cfg}+\'Debt Config\'!$L{cfg})/12,MAX(1,\'Debt Config\'!$H{cfg}-{letter}{month}+1),-{letter}{opening}),{letter}{opening}*(1-\'Debt Config\'!$N{cfg})/MAX(1,\'Debt Config\'!$H{cfg}-{letter}{month}+1)))),0)', styles)
             _formula(ws, bullet, c, f'=IF({letter}{maturity},{letter}{opening}*\'Debt Config\'!$N{cfg},0)', styles)
-            _formula(ws, sweep, c, f'=IF({letter}{active},MIN(MAX(0,{letter}{opening}+{letter}{draw}+{letter}{pik_interest}-{letter}{amort}-{letter}{bullet}),MAX(0,\'Financial Statements\'!{letter}20-\'Debt Config\'!$Q{cfg})*\'Debt Config\'!$O{cfg}),0)', styles)
+            _formula(ws, sweep, c, f'=IF({letter}{active},MIN(MAX(0,{letter}{opening}+{letter}{draw}+{letter}{pik_interest}-{letter}{amort}-{letter}{bullet}),MAX(0,\'Financial Statements\'!{_financial_monthly_col(c)}20-\'Debt Config\'!$Q{cfg})*\'Debt Config\'!$O{cfg}),0)', styles)
             _formula(ws, closing, c, f"=MAX(0,{letter}{opening}+{letter}{draw}+{letter}{pik_interest}-{letter}{amort}-{letter}{bullet}-{letter}{sweep})", styles, output=True)
             _formula(ws, undrawn, c, f"=MAX(0,'Debt Config'!$G{cfg}-{letter}{closing})", styles)
             _formula(ws, cost, c, f"={letter}{cash_interest}", styles, output=True)
@@ -697,34 +726,80 @@ def _build_debt_schedule(ws, styles: dict) -> None:
 def _build_financial_statements(ws, styles: dict) -> None:
     ws["B2"] = "Financial Statements"
     ws["B2"].font = styles["section_font"]
-    _write_period_headers(ws, 4, styles)
-    rows = ["Revenue", "COGS", "Gross Profit", "Payroll", "Opex", "EBITDA", "D&A", "EBIT", "Cash Interest", "PBT", "Tax", "Net Income", "Change in NWC", "Capex", "Cash Flow Before Debt", "Debt Amortization / Sweep", "Free Cash Flow", "Closing Cash", "Closing Debt", "Net Debt"]
-    for r, label in enumerate(rows, start=6):
-        ws.cell(r, 2, label)
+    ws["B3"] = "Annual view on the left; monthly forecast detail on the right. Monthly columns are grouped and can be expanded/collapsed in Excel."
+    years = [2026, 2027, 2028, 2029, 2030]
+    _table_header(ws, 4, ["Metric"] + [f"FY{year}" for year in years], styles)
+    monthly_start = FINANCIAL_MONTHLY_COL
+    ws.cell(4, monthly_start - 1, "Monthly Detail")
+    ws.cell(4, monthly_start - 1).fill = styles["section_fill"]
+    ws.cell(4, monthly_start - 1).font = styles["bold_font"]
+    for idx, c in enumerate(_period_cols(), start=2):
+        out_col = monthly_start + c - FIRST_PERIOD_COL
+        cell = ws.cell(4, out_col)
+        cell.value = f"='Lists & Dates'!V{idx}"
+        cell.number_format = "mmm-yy"
+        cell.fill = styles["header_fill"]
+        cell.font = styles["header_font"]
+        cell.alignment = styles["center"]
+        ws.column_dimensions[_col(out_col)].outlineLevel = 1
+        ws.column_dimensions[_col(out_col)].hidden = True
     debt_agg = 6 + MAX_DEBT_TRANCHES * 16 + 2
+    rows = [
+        ("Income Statement", "Revenue"),
+        ("Income Statement", "COGS"),
+        ("Income Statement", "Gross Profit"),
+        ("Income Statement", "Payroll"),
+        ("Income Statement", "Opex"),
+        ("Income Statement", "EBITDA"),
+        ("Income Statement", "D&A"),
+        ("Income Statement", "EBIT"),
+        ("Income Statement", "Cash Interest"),
+        ("Income Statement", "PBT"),
+        ("Income Statement", "Tax"),
+        ("Income Statement", "Net Income"),
+        ("Cash Flow", "Change in NWC"),
+        ("Cash Flow", "Capex"),
+        ("Cash Flow", "Cash Flow Before Debt"),
+        ("Cash Flow", "Debt Amortization / Sweep"),
+        ("Cash Flow", "Free Cash Flow"),
+        ("Balance Sheet", "Closing Cash"),
+        ("Balance Sheet", "Closing Debt"),
+        ("Balance Sheet", "Net Debt"),
+    ]
+    for r, (section, label) in enumerate(rows, start=6):
+        ws.cell(r, 2, label)
+        ws.cell(r, 3, section)
+        for year_idx, year in enumerate(years, start=3):
+            if r in [23, 24, 25]:
+                _formula(ws, r, year_idx, f"=XLOOKUP(DATE({year},12,31),$J$4:$BQ$4,$J${r}:$BQ${r},0)", styles, output=True)
+            else:
+                _formula(ws, r, year_idx, f'=SUMIFS($J${r}:$BQ${r},$J$4:$BQ$4,">="&DATE({year},1,1),$J$4:$BQ$4,"<="&DATE({year},12,31))', styles, output=r in [8, 11, 17, 20, 22])
     for c in _period_cols():
-        letter = _col(c)
-        prev = _col(c - 1)
-        _formula(ws, 6, c, f"='Revenue Drivers'!{letter}14", styles)
-        _formula(ws, 7, c, f"='Product Build'!{letter}14", styles)
-        _formula(ws, 8, c, f"={letter}6+{letter}7", styles, output=True)
-        _formula(ws, 9, c, f"='Headcount'!{letter}16", styles)
-        _formula(ws, 10, c, f"='Opex'!{letter}15", styles)
-        _formula(ws, 11, c, f"=SUM({letter}8:{letter}10)", styles, output=True)
-        _formula(ws, 12, c, f"='Capex D&A'!{letter}14", styles)
-        _formula(ws, 13, c, f"={letter}11+{letter}12", styles)
-        _formula(ws, 14, c, f"='Debt Schedule'!{letter}{debt_agg+3}", styles)
-        _formula(ws, 15, c, f"={letter}13-{letter}14", styles)
-        _formula(ws, 16, c, f"=-MAX({letter}15,0)*'Control Panel'!$C$13", styles)
-        _formula(ws, 17, c, f"={letter}15+{letter}16", styles, output=True)
-        _formula(ws, 18, c, f"='Working Capital'!{letter}13", styles)
-        _formula(ws, 19, c, f"='Capex D&A'!{letter}13", styles)
-        _formula(ws, 20, c, f"={letter}11+{letter}16-{letter}18+{letter}19-{letter}14", styles, output=True)
-        _formula(ws, 21, c, f"='Debt Schedule'!{letter}{debt_agg+5}+'Debt Schedule'!{letter}{debt_agg+6}+'Debt Schedule'!{letter}{debt_agg+7}", styles)
-        _formula(ws, 22, c, f"={letter}20-{letter}21", styles, output=True)
-        _formula(ws, 23, c, f"='Control Panel'!$C$11+{letter}22" if c == FIRST_PERIOD_COL else f"={prev}23+{letter}22", styles, output=True)
-        _formula(ws, 24, c, f"='Debt Schedule'!{letter}{debt_agg+8}", styles, output=True)
-        _formula(ws, 25, c, f"={letter}24-{letter}23", styles, output=True)
+        source_letter = _col(c)
+        out_col = FINANCIAL_MONTHLY_COL + c - FIRST_PERIOD_COL
+        letter = _col(out_col)
+        prev = _col(out_col - 1)
+        _formula(ws, 6, out_col, f"='Revenue Drivers'!{source_letter}14", styles)
+        _formula(ws, 7, out_col, f"='Product Build'!{source_letter}14", styles)
+        _formula(ws, 8, out_col, f"={letter}6+{letter}7", styles, output=True)
+        _formula(ws, 9, out_col, f"='Headcount'!{source_letter}16", styles)
+        _formula(ws, 10, out_col, f"='Opex'!{source_letter}15", styles)
+        _formula(ws, 11, out_col, f"=SUM({letter}8:{letter}10)", styles, output=True)
+        _formula(ws, 12, out_col, f"='Capex D&A'!{source_letter}14", styles)
+        _formula(ws, 13, out_col, f"={letter}11+{letter}12", styles)
+        _formula(ws, 14, out_col, f"='Debt Schedule'!{source_letter}{debt_agg+3}", styles)
+        _formula(ws, 15, out_col, f"={letter}13-{letter}14", styles)
+        _formula(ws, 16, out_col, f"=-MAX({letter}15,0)*'Control Panel'!$C$13", styles)
+        _formula(ws, 17, out_col, f"={letter}15+{letter}16", styles, output=True)
+        _formula(ws, 18, out_col, f"='Working Capital'!{source_letter}13", styles)
+        _formula(ws, 19, out_col, f"='Capex D&A'!{source_letter}13", styles)
+        _formula(ws, 20, out_col, f"={letter}11+{letter}16-{letter}18+{letter}19-{letter}14", styles, output=True)
+        _formula(ws, 21, out_col, f"='Debt Schedule'!{source_letter}{debt_agg+5}+'Debt Schedule'!{source_letter}{debt_agg+6}+'Debt Schedule'!{source_letter}{debt_agg+7}", styles)
+        _formula(ws, 22, out_col, f"={letter}20-{letter}21", styles, output=True)
+        _formula(ws, 23, out_col, f"='Control Panel'!$C$11+{letter}22" if c == FIRST_PERIOD_COL else f"={prev}23+{letter}22", styles, output=True)
+        _formula(ws, 24, out_col, f"='Debt Schedule'!{source_letter}{debt_agg+8}", styles, output=True)
+        _formula(ws, 25, out_col, f"={letter}24-{letter}23", styles, output=True)
+    ws.sheet_properties.outlinePr.summaryRight = False
 
 
 def _build_detail_forecast_lines(ws, styles: dict) -> None:
@@ -771,7 +846,8 @@ def _build_detail_forecast_lines(ws, styles: dict) -> None:
         factor = 1 + (cycle - 1) * 0.001
         for c in _period_cols():
             col = _col(c)
-            base_formula = template.format(col=col)
+            fs_col = _financial_monthly_col(c)
+            base_formula = template.format(col=fs_col if "Financial Statements" in template else col)
             if label in ["Net Debt / EBITDA", "Interest Cover"]:
                 _formula(ws, row, c, base_formula, styles, output=True, fmt="0.0x")
             elif label in ["Liquidity"]:
@@ -798,9 +874,10 @@ def _build_covenants(ws, styles: dict, assumptions: dict) -> None:
         ws.cell(r, 2, label)
     for c in _period_cols():
         letter = _col(c)
-        _formula(ws, 11, c, f"=IFERROR('Financial Statements'!{letter}25/'Financial Statements'!{letter}11,0)", styles, output=True, fmt="0.0x")
-        _formula(ws, 12, c, f"=IFERROR('Financial Statements'!{letter}11/'Financial Statements'!{letter}14,99)", styles, output=True, fmt="0.0x")
-        _formula(ws, 13, c, f"='Financial Statements'!{letter}23", styles, output=True)
+        fs_col = _financial_monthly_col(c)
+        _formula(ws, 11, c, f"=IFERROR('Financial Statements'!{fs_col}25/'Financial Statements'!{fs_col}11,0)", styles, output=True, fmt="0.0x")
+        _formula(ws, 12, c, f"=IFERROR('Financial Statements'!{fs_col}11/'Financial Statements'!{fs_col}14,99)", styles, output=True, fmt="0.0x")
+        _formula(ws, 13, c, f"='Financial Statements'!{fs_col}23", styles, output=True)
         _formula(ws, 14, c, f"={letter}11<=$C$6", styles, output=True)
         _formula(ws, 15, c, f"={letter}12>=$C$7", styles, output=True)
         _formula(ws, 16, c, f"={letter}13>=$C$8", styles, output=True)
@@ -816,12 +893,13 @@ def _build_outputs(ws, styles: dict) -> None:
         ws.cell(r, 2, label)
     for c in _period_cols():
         letter = _col(c)
-        _formula(ws, 6, c, f"='Financial Statements'!{letter}6", styles, output=True)
-        _formula(ws, 7, c, f"=IFERROR('Financial Statements'!{letter}8/'Financial Statements'!{letter}6,0)", styles, output=True, fmt="0.0%")
-        _formula(ws, 8, c, f"='Financial Statements'!{letter}11", styles, output=True)
+        fs_col = _financial_monthly_col(c)
+        _formula(ws, 6, c, f"='Financial Statements'!{fs_col}6", styles, output=True)
+        _formula(ws, 7, c, f"=IFERROR('Financial Statements'!{fs_col}8/'Financial Statements'!{fs_col}6,0)", styles, output=True, fmt="0.0%")
+        _formula(ws, 8, c, f"='Financial Statements'!{fs_col}11", styles, output=True)
         _formula(ws, 9, c, f"=IFERROR({letter}8/{letter}6,0)", styles, output=True, fmt="0.0%")
-        _formula(ws, 10, c, f"='Financial Statements'!{letter}22", styles, output=True)
-        _formula(ws, 11, c, f"='Financial Statements'!{letter}24", styles, output=True)
+        _formula(ws, 10, c, f"='Financial Statements'!{fs_col}22", styles, output=True)
+        _formula(ws, 11, c, f"='Financial Statements'!{fs_col}24", styles, output=True)
         _formula(ws, 12, c, f"='Covenants'!{letter}11", styles, output=True, fmt="0.0x")
         _formula(ws, 13, c, f"='Covenants'!{letter}17", styles, output=True)
 
@@ -836,7 +914,7 @@ def _build_packaged_output(ws, project: dict, styles: dict) -> None:
         ("Revenue", "'Outputs'!D6", "'Output_Group_Annual'!C5", "'Output_Group_Annual'!D5", "'Output_Group_Annual'!E5", "'Output_Group_Annual'!F5", "'Output_Group_Annual'!G5"),
         ("EBITDA", "'Outputs'!D8", "'Output_Group_Annual'!C7", "'Output_Group_Annual'!D7", "'Output_Group_Annual'!E7", "'Output_Group_Annual'!F7", "'Output_Group_Annual'!G7"),
         ("EBITDA Margin", "'Outputs'!D9", "'Output_Group_Annual'!C8", "'Output_Group_Annual'!D8", "'Output_Group_Annual'!E8", "'Output_Group_Annual'!F8", "'Output_Group_Annual'!G8"),
-        ("Free Cash Flow", "'Outputs'!D10", "'Financial Statements'!D22", "'Financial Statements'!P22", "'Financial Statements'!AB22", "'Financial Statements'!AN22", "'Financial Statements'!AZ22"),
+        ("Free Cash Flow", "'Outputs'!D10", "'Financial Statements'!C22", "'Financial Statements'!D22", "'Financial Statements'!E22", "'Financial Statements'!F22", "'Financial Statements'!G22"),
         ("Closing Debt", "'Outputs'!D11", "'Output_Group_Annual'!C10", "'Output_Group_Annual'!D10", "'Output_Group_Annual'!E10", "'Output_Group_Annual'!F10", "'Output_Group_Annual'!G10"),
         ("Net Debt / EBITDA", "'Outputs'!D12", "'Output_Group_Annual'!C11", "'Output_Group_Annual'!D11", "'Output_Group_Annual'!E11", "'Output_Group_Annual'!F11", "'Output_Group_Annual'!G11"),
     ]
@@ -932,7 +1010,7 @@ def _build_debt_capacity(ws, styles: dict) -> None:
         ("Lender Leverage Threshold", "3.50", "3.25", "3.00", "2.75", "2.50"),
         ("Implied Debt Capacity", "=C5*C7", "=D5*D7", "=E5*E7", "=F5*F7", "=G5*G7"),
         ("Headroom / Shortfall", "=C8-C6", "=D8-D6", "=E8-E6", "=F8-F6", "=G8-G6"),
-        ("Cash Sweep Capacity", "='Financial Statements'!D22", "='Financial Statements'!P22", "='Financial Statements'!AB22", "='Financial Statements'!AN22", "='Financial Statements'!AZ22"),
+        ("Cash Sweep Capacity", "='Financial Statements'!C22", "='Financial Statements'!D22", "='Financial Statements'!E22", "='Financial Statements'!F22", "='Financial Statements'!G22"),
         ("Refinancing Risk Flag", '=IF(C9<0,"Shortfall","Headroom")', '=IF(D9<0,"Shortfall","Headroom")', '=IF(E9<0,"Shortfall","Headroom")', '=IF(F9<0,"Shortfall","Headroom")', '=IF(G9<0,"Shortfall","Headroom")'),
     ]
     for row, values in enumerate(metrics, start=5):
@@ -960,7 +1038,7 @@ def _build_sensitivity_matrix(ws, styles: dict) -> None:
                 ws,
                 row,
                 col_idx,
-                f"=IFERROR(('Financial Statements'!D24*{debt_factor})/('Financial Statements'!D11*{ebitda_factor}),0)",
+                f"=IFERROR(('Financial Statements'!J24*{debt_factor})/('Financial Statements'!J11*{ebitda_factor}),0)",
                 styles,
                 output=True,
                 fmt="0.0x",
@@ -977,7 +1055,7 @@ def _build_sensitivity_matrix(ws, styles: dict) -> None:
                 ws,
                 row,
                 col_idx,
-                f"=('Control Panel'!$C$11*{cash_factor})+('Financial Statements'!D22*{fcf_factor})",
+                f"=('Control Panel'!$C$11*{cash_factor})+('Financial Statements'!J22*{fcf_factor})",
                 styles,
                 output=True,
             )
@@ -993,9 +1071,10 @@ def _build_checks(ws, styles: dict) -> None:
     debt_agg = 6 + MAX_DEBT_TRANCHES * 16 + 2
     for c in _period_cols():
         letter = _col(c)
-        _formula(ws, 6, c, f'=IF(\'Financial Statements\'!{letter}23>=0,"OK","ERROR")', styles, output=True)
+        fs_col = _financial_monthly_col(c)
+        _formula(ws, 6, c, f'=IF(\'Financial Statements\'!{fs_col}23>=0,"OK","ERROR")', styles, output=True)
         _formula(ws, 7, c, f'=IF(\'Debt Schedule\'!{letter}{debt_agg+8}>=0,"OK","ERROR")', styles, output=True)
-        _formula(ws, 8, c, f'=IF(\'Financial Statements\'!{letter}6>0,"OK","ERROR")', styles, output=True)
+        _formula(ws, 8, c, f'=IF(\'Financial Statements\'!{fs_col}6>0,"OK","ERROR")', styles, output=True)
         _formula(ws, 9, c, f'=IF(\'Covenants\'!{letter}17<>"","OK","ERROR")', styles, output=True)
         _formula(ws, 10, c, f'=IF(AND({letter}6="OK",{letter}7="OK",{letter}8="OK",{letter}9="OK"),"OK","ERROR")', styles, output=True)
 
@@ -1126,12 +1205,16 @@ def _add_list_validation(ws, cell_range: str, formula_range: str, DataValidation
 
 def _polish_sheet(ws, styles: dict) -> None:
     ws.sheet_view.showGridLines = False
-    ws.freeze_panes = "D5"
+    ws.freeze_panes = "J5" if ws.title == "Financial Statements" else "D5"
     ws.column_dimensions["A"].width = 3
     ws.column_dimensions["B"].width = 28
     ws.column_dimensions["C"].width = 18
-    for col in range(4, FIRST_PERIOD_COL + PERIODS):
+    max_period_col = max(FIRST_PERIOD_COL + PERIODS, FINANCIAL_MONTHLY_COL + PERIODS)
+    for col in range(4, max_period_col):
         ws.column_dimensions[_col(col)].width = 12
+    if ws.title == "Financial Statements":
+        ws.column_dimensions["C"].width = 16
+        ws.column_dimensions["I"].width = 4
     for row in ws.iter_rows():
         for cell in row:
             cell.border = styles["thin_border"]
@@ -1188,6 +1271,36 @@ def _debt_values(tranche: dict) -> tuple:
 
 def _period_cols() -> range:
     return range(FIRST_PERIOD_COL, FIRST_PERIOD_COL + PERIODS)
+
+
+def _financial_monthly_col(period_col: int) -> str:
+    return _col(FINANCIAL_MONTHLY_COL + period_col - FIRST_PERIOD_COL)
+
+
+def _flatten_assumptions(value, prefix: str = "") -> list[tuple[str, str, object]]:
+    rows = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_prefix = f"{prefix}.{key}" if prefix else str(key)
+            rows.extend(_flatten_assumptions(child, child_prefix))
+    elif isinstance(value, list):
+        for idx, child in enumerate(value, start=1):
+            child_prefix = f"{prefix}[{idx}]"
+            rows.extend(_flatten_assumptions(child, child_prefix))
+    else:
+        category, _, key = prefix.partition(".")
+        rows.append((category or "assumptions", key or prefix, value))
+    return rows
+
+
+def _assumption_type(value) -> str:
+    if isinstance(value, bool):
+        return "Boolean"
+    if isinstance(value, (int, float)):
+        return "Numeric"
+    if isinstance(value, str) and len(value) >= 10 and value[4:5] == "-" and value[7:8] == "-":
+        return "Date"
+    return "Text"
 
 
 def _styles(Font, PatternFill, Border, Side, Alignment) -> dict:
