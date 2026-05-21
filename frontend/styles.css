@@ -69,6 +69,16 @@ label {
   text-transform: uppercase;
 }
 
+label .field-hint {
+  display: block;
+  margin-top: 3px;
+  color: #7b8784;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-transform: none;
+}
+
 h1,
 h2,
 h3,
@@ -630,17 +640,68 @@ h3 {
 }
 
 .builder-layout {
-  display: grid;
-  grid-template-columns: minmax(320px, 420px) 1fr;
-  gap: 18px;
+  display: block;
 }
 
 .builder-panel {
   min-width: 0;
 }
 
+.bp-wizard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 18px;
+  padding: 12px;
+}
+
+.wizard-steps {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+.wizard-step {
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 9px 8px;
+  text-align: center;
+}
+
+.wizard-step.active {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.bp-step-panel {
+  display: none;
+  min-height: 480px;
+}
+
+.bp-step-panel.active-step {
+  display: block;
+}
+
+.bp-step-panel + .bp-step-panel {
+  margin-top: 0;
+}
+
+.wizard-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.wizard-actions button {
+  min-width: 160px;
+}
+
 .wide-builder {
-  grid-column: span 1;
+  width: 100%;
 }
 
 .compact-grid {
@@ -703,6 +764,25 @@ h3 {
   padding: 8px 9px;
 }
 
+.assumption-guide {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #cfe0d2;
+  border-left: 4px solid var(--brand);
+  border-radius: 6px;
+  background: #f4faf5;
+  color: var(--muted);
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  line-height: 1.45;
+}
+
+.assumption-guide strong {
+  color: var(--brand-dark);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
 @media (max-width: 980px) {
   .login-view,
   .app-shell,
@@ -710,7 +790,6 @@ h3 {
   #dashboardView .workbench,
   #projectView .workbench,
   #outputsView .workbench,
-  .builder-layout,
   .metric-grid {
     grid-template-columns: 1fr;
   }
@@ -747,7 +826,8 @@ h3 {
   }
 
   .compact-grid,
-  .debt-grid {
+  .debt-grid,
+  .wizard-steps {
     grid-template-columns: 1fr;
   }
 }

@@ -289,101 +289,147 @@
               </div>
             </section>
 
+            <section class="bp-wizard">
+              <div class="wizard-steps">
+                <button class="wizard-step active" data-bp-step-target="0">1. Setup</button>
+                <button class="wizard-step" data-bp-step-target="1">2. Historicals</button>
+                <button class="wizard-step" data-bp-step-target="2">3. Revenue</button>
+                <button class="wizard-step" data-bp-step-target="3">4. Costs</button>
+                <button class="wizard-step" data-bp-step-target="4">5. People</button>
+                <button class="wizard-step" data-bp-step-target="5">6. Cash flow</button>
+                <button class="wizard-step" data-bp-step-target="6">7. Debt</button>
+                <button class="wizard-step" data-bp-step-target="7">8. Covenants</button>
+                <button class="wizard-step" data-bp-step-target="8">9. Generate</button>
+              </div>
+            </section>
+
             <section class="builder-layout">
-              <div class="panel builder-panel">
+              <div class="panel builder-panel bp-step-panel active-step" data-bp-step="0">
                 <p class="eyebrow">Control</p>
                 <h3>Model setup</h3>
+                <div class="assumption-guide">
+                  <strong>Purpose</strong>
+                  <span>Set the modelling perimeter used by every downstream sheet: dates, currency, scenario, tax, opening liquidity and opening leverage.</span>
+                </div>
                 <div class="compact-grid">
-                  <label>Currency<input id="bpCurrency" value="EUR" /></label>
-                  <label>Scenario<select id="bpScenario"><option>Base</option><option>Downside</option><option>Upside</option><option>Bank Case</option><option>IC Case</option><option>Restructuring Case</option></select></label>
-                  <label>Model start<input id="bpModelStart" type="date" /></label>
-                  <label>Actuals end<input id="bpActualsEnd" type="date" /></label>
-                  <label>Forecast months<input id="bpForecastMonths" type="number" min="12" max="120" /></label>
-                  <label>Tax rate<input id="bpTaxRate" type="number" step="0.001" /></label>
-                  <label>Opening cash<input id="bpOpeningCash" type="number" step="1000" /></label>
-                  <label>Opening debt<input id="bpOpeningDebt" type="number" step="1000" /></label>
-                  <label>Minimum cash<input id="bpMinimumCash" type="number" step="1000" /></label>
+                  <label>Reporting currency<span class="field-hint">Workbook currency label, e.g. EUR</span><input id="bpCurrency" value="EUR" placeholder="EUR" /></label>
+                  <label>Scenario case<span class="field-hint">Case shown in Control Panel and outputs</span><select id="bpScenario"><option>Base</option><option>Downside</option><option>Upside</option><option>Bank Case</option><option>IC Case</option><option>Restructuring Case</option></select></label>
+                  <label>Forecast start date<span class="field-hint">First monthly forecast period</span><input id="bpModelStart" type="date" /></label>
+                  <label>Last actuals date<span class="field-hint">Latest historical period extracted from documents</span><input id="bpActualsEnd" type="date" /></label>
+                  <label>Forecast duration, months<span class="field-hint">Usually 36, 60 or 84 months</span><input id="bpForecastMonths" type="number" min="12" max="120" placeholder="60" /></label>
+                  <label>Corporate tax rate<span class="field-hint">Enter decimal: 0.25 = 25%</span><input id="bpTaxRate" type="number" step="0.001" placeholder="0.25" /></label>
+                  <label>Opening cash balance<span class="field-hint">Cash at forecast start, full currency amount</span><input id="bpOpeningCash" type="number" step="1000" placeholder="120000" /></label>
+                  <label>Opening gross debt<span class="field-hint">Total debt before tranche split, full amount</span><input id="bpOpeningDebt" type="number" step="1000" placeholder="500000" /></label>
+                  <label>Minimum operating cash<span class="field-hint">Liquidity floor used for sweeps/covenants</span><input id="bpMinimumCash" type="number" step="1000" placeholder="50000" /></label>
                 </div>
               </div>
 
-              <div class="panel builder-panel wide-builder">
+              <div class="panel builder-panel wide-builder bp-step-panel" data-bp-step="2">
                 <p class="eyebrow">Commercial engine</p>
                 <h3>Revenue streams</h3>
+                <div class="assumption-guide">
+                  <strong>How to fill</strong>
+                  <span>Enter one row per product/service. Volume x price creates opening monthly revenue; monthly growth rates then drive the forecast by product line.</span>
+                </div>
                 <div class="builder-table" id="revenueStreamTable">
                   <div class="builder-row builder-head">
-                    <span>Name</span><span>Type</span><span>Volume</span><span>Price</span><span>Vol growth</span><span>Price growth</span>
+                    <span>Product/service name</span><span>Business type</span><span>Opening monthly volume</span><span>Average unit price</span><span>Monthly volume growth</span><span>Monthly price growth</span>
                   </div>
                 </div>
               </div>
 
-              <div class="panel builder-panel">
+              <div class="panel builder-panel bp-step-panel" data-bp-step="3">
                 <p class="eyebrow">Costs</p>
                 <h3>Cost base</h3>
+                <div class="assumption-guide">
+                  <strong>Purpose</strong>
+                  <span>These assumptions drive gross margin and the broad SG&A envelope. Detailed opex items below provide the line-by-line build.</span>
+                </div>
                 <div class="compact-grid">
-                  <label>COGS % revenue<input id="bpCogsPercent" type="number" step="0.001" /></label>
-                  <label>Fulfilment / unit<input id="bpFulfilmentCost" type="number" step="100" /></label>
-                  <label>Fixed opex / month<input id="bpFixedOpex" type="number" step="1000" /></label>
-                  <label>Opex % revenue<input id="bpOpexPercent" type="number" step="0.001" /></label>
-                  <label>Rent / month<input id="bpRent" type="number" step="1000" /></label>
-                  <label>Professional fees<input id="bpProfessionalFees" type="number" step="1000" /></label>
-                  <label>IT / month<input id="bpIt" type="number" step="1000" /></label>
+                  <label>COGS as % of revenue<span class="field-hint">Decimal: 0.35 = 35% of revenue</span><input id="bpCogsPercent" type="number" step="0.001" placeholder="0.35" /></label>
+                  <label>Fulfilment cost per unit<span class="field-hint">Direct cost per unit sold</span><input id="bpFulfilmentCost" type="number" step="100" placeholder="100" /></label>
+                  <label>Other fixed opex / month<span class="field-hint">Residual SG&A not detailed below</span><input id="bpFixedOpex" type="number" step="1000" placeholder="80000" /></label>
+                  <label>Variable opex % revenue<span class="field-hint">Decimal: 0.04 = 4% of revenue</span><input id="bpOpexPercent" type="number" step="0.001" placeholder="0.04" /></label>
+                  <label>Rent / month<span class="field-hint">Facilities cost</span><input id="bpRent" type="number" step="1000" placeholder="12000" /></label>
+                  <label>Professional fees / month<span class="field-hint">Legal, audit, advisory, consultants</span><input id="bpProfessionalFees" type="number" step="1000" placeholder="8000" /></label>
+                  <label>IT & software / month<span class="field-hint">Systems, hosting, SaaS licences</span><input id="bpIt" type="number" step="1000" placeholder="5000" /></label>
                 </div>
               </div>
 
-              <div class="panel builder-panel wide-builder">
+              <div class="panel builder-panel wide-builder bp-step-panel" data-bp-step="3">
                 <p class="eyebrow">Cost structure</p>
                 <h3>Detailed opex items</h3>
+                <div class="assumption-guide">
+                  <strong>Driver choices</strong>
+                  <span>Fixed = monthly amount; % Revenue = variable cost linked to revenue; Per FTE = cost scales with total headcount.</span>
+                </div>
                 <div class="builder-table" id="costItemTable">
                   <div class="builder-row cost-head builder-head">
-                    <span>Cost item</span><span>Driver</span><span>Fixed / month</span><span>% revenue</span><span>Cost / FTE</span>
+                    <span>Cost item name</span><span>Cost driver</span><span>Fixed monthly amount</span><span>% of revenue</span><span>Monthly cost / FTE</span>
                   </div>
                 </div>
               </div>
 
-              <div class="panel builder-panel wide-builder">
+              <div class="panel builder-panel wide-builder bp-step-panel" data-bp-step="4">
                 <p class="eyebrow">People</p>
                 <h3>Headcount plan</h3>
+                <div class="assumption-guide">
+                  <strong>How payroll works</strong>
+                  <span>Opening FTE plus scheduled hiring drives monthly payroll by department. Salary is monthly fully-loaded cost per FTE.</span>
+                </div>
                 <div class="builder-table" id="headcountTable">
                   <div class="builder-row builder-head">
-                    <span>Department</span><span>Opening FTE</span><span>Salary / month</span><span>Hiring every</span><span>New hires</span>
+                    <span>Department / team</span><span>Opening FTE</span><span>Monthly salary / FTE</span><span>Hiring every N months</span><span>New hires per wave</span>
                   </div>
                 </div>
               </div>
 
-              <div class="panel builder-panel">
+              <div class="panel builder-panel bp-step-panel" data-bp-step="5">
                 <p class="eyebrow">Cash flow</p>
                 <h3>Working capital & capex</h3>
+                <div class="assumption-guide">
+                  <strong>Cash conversion</strong>
+                  <span>DSO, DIO and DPO convert P&L into cash. Capex assumptions drive free cash flow and depreciation.</span>
+                </div>
                 <div class="compact-grid">
-                  <label>DSO<input id="bpDso" type="number" /></label>
-                  <label>DIO<input id="bpDio" type="number" /></label>
-                  <label>DPO<input id="bpDpo" type="number" /></label>
-                  <label>Maintenance capex %<input id="bpMaintenanceCapex" type="number" step="0.001" /></label>
-                  <label>Growth capex / month<input id="bpGrowthCapex" type="number" step="1000" /></label>
-                  <label>Depreciation years<input id="bpDepreciationYears" type="number" step="1" /></label>
+                  <label>DSO, days sales outstanding<span class="field-hint">Receivables = revenue / 365 x DSO</span><input id="bpDso" type="number" placeholder="60" /></label>
+                  <label>DIO, days inventory outstanding<span class="field-hint">Inventory = COGS / 365 x DIO</span><input id="bpDio" type="number" placeholder="45" /></label>
+                  <label>DPO, days payable outstanding<span class="field-hint">Payables = costs / 365 x DPO</span><input id="bpDpo" type="number" placeholder="55" /></label>
+                  <label>Maintenance capex % revenue<span class="field-hint">Decimal: 0.015 = 1.5%</span><input id="bpMaintenanceCapex" type="number" step="0.001" placeholder="0.015" /></label>
+                  <label>Growth capex / month<span class="field-hint">Fixed monthly expansion capex</span><input id="bpGrowthCapex" type="number" step="1000" placeholder="15000" /></label>
+                  <label>Depreciation life, years<span class="field-hint">Used for monthly D&A</span><input id="bpDepreciationYears" type="number" step="1" placeholder="7" /></label>
                 </div>
               </div>
 
-              <div class="panel builder-panel wide-builder">
+              <div class="panel builder-panel wide-builder bp-step-panel" data-bp-step="6">
                 <p class="eyebrow">Debt engine</p>
                 <h3>Debt instruments</h3>
+                <div class="assumption-guide">
+                  <strong>Debt modelling</strong>
+                  <span>Enter each tranche separately. Interest type controls cash interest vs PIK; frequency controls when cash interest is paid; amortisation controls principal repayment.</span>
+                </div>
                 <div class="builder-table" id="debtTrancheTable">
                   <div class="builder-row debt-head builder-head">
-                    <span>Name</span><span>Type</span><span>Borrower</span><span>Start</span><span>Opening</span><span>Commitment</span><span>Term</span><span>Moratorium</span><span>Margin</span><span>Base</span><span>Amort.</span><span>Interest</span><span>Freq.</span><span>Cash pay %</span>
+                    <span>Tranche name</span><span>Debt instrument type</span><span>Borrower</span><span>Start date</span><span>Opening balance</span><span>Total commitment</span><span>Term months</span><span>Principal moratorium</span><span>Margin</span><span>Base rate</span><span>Amortisation</span><span>Interest type</span><span>Cash pay frequency</span><span>Cash pay %</span>
                   </div>
                 </div>
               </div>
 
-              <div class="panel builder-panel">
+              <div class="panel builder-panel bp-step-panel" data-bp-step="7">
                 <p class="eyebrow">Covenants</p>
                 <h3>Credit thresholds</h3>
+                <div class="assumption-guide">
+                  <strong>Lender tests</strong>
+                  <span>These thresholds create pass/fail outputs and lender-style covenant headroom across the forecast.</span>
+                </div>
                 <div class="compact-grid">
-                  <label>Max net debt / EBITDA<input id="bpMaxLeverage" type="number" step="0.1" /></label>
-                  <label>Min interest cover<input id="bpMinIcr" type="number" step="0.1" /></label>
-                  <label>Min liquidity<input id="bpMinLiquidity" type="number" step="1000" /></label>
+                  <label>Maximum net debt / EBITDA<span class="field-hint">Example: 3.5x</span><input id="bpMaxLeverage" type="number" step="0.1" placeholder="3.5" /></label>
+                  <label>Minimum interest cover ratio<span class="field-hint">EBITDA / cash interest, e.g. 2.0x</span><input id="bpMinIcr" type="number" step="0.1" placeholder="2.0" /></label>
+                  <label>Minimum liquidity covenant<span class="field-hint">Cash floor required by lenders</span><input id="bpMinLiquidity" type="number" step="1000" placeholder="50000" /></label>
                 </div>
               </div>
 
-              <div class="panel builder-panel wide-builder">
+              <div class="panel builder-panel wide-builder bp-step-panel" data-bp-step="1">
                 <p class="eyebrow">Historical data</p>
                 <h3>AI extraction workflow</h3>
                 <div class="output-grid">
@@ -393,7 +439,23 @@
                 <div class="model-note">Uploaded PDF/XLSX/CSV files are normalized by the extraction layer and written into the Historical Inputs sheet. The forecast, debt schedule, financial statements, covenants and outputs remain formula-driven.</div>
                 <div id="bpBuilderResult" class="result-box"></div>
               </div>
+
+              <div class="panel builder-panel wide-builder bp-step-panel" data-bp-step="8">
+                <p class="eyebrow">Final generation</p>
+                <h3>Generate formula-driven BP pack</h3>
+                <div class="model-note">This final step saves all assumptions, uses the latest normalized historicals as the base period, and generates the Excel BP with formula-driven forecast, debt, covenants, outputs, checks and detailed forecast line build.</div>
+                <div class="output-grid">
+                  <button id="saveBpFinalButton">Save all assumptions</button>
+                  <button id="generateBpFinalButton">Generate Excel BP</button>
+                  <button id="downloadBpFinalButton" class="secondary-button">Download latest BP</button>
+                </div>
+              </div>
             </section>
+
+            <div class="wizard-actions">
+              <button id="bpWizardPrevButton" class="secondary-button">Previous</button>
+              <button id="bpWizardNextButton">Next</button>
+            </div>
           </div>
         </section>
 
@@ -413,7 +475,7 @@
                 <button class="disabled-button" disabled>IM / M&A deck</button>
               </div>
               <div class="model-note">
-                The Excel BP model is a monthly formula-driven workbook with admin, group assumptions, multi-entity inputs, monthly and annual outputs, revenue drivers, product economics, headcount, opex, working capital, capex, 10-tranche debt modelling, covenants, debt capacity, sensitivity matrix, restructuring options, IC summary and checks.
+                The Excel BP model is a monthly formula-driven workbook with admin, group assumptions, historical bridge, detailed forecast lines, multi-entity inputs, monthly and annual outputs, revenue drivers, product economics, headcount, opex, working capital, capex, 10-tranche debt modelling, covenants, debt capacity, sensitivity matrix, restructuring options, IC summary and checks.
               </div>
               <div id="outputResult" class="result-box"></div>
             </div>
@@ -422,7 +484,7 @@
               <p class="eyebrow">Templates</p>
               <h3>Available references</h3>
               <div class="module-list">
-                <div><span>Excel BP engine</span><strong>35 tabs</strong></div>
+                <div><span>Excel BP engine</span><strong>37 tabs</strong></div>
                 <div><span>Debt library</span><strong>75 instruments</strong></div>
                 <div><span>QoE engine</span><strong>8 adj. types</strong></div>
                 <div><span>Restructuring</span><strong>10 options</strong></div>

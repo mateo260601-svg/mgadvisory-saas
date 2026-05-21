@@ -9,6 +9,7 @@ const state = {
   lastOutput: null,
   user: null,
   googleConfigured: false,
+  bpStep: 0,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -884,7 +885,35 @@ async function showView(viewId) {
     outputsView: "Outputs",
   };
   $("pageTitle").textContent = titles[viewId] || "Workspace";
-  if (viewId === "bpBuilderView" && activeProject()) loadBpAssumptions();
+  if (viewId === "bpBuilderView" && activeProject()) {
+    showBpStep(state.bpStep || 0);
+    loadBpAssumptions();
+  }
+}
+
+function showBpStep(step) {
+  const maxStep = 8;
+  state.bpStep = Math.max(0, Math.min(maxStep, Number(step) || 0));
+  document.querySelectorAll("[data-bp-step]").forEach((panel) => {
+    panel.classList.toggle("active-step", Number(panel.dataset.bpStep) === state.bpStep);
+  });
+  document.querySelectorAll("[data-bp-step-target]").forEach((button) => {
+    button.classList.toggle("active", Number(button.dataset.bpStepTarget) === state.bpStep);
+  });
+  if ($("bpWizardPrevButton")) $("bpWizardPrevButton").disabled = state.bpStep === 0;
+  if ($("bpWizardNextButton")) $("bpWizardNextButton").textContent = state.bpStep === maxStep ? "Generate" : "Next";
+}
+
+function nextBpStep() {
+  if (state.bpStep >= 8) {
+    generateBpFromBuilder();
+    return;
+  }
+  showBpStep(state.bpStep + 1);
+}
+
+function previousBpStep() {
+  showBpStep(state.bpStep - 1);
 }
 
 function setResult(id, payload) {
@@ -953,8 +982,11 @@ $("generateBpOutputButton").addEventListener("click", generateBp);
 $("loadBpAssumptionsButton").addEventListener("click", loadBpAssumptions);
 $("saveBpAssumptionsButton").addEventListener("click", saveBpAssumptions);
 $("generateBpBuilderButton").addEventListener("click", generateBpFromBuilder);
+$("saveBpFinalButton").addEventListener("click", saveBpAssumptions);
+$("generateBpFinalButton").addEventListener("click", generateBpFromBuilder);
 $("downloadBpButton").addEventListener("click", downloadBp);
 $("downloadBpBuilderButton").addEventListener("click", downloadBp);
+$("downloadBpFinalButton").addEventListener("click", downloadBp);
 $("aiBriefButton").addEventListener("click", generateAiBrief);
 $("qoePackButton").addEventListener("click", generateQoePack);
 $("restructuringButton").addEventListener("click", generateRestructuringPaper);
@@ -965,6 +997,13 @@ $("projectSearch").addEventListener("input", () => renderProjectList("projectLis
 document.querySelectorAll("[data-view], [data-view-button]").forEach((el) => {
   el.addEventListener("click", () => showView(el.dataset.view || el.dataset.viewButton));
 });
+
+document.querySelectorAll("[data-bp-step-target]").forEach((el) => {
+  el.addEventListener("click", () => showBpStep(el.dataset.bpStepTarget));
+});
+
+$("bpWizardPrevButton").addEventListener("click", previousBpStep);
+$("bpWizardNextButton").addEventListener("click", nextBpStep);
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 const redirectHandled = handleAuthRedirect();

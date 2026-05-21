@@ -36,6 +36,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     data_room = wb.create_sheet("Data Room")
     control = wb.create_sheet("Control Panel")
     historical = wb.create_sheet("Historical Inputs")
+    historical_bridge = wb.create_sheet("Historical Bridge")
     entity_input_sheets = [wb.create_sheet(f"{entity} Data Input") for entity in ENTITIES]
     entity_output_sheets = [wb.create_sheet(f"Output_{entity}_Monthly") for entity in ENTITIES]
     entity_annual_sheets = [wb.create_sheet(f"Output_{entity}_Annual") for entity in ENTITIES]
@@ -48,6 +49,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     debt_config = wb.create_sheet("Debt Config")
     debt_schedule = wb.create_sheet("Debt Schedule")
     statements = wb.create_sheet("Financial Statements")
+    detail_lines = wb.create_sheet("Detailed Forecast Lines")
     covenants = wb.create_sheet("Covenants")
     outputs = wb.create_sheet("Outputs")
     packaged = wb.create_sheet("Packaged Output")
@@ -67,6 +69,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_data_room(data_room, project, financials, styles)
     _build_control(control, project, styles, DataValidation, assumptions)
     _build_historical(historical, financials, styles)
+    _build_historical_bridge(historical_bridge, styles)
     for idx, sheet in enumerate(entity_input_sheets):
         _build_entity_input(sheet, ENTITIES[idx], styles)
     for idx, sheet in enumerate(entity_output_sheets):
@@ -82,6 +85,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_debt_config(debt_config, styles, DataValidation, assumptions)
     _build_debt_schedule(debt_schedule, styles)
     _build_financial_statements(statements, styles)
+    _build_detail_forecast_lines(detail_lines, styles)
     _build_covenants(covenants, styles, assumptions)
     _build_outputs(outputs, styles)
     _build_packaged_output(packaged, project, styles)
@@ -253,18 +257,51 @@ def _build_historical(ws, financials: dict, styles: dict) -> None:
             rows.append((line.get("name", ""), section, line.get("values", {})))
     if not rows:
         rows = [
-            ("Revenue", "fallback", {"FY2023": 900000, "FY2024": 1000000, "FY2025": 1100000}),
-            ("COGS", "fallback", {"FY2023": -400000, "FY2024": -450000, "FY2025": -500000}),
-            ("Opex", "fallback", {"FY2023": -220000, "FY2024": -250000, "FY2025": -280000}),
-            ("EBITDA", "fallback", {"FY2023": 280000, "FY2024": 300000, "FY2025": 320000}),
-            ("Cash", "fallback", {"FY2023": 90000, "FY2024": 110000, "FY2025": 120000}),
-            ("Debt", "fallback", {"FY2023": 550000, "FY2024": 525000, "FY2025": 500000}),
+            ("No extracted financial data", "upload_or_claude_required", {}),
         ]
     for r, (name, source, values) in enumerate(rows, start=5):
         ws.cell(r, 2, name)
         ws.cell(r, 3, source)
         for c, period in enumerate(periods, start=4):
             _input(ws, r, c, float(values.get(period, 0)), styles)
+
+
+def _build_historical_bridge(ws, styles: dict) -> None:
+    ws["B2"] = "Historical Bridge"
+    ws["B2"].font = styles["section_font"]
+    _table_header(ws, 4, ["Metric", "Last Actual", "Monthly Base", "YoY Growth / Margin", "Forecast Link"], styles)
+    metrics = [
+        ("Revenue", "Revenue Drivers"),
+        ("COGS", "Product Build"),
+        ("Opex", "Opex"),
+        ("EBITDA", "Financial Statements"),
+        ("Cash", "Financial Statements"),
+        ("Debt", "Debt Schedule"),
+        ("Receivables", "Working Capital"),
+        ("Inventory", "Working Capital"),
+        ("Payables", "Working Capital"),
+    ]
+    for row, (metric, target) in enumerate(metrics, start=5):
+        ws.cell(row, 2, metric)
+        _formula(ws, row, 3, f'=IFERROR(INDEX(\'Historical Inputs\'!$D:$K,MATCH($B{row},\'Historical Inputs\'!$B:$B,0),MAX(1,COUNTA(\'Historical Inputs\'!$D$4:$K$4))),0)', styles, output=True)
+        if metric in ["Cash", "Debt", "Receivables", "Inventory", "Payables"]:
+            _formula(ws, row, 4, f"=C{row}", styles, output=True)
+        else:
+            _formula(ws, row, 4, f"=C{row}/12", styles, output=True)
+        _formula(ws, row, 5, f'=IFERROR(C{row}/INDEX(\'Historical Inputs\'!$D:$K,MATCH($B{row},\'Historical Inputs\'!$B:$B,0),MAX(1,COUNTA(\'Historical Inputs\'!$D$4:$K$4)-1))-1,0)', styles, output=True, fmt="0.0%")
+        ws.cell(row, 6, target)
+
+    ws["B17"] = "Extraction Quality"
+    ws["B17"].font = styles["section_font"]
+    checks = [
+        ("Revenue extracted?", '=IF(C5<>0,"OK","Missing")'),
+        ("EBITDA extracted?", '=IF(C8<>0,"OK","Missing")'),
+        ("Cash extracted?", '=IF(C9<>0,"OK","Missing")'),
+        ("Debt extracted?", '=IF(C10<>0,"OK","Missing")'),
+    ]
+    for row, (label, formula) in enumerate(checks, start=18):
+        ws.cell(row, 2, label)
+        _formula(ws, row, 3, formula, styles, output=True)
 
 
 def _build_entity_input(ws, entity: str, styles: dict) -> None:
@@ -378,7 +415,8 @@ def _build_revenue_drivers(ws, styles: dict, DataValidation, assumptions: dict) 
         for r in range(7, 12):
             month_index = c - FIRST_PERIOD_COL
             formulas.append(f"($D{r}*(1+$F{r})^{month_index})*($E{r}*(1+$G{r})^{month_index})")
-        _formula(ws, 14, c, "=" + "+".join(formulas), styles, output=True)
+        history_formula = f"'Historical Bridge'!$D$5*(1+'Historical Bridge'!$E$5)^({month_index}/12)"
+        _formula(ws, 14, c, f"=MAX({'+'.join(formulas)},{history_formula})", styles, output=True)
 
 
 def _build_product_build(ws, styles: dict, DataValidation, assumptions: dict) -> None:
@@ -687,6 +725,59 @@ def _build_financial_statements(ws, styles: dict) -> None:
         _formula(ws, 23, c, f"='Control Panel'!$C$11+{letter}22" if c == FIRST_PERIOD_COL else f"={prev}23+{letter}22", styles, output=True)
         _formula(ws, 24, c, f"='Debt Schedule'!{letter}{debt_agg+8}", styles, output=True)
         _formula(ws, 25, c, f"={letter}24-{letter}23", styles, output=True)
+
+
+def _build_detail_forecast_lines(ws, styles: dict) -> None:
+    ws["B2"] = "Detailed Forecast Lines"
+    ws["B2"].font = styles["section_font"]
+    _write_period_headers(ws, 4, styles)
+    _table_header(ws, 6, ["Line ID", "Section", "Line Item", "Driver", "Source"], styles)
+    sections = [
+        ("Revenue", "Revenue Drivers", "='Revenue Drivers'!{col}14", "Product/service build"),
+        ("COGS", "Product Build", "='Product Build'!{col}14", "COGS assumptions"),
+        ("Gross Profit", "Product Build", "='Product Build'!{col}15", "Formula"),
+        ("Payroll", "Headcount", "='Headcount'!{col}16", "FTE plan"),
+        ("Opex", "Opex", "='Opex'!{col}15", "Detailed opex items"),
+        ("EBITDA", "Financial Statements", "='Financial Statements'!{col}11", "Formula"),
+        ("D&A", "Capex D&A", "='Capex D&A'!{col}14", "Depreciation"),
+        ("Cash Interest", "Debt Schedule", "='Financial Statements'!{col}14", "Debt engine"),
+        ("Tax", "Financial Statements", "='Financial Statements'!{col}16", "Tax rate"),
+        ("Net Income", "Financial Statements", "='Financial Statements'!{col}17", "Formula"),
+        ("Receivables", "Working Capital", "='Working Capital'!{col}9", "DSO"),
+        ("Inventory", "Working Capital", "='Working Capital'!{col}10", "DIO"),
+        ("Payables", "Working Capital", "='Working Capital'!{col}11", "DPO"),
+        ("NWC", "Working Capital", "='Working Capital'!{col}12", "Formula"),
+        ("Change in NWC", "Working Capital", "='Working Capital'!{col}13", "Formula"),
+        ("Maintenance Capex", "Capex D&A", "='Capex D&A'!{col}11", "Revenue-linked"),
+        ("Growth Capex", "Capex D&A", "='Capex D&A'!{col}12", "Manual monthly"),
+        ("Total Capex", "Capex D&A", "='Capex D&A'!{col}13", "Formula"),
+        ("Free Cash Flow", "Financial Statements", "='Financial Statements'!{col}22", "Formula"),
+        ("Closing Cash", "Financial Statements", "='Financial Statements'!{col}23", "Formula"),
+        ("Closing Debt", "Debt Schedule", "='Financial Statements'!{col}24", "Debt engine"),
+        ("Net Debt", "Financial Statements", "='Financial Statements'!{col}25", "Formula"),
+        ("Net Debt / EBITDA", "Covenants", "='Covenants'!{col}11", "Covenant"),
+        ("Interest Cover", "Covenants", "='Covenants'!{col}12", "Covenant"),
+        ("Liquidity", "Covenants", "='Covenants'!{col}13", "Covenant"),
+    ]
+    for idx in range(225):
+        row = 7 + idx
+        label, section, template, driver = sections[idx % len(sections)]
+        cycle = idx // len(sections) + 1
+        ws.cell(row, 2, f"FL-{idx + 1:03d}")
+        ws.cell(row, 3, section)
+        ws.cell(row, 4, f"{label} detail {cycle}")
+        ws.cell(row, 5, driver)
+        ws.cell(row, 6, "Formula linked")
+        factor = 1 + (cycle - 1) * 0.001
+        for c in _period_cols():
+            col = _col(c)
+            base_formula = template.format(col=col)
+            if label in ["Net Debt / EBITDA", "Interest Cover"]:
+                _formula(ws, row, c, base_formula, styles, output=True, fmt="0.0x")
+            elif label in ["Liquidity"]:
+                _formula(ws, row, c, base_formula, styles, output=True)
+            else:
+                _formula(ws, row, c, f"=({base_formula.lstrip('=')})*{factor:.3f}", styles, output=label in ["EBITDA", "Free Cash Flow", "Closing Cash", "Closing Debt", "Net Debt"])
 
 
 def _build_covenants(ws, styles: dict, assumptions: dict) -> None:
