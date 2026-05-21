@@ -17,7 +17,7 @@ FORMULA_FILL = "FFFFFF"
 LINK_FILL = "EAF2F8"
 
 
-def build_business_plan_workbook(project: dict, financials: dict, output_path: Path) -> None:
+def build_business_plan_workbook(project: dict, financials: dict, output_path: Path, assumptions: dict | None = None) -> None:
     try:
         from openpyxl import Workbook
         from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -25,6 +25,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     except Exception as exc:
         raise RuntimeError(f"Excel generation dependency unavailable: {exc}") from exc
 
+    assumptions = assumptions or {}
     wb = Workbook()
     wb.remove(wb.active)
     styles = _styles(Font, PatternFill, Border, Side, Alignment)
@@ -64,7 +65,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_group_assumptions(group_assumptions, project, styles, DataValidation)
     _build_cover(cover, project, styles)
     _build_data_room(data_room, project, financials, styles)
-    _build_control(control, project, styles, DataValidation)
+    _build_control(control, project, styles, DataValidation, assumptions)
     _build_historical(historical, financials, styles)
     for idx, sheet in enumerate(entity_input_sheets):
         _build_entity_input(sheet, ENTITIES[idx], styles)
@@ -72,16 +73,16 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
         _build_entity_monthly_output(sheet, ENTITIES[idx], styles)
     for idx, sheet in enumerate(entity_annual_sheets):
         _build_entity_annual_output(sheet, ENTITIES[idx], styles)
-    _build_revenue_drivers(revenue, styles, DataValidation)
-    _build_product_build(products, styles, DataValidation)
-    _build_headcount(headcount, styles)
-    _build_opex(opex, styles, DataValidation)
-    _build_working_capital(wc, styles)
-    _build_capex(capex, styles)
-    _build_debt_config(debt_config, styles, DataValidation)
+    _build_revenue_drivers(revenue, styles, DataValidation, assumptions)
+    _build_product_build(products, styles, DataValidation, assumptions)
+    _build_headcount(headcount, styles, assumptions)
+    _build_opex(opex, styles, DataValidation, assumptions)
+    _build_working_capital(wc, styles, assumptions)
+    _build_capex(capex, styles, assumptions)
+    _build_debt_config(debt_config, styles, DataValidation, assumptions)
     _build_debt_schedule(debt_schedule, styles)
     _build_financial_statements(statements, styles)
-    _build_covenants(covenants, styles)
+    _build_covenants(covenants, styles, assumptions)
     _build_outputs(outputs, styles)
     _build_packaged_output(packaged, project, styles)
     _build_ic_summary(ic_summary, project, styles)
@@ -214,20 +215,21 @@ def _build_data_room(ws, project: dict, financials: dict, styles: dict) -> None:
         ws.cell(17 + idx, 3, source)
 
 
-def _build_control(ws, project: dict, styles: dict, DataValidation) -> None:
+def _build_control(ws, project: dict, styles: dict, DataValidation, assumptions: dict) -> None:
     ws["B2"] = "Control Panel"
     ws["B2"].font = styles["section_font"]
+    model = assumptions.get("model", {})
     controls = [
         ("Company Name", project.get("company_name", "Target Company")),
-        ("Currency", project.get("currency", "EUR")),
-        ("Scenario", "Base"),
-        ("Model Start Date", date(2026, 1, 31)),
-        ("Actuals End Date", date(2025, 12, 31)),
-        ("Forecast Months", PERIODS),
-        ("Opening Cash", 120000),
-        ("Opening Debt", 500000),
-        ("Tax Rate", 0.25),
-        ("Minimum Cash", 50000),
+        ("Currency", model.get("currency", project.get("currency", "EUR"))),
+        ("Scenario", model.get("scenario", "Base")),
+        ("Model Start Date", _date_value(model.get("model_start_date"), date(2026, 1, 31))),
+        ("Actuals End Date", _date_value(model.get("actuals_end_date"), date(2025, 12, 31))),
+        ("Forecast Months", int(model.get("forecast_months", PERIODS) or PERIODS)),
+        ("Opening Cash", _num(model.get("opening_cash"), 120000)),
+        ("Opening Debt", _num(model.get("opening_debt"), 500000)),
+        ("Tax Rate", _num(model.get("tax_rate"), 0.25)),
+        ("Minimum Cash", _num(model.get("minimum_cash"), 50000)),
     ]
     for row, (label, value) in enumerate(controls, start=5):
         _label(ws, row, 2, label, styles)
@@ -347,25 +349,26 @@ def _build_entity_annual_output(ws, entity: str, styles: dict) -> None:
                 _formula(ws, row, idx, f'=SUMIFS(\'{monthly}\'!$D${source_row}:$BK${source_row},\'{monthly}\'!$D$4:$BK$4,">="&DATE({year},1,1),\'{monthly}\'!$D$4:$BK$4,"<="&DATE({year},12,31))', styles, output=True)
 
 
-def _build_revenue_drivers(ws, styles: dict, DataValidation) -> None:
+def _build_revenue_drivers(ws, styles: dict, DataValidation, assumptions: dict) -> None:
     ws["B2"] = "Revenue Drivers"
     ws["B2"].font = styles["section_font"]
     _write_period_headers(ws, 4, styles)
-    rows = [
-        ("Product / Service 1", "Product"),
-        ("Product / Service 2", "Service"),
-        ("Product / Service 3", "Recurring"),
-        ("Product / Service 4", "Project"),
-        ("Product / Service 5", "Other"),
+    rows = assumptions.get("revenue_streams") or [
+        {"name": "Product / Service 1", "type": "Product", "volume": 100, "price": 1000, "volume_growth": 0.01, "price_growth": 0.002},
+        {"name": "Product / Service 2", "type": "Service", "volume": 120, "price": 900, "volume_growth": 0.01, "price_growth": 0.002},
+        {"name": "Product / Service 3", "type": "Recurring", "volume": 140, "price": 800, "volume_growth": 0.01, "price_growth": 0.002},
+        {"name": "Product / Service 4", "type": "Project", "volume": 160, "price": 700, "volume_growth": 0.01, "price_growth": 0.002},
+        {"name": "Product / Service 5", "type": "Other", "volume": 180, "price": 600, "volume_growth": 0.01, "price_growth": 0.002},
     ]
     _table_header(ws, 6, ["Revenue Stream", "Type", "Start Volume", "Start Price", "Monthly Volume Growth", "Monthly Price Growth"], styles)
-    for idx, (name, typ) in enumerate(rows, start=7):
-        ws.cell(idx, 2, name)
-        _input(ws, idx, 3, typ, styles)
-        _input(ws, idx, 4, 100 + (idx - 7) * 20, styles)
-        _input(ws, idx, 5, 1000 - (idx - 7) * 100, styles)
-        _input(ws, idx, 6, 0.01, styles)
-        _input(ws, idx, 7, 0.002, styles)
+    for idx in range(7, 12):
+        row = rows[idx - 7] if idx - 7 < len(rows) else {}
+        ws.cell(idx, 2, row.get("name", f"Product / Service {idx - 6}"))
+        _input(ws, idx, 3, row.get("type", "Other"), styles)
+        _input(ws, idx, 4, _num(row.get("volume"), 0), styles)
+        _input(ws, idx, 5, _num(row.get("price"), 0), styles)
+        _input(ws, idx, 6, _num(row.get("volume_growth"), 0), styles, fmt="0.0%")
+        _input(ws, idx, 7, _num(row.get("price_growth"), 0), styles, fmt="0.0%")
         _add_list_validation(ws, f"C{idx}", "'Lists & Dates'!$H$2:$H$20", DataValidation)
     ws["B14"] = "Total Revenue"
     ws["B14"].font = styles["bold_font"]
@@ -378,15 +381,16 @@ def _build_revenue_drivers(ws, styles: dict, DataValidation) -> None:
         _formula(ws, 14, c, "=" + "+".join(formulas), styles, output=True)
 
 
-def _build_product_build(ws, styles: dict, DataValidation) -> None:
+def _build_product_build(ws, styles: dict, DataValidation, assumptions: dict) -> None:
     ws["B2"] = "Product Build"
     ws["B2"].font = styles["section_font"]
     _write_period_headers(ws, 4, styles)
+    cost_base = assumptions.get("cost_base", {})
     _table_header(ws, 6, ["Stream", "COGS % Revenue", "Fulfilment Cost / Unit", "Direct FTE / Unit"], styles)
     for r in range(7, 12):
         ws.cell(r, 2, f"='Revenue Drivers'!B{r}")
-        _input(ws, r, 3, 0.35, styles)
-        _input(ws, r, 4, 100, styles)
+        _input(ws, r, 3, _num(cost_base.get("cogs_percent"), 0.35), styles, fmt="0.0%")
+        _input(ws, r, 4, _num(cost_base.get("fulfilment_cost_per_unit"), 100), styles)
         _input(ws, r, 5, 0.01, styles)
     ws["B14"] = "Total COGS"
     ws["B15"] = "Gross Profit"
@@ -400,18 +404,26 @@ def _build_product_build(ws, styles: dict, DataValidation) -> None:
         _formula(ws, 16, c, f"=IFERROR({letter}15/'Revenue Drivers'!{letter}14,0)", styles, output=True, fmt="0.0%")
 
 
-def _build_headcount(ws, styles: dict) -> None:
+def _build_headcount(ws, styles: dict, assumptions: dict) -> None:
     ws["B2"] = "Headcount"
     ws["B2"].font = styles["section_font"]
     _write_period_headers(ws, 4, styles)
     _table_header(ws, 6, ["Department", "Opening FTE", "Avg Salary / Month", "Hiring Every N Months", "New Hires"], styles)
-    depts = ["Management", "Sales", "Operations", "Finance", "IT", "Admin"]
-    for r, dept in enumerate(depts, start=7):
-        ws.cell(r, 2, dept)
-        _input(ws, r, 3, 2 if dept == "Management" else 4, styles)
-        _input(ws, r, 4, 10000 if dept == "Management" else 4500, styles)
-        _input(ws, r, 5, 6, styles)
-        _input(ws, r, 6, 1, styles)
+    depts = assumptions.get("headcount") or [
+        {"department": "Management", "opening_fte": 2, "avg_salary_month": 10000, "hiring_every_months": 6, "new_hires": 1},
+        {"department": "Sales", "opening_fte": 4, "avg_salary_month": 4500, "hiring_every_months": 6, "new_hires": 1},
+        {"department": "Operations", "opening_fte": 4, "avg_salary_month": 4500, "hiring_every_months": 6, "new_hires": 1},
+        {"department": "Finance", "opening_fte": 4, "avg_salary_month": 4500, "hiring_every_months": 6, "new_hires": 1},
+        {"department": "IT", "opening_fte": 4, "avg_salary_month": 4500, "hiring_every_months": 6, "new_hires": 1},
+        {"department": "Admin", "opening_fte": 4, "avg_salary_month": 4500, "hiring_every_months": 6, "new_hires": 1},
+    ]
+    for r in range(7, 13):
+        dept = depts[r - 7] if r - 7 < len(depts) else {}
+        ws.cell(r, 2, dept.get("department", f"Department {r - 6}"))
+        _input(ws, r, 3, _num(dept.get("opening_fte"), 0), styles)
+        _input(ws, r, 4, _num(dept.get("avg_salary_month"), 0), styles)
+        _input(ws, r, 5, max(1, int(_num(dept.get("hiring_every_months"), 6))), styles)
+        _input(ws, r, 6, _num(dept.get("new_hires"), 0), styles)
     ws["B15"] = "Total FTE"
     ws["B16"] = "Payroll Cost"
     for c in _period_cols():
@@ -423,25 +435,28 @@ def _build_headcount(ws, styles: dict) -> None:
         _formula(ws, 16, c, f"=-SUMPRODUCT({letter}7:{letter}12,$D$7:$D$12)", styles, output=True)
 
 
-def _build_opex(ws, styles: dict, DataValidation) -> None:
+def _build_opex(ws, styles: dict, DataValidation, assumptions: dict) -> None:
     ws["B2"] = "Opex"
     ws["B2"].font = styles["section_font"]
     _write_period_headers(ws, 4, styles)
     _table_header(ws, 6, ["Cost Category", "Driver", "Monthly Fixed", "% Revenue", "Cost / FTE"], styles)
-    rows = [
-        ("Rent", "Fixed", 25000, 0, 0),
-        ("Marketing", "% Revenue", 0, 0.03, 0),
-        ("IT", "Per FTE", 5000, 0, 120),
-        ("Professional Fees", "Fixed", 15000, 0, 0),
-        ("Travel", "% Revenue", 0, 0.01, 0),
-        ("Other SG&A", "Fixed", 10000, 0, 0),
+    cost_items = assumptions.get("cost_items") or []
+    cost_base = assumptions.get("cost_base", {})
+    rows = cost_items[:6] or [
+        {"name": "Rent", "driver": "Fixed", "monthly_fixed": _num(cost_base.get("rent_monthly"), 25000), "percent_revenue": 0, "cost_per_fte": 0},
+        {"name": "Marketing", "driver": "% Revenue", "monthly_fixed": 0, "percent_revenue": _num(cost_base.get("opex_percent_revenue"), 0.03), "cost_per_fte": 0},
+        {"name": "IT", "driver": "Per FTE", "monthly_fixed": _num(cost_base.get("it_monthly"), 5000), "percent_revenue": 0, "cost_per_fte": 120},
+        {"name": "Professional Fees", "driver": "Fixed", "monthly_fixed": _num(cost_base.get("professional_fees_monthly"), 15000), "percent_revenue": 0, "cost_per_fte": 0},
+        {"name": "Travel", "driver": "% Revenue", "monthly_fixed": 0, "percent_revenue": 0.01, "cost_per_fte": 0},
+        {"name": "Other SG&A", "driver": "Fixed", "monthly_fixed": _num(cost_base.get("opex_fixed_monthly"), 10000), "percent_revenue": 0, "cost_per_fte": 0},
     ]
-    for r, row in enumerate(rows, start=7):
-        ws.cell(r, 2, row[0])
-        _input(ws, r, 3, row[1], styles)
-        _input(ws, r, 4, row[2], styles)
-        _input(ws, r, 5, row[3], styles)
-        _input(ws, r, 6, row[4], styles)
+    for r in range(7, 13):
+        row = rows[r - 7] if r - 7 < len(rows) else {}
+        ws.cell(r, 2, row.get("name", f"Cost item {r - 6}"))
+        _input(ws, r, 3, row.get("driver", "Fixed"), styles)
+        _input(ws, r, 4, _num(row.get("monthly_fixed"), 0), styles)
+        _input(ws, r, 5, _num(row.get("percent_revenue"), 0), styles, fmt="0.0%")
+        _input(ws, r, 6, _num(row.get("cost_per_fte"), 0), styles)
         _add_list_validation(ws, f"C{r}", "'Lists & Dates'!$K$2:$K$8", DataValidation)
     ws["B15"] = "Total Opex excl Payroll"
     ws["B16"] = "Total Opex incl Payroll"
@@ -453,11 +468,21 @@ def _build_opex(ws, styles: dict, DataValidation) -> None:
         _formula(ws, 16, c, f"={letter}15+'Headcount'!{letter}16", styles, output=True)
 
 
-def _build_working_capital(ws, styles: dict) -> None:
+def _build_working_capital(ws, styles: dict, assumptions: dict) -> None:
     ws["B2"] = "Working Capital"
     ws["B2"].font = styles["section_font"]
     _write_period_headers(ws, 4, styles)
-    rows = [("DSO", 60), ("DIO", 35), ("DPO", 55), ("Receivables", None), ("Inventory", None), ("Payables", None), ("Net Working Capital", None), ("Change in NWC", None)]
+    wc = assumptions.get("working_capital", {})
+    rows = [
+        ("DSO", _num(wc.get("dso"), 60)),
+        ("DIO", _num(wc.get("dio"), 35)),
+        ("DPO", _num(wc.get("dpo"), 55)),
+        ("Receivables", None),
+        ("Inventory", None),
+        ("Payables", None),
+        ("Net Working Capital", None),
+        ("Change in NWC", None),
+    ]
     for r, (label, value) in enumerate(rows, start=6):
         ws.cell(r, 2, label)
         if value is not None:
@@ -472,14 +497,19 @@ def _build_working_capital(ws, styles: dict) -> None:
         _formula(ws, 13, c, f"={letter}12" if c == FIRST_PERIOD_COL else f"={letter}12-{prev}12", styles, output=True)
 
 
-def _build_capex(ws, styles: dict) -> None:
+def _build_capex(ws, styles: dict, assumptions: dict) -> None:
     ws["B2"] = "Capex D&A"
     ws["B2"].font = styles["section_font"]
     _write_period_headers(ws, 4, styles)
-    assumptions = [("Maintenance Capex % Revenue", 0.03), ("Growth Capex % Revenue", 0.02), ("Depreciation Life Months", 60)]
-    for r, (label, value) in enumerate(assumptions, start=6):
+    capex = assumptions.get("capex", {})
+    rows = [
+        ("Maintenance Capex % Revenue", _num(capex.get("maintenance_percent_revenue"), 0.03)),
+        ("Growth Capex / Month", _num(capex.get("growth_capex_monthly"), 0)),
+        ("Depreciation Life Months", max(1, int(_num(capex.get("depreciation_years"), 5) * 12))),
+    ]
+    for r, (label, value) in enumerate(rows, start=6):
         ws.cell(r, 2, label)
-        _input(ws, r, 3, value, styles)
+        _input(ws, r, 3, value, styles, fmt="0.0%" if r == 6 else None)
     rows = ["Maintenance Capex", "Growth Capex", "Total Capex", "Depreciation", "Net PPE"]
     for r, label in enumerate(rows, start=11):
         ws.cell(r, 2, label)
@@ -487,13 +517,13 @@ def _build_capex(ws, styles: dict) -> None:
         letter = _col(c)
         prev = _col(c - 1)
         _formula(ws, 11, c, f"=-'Revenue Drivers'!{letter}14*$C$6", styles)
-        _formula(ws, 12, c, f"=-'Revenue Drivers'!{letter}14*$C$7", styles)
+        _formula(ws, 12, c, f"=-$C$7", styles)
         _formula(ws, 13, c, f"={letter}11+{letter}12", styles, output=True)
         _formula(ws, 14, c, f"=-ABS({letter}13)/$C$8", styles)
         _formula(ws, 15, c, f"=ABS({letter}13)+{letter}14" if c == FIRST_PERIOD_COL else f"={prev}15+ABS({letter}13)+{letter}14", styles, output=True)
 
 
-def _build_debt_config(ws, styles: dict, DataValidation) -> None:
+def _build_debt_config(ws, styles: dict, DataValidation, assumptions: dict) -> None:
     ws["B2"] = "Debt Config"
     ws["B2"].font = styles["section_font"]
     _table_header(
@@ -517,28 +547,36 @@ def _build_debt_config(ws, styles: dict, DataValidation) -> None:
             "PIK?",
             "Min Cash",
             "Maturity Date",
+            "Interest Type",
+            "Cash Pay Frequency",
+            "Cash Pay %",
         ],
         styles,
     )
+    configured = assumptions.get("debt_tranches") or []
     defaults = [
-        ("Senior Term Loan B", "Senior Term Loan B", "OpCo", "='Control Panel'!$C$8", 300000, 300000, 84, 12, 0, 0.035, 0.030, "Linear", 0.25, 0.15, "FALSE", 50000),
-        ("Super Senior RCF", "Super Senior RCF", "OpCo", "='Control Panel'!$C$8", 0, 100000, 60, 0, 0, 0.020, 0.030, "Revolver", 1.00, 0.00, "FALSE", 50000),
-        ("Mezzanine PIK", "Mezzanine PIK", "HoldCo", "='Control Panel'!$C$8", 200000, 200000, 96, 24, 24, 0.060, 0.060, "PIK", 1.00, 0.00, "TRUE", 50000),
-        ("Seller Note", "Seller Note", "Seller", "='Control Panel'!$C$8", 50000, 50000, 36, 12, 0, 0.000, 0.060, "Bullet", 1.00, 0.00, "FALSE", 50000),
-        ("DIP / Rescue", "DIP Financing", "OpCo", "='Control Panel'!$C$8", 0, 0, 24, 0, 0, 0.060, 0.060, "Cash Sweep", 0.00, 0.50, "FALSE", 50000),
+        _debt_values(tranche) for tranche in configured[:MAX_DEBT_TRANCHES]
+    ] or [
+        ("Senior Term Loan B", "Senior Term Loan B", "OpCo", "='Control Panel'!$C$8", 300000, 300000, 84, 12, 0, 0.035, 0.030, "Linear", 0.25, 0.15, "FALSE", 50000, "Cash", "Monthly", 1.00),
+        ("Super Senior RCF", "Super Senior RCF", "OpCo", "='Control Panel'!$C$8", 0, 100000, 60, 0, 0, 0.020, 0.030, "Revolver", 1.00, 0.00, "FALSE", 50000, "Cash", "Quarterly", 1.00),
+        ("Mezzanine PIK", "Mezzanine PIK", "HoldCo", "='Control Panel'!$C$8", 200000, 200000, 96, 24, 24, 0.060, 0.060, "PIK", 1.00, 0.00, "TRUE", 50000, "PIK", "Annual", 0.00),
+        ("Seller Note", "Seller Note", "Seller", "='Control Panel'!$C$8", 50000, 50000, 36, 12, 0, 0.000, 0.060, "Bullet", 1.00, 0.00, "FALSE", 50000, "Cash", "Annual", 1.00),
+        ("DIP / Rescue", "DIP Financing", "OpCo", "='Control Panel'!$C$8", 0, 0, 24, 0, 0, 0.060, 0.060, "Cash Sweep", 0.00, 0.50, "FALSE", 50000, "Cash", "Monthly", 1.00),
     ]
     for r in range(5, 5 + MAX_DEBT_TRANCHES):
-        values = defaults[r - 5] if r - 5 < len(defaults) else ("", "Senior Term Loan B", "", "='Control Panel'!$C$8", 0, 0, 60, 0, 0, 0.030, 0.030, "Bullet", 1.00, 0.00, "FALSE", 50000)
+        values = defaults[r - 5] if r - 5 < len(defaults) else ("", "Senior Term Loan B", "", "='Control Panel'!$C$8", 0, 0, 60, 0, 0, 0.030, 0.030, "Bullet", 1.00, 0.00, "FALSE", 50000, "Cash", "Monthly", 1.00)
         for c, value in enumerate(values, start=2):
             _input(ws, r, c, value, styles)
         ws.cell(r, 18, f"=EDATE(E{r},H{r})")
         ws.cell(r, 5).number_format = "yyyy-mm-dd"
         ws.cell(r, 18).number_format = "yyyy-mm-dd"
-        for col in [11, 12, 14, 15]:
+        for col in [11, 12, 14, 15, 20]:
             ws.cell(r, col).number_format = "0.0%"
         _add_list_validation(ws, f"C{r}", "'Lists & Dates'!$N$2:$N$80", DataValidation)
         _add_list_validation(ws, f"M{r}", "'Lists & Dates'!$Q$2:$Q$16", DataValidation)
         _add_list_validation(ws, f"P{r}", "'Lists & Dates'!$T$2:$T$3", DataValidation)
+        _add_list_validation(ws, f"S{r}", "'Lists & Dates'!$W$2:$W$4", DataValidation)
+        _add_list_validation(ws, f"T{r}", "'Lists & Dates'!$Y$2:$Y$4", DataValidation)
 
 
 def _build_debt_schedule(ws, styles: dict) -> None:
@@ -588,8 +626,8 @@ def _build_debt_schedule(ws, styles: dict) -> None:
             _formula(ws, month, c, f'=IF({letter}{active},DATEDIF(\'Debt Config\'!$E{cfg},{letter}$4,"m")+1,0)', styles)
             _formula(ws, opening, c, f"=IF({letter}{active},'Debt Config'!$F{cfg},0)" if c == FIRST_PERIOD_COL else f"=IF({letter}{active},{prev}{closing},0)", styles)
             _formula(ws, draw, c, f'=IF(AND({letter}{active},{letter}{opening}=0,\'Debt Config\'!$M{cfg}="Revolver"),MIN(\'Debt Config\'!$G{cfg},{letter}{undrawn}),0)', styles)
-            _formula(ws, cash_interest, c, f'=IF({letter}{active},IF(OR(\'Debt Config\'!$P{cfg}="TRUE",{letter}{month}<=\'Debt Config\'!$J{cfg}),0,{letter}{opening}*(\'Debt Config\'!$K{cfg}+\'Debt Config\'!$L{cfg})/12),0)', styles)
-            _formula(ws, pik_interest, c, f'=IF({letter}{active},IF(OR(\'Debt Config\'!$P{cfg}="TRUE",{letter}{month}<=\'Debt Config\'!$J{cfg}),{letter}{opening}*(\'Debt Config\'!$K{cfg}+\'Debt Config\'!$L{cfg})/12,0),0)', styles)
+            _formula(ws, cash_interest, c, f'=IF({letter}{active},IF(OR(\'Debt Config\'!$P{cfg}="TRUE",\'Debt Config\'!$S{cfg}="PIK",{letter}{month}<=\'Debt Config\'!$J{cfg}),0,IF(MOD({letter}{month},SWITCH(\'Debt Config\'!$T{cfg},"Monthly",1,"Quarterly",3,"Annual",12,1))=0,{letter}{opening}*(\'Debt Config\'!$K{cfg}+\'Debt Config\'!$L{cfg})/12*SWITCH(\'Debt Config\'!$T{cfg},"Monthly",1,"Quarterly",3,"Annual",12,1)*\'Debt Config\'!$U{cfg},0)),0)', styles)
+            _formula(ws, pik_interest, c, f'=IF({letter}{active},MAX(0,{letter}{opening}*(\'Debt Config\'!$K{cfg}+\'Debt Config\'!$L{cfg})/12-{letter}{cash_interest}),0)', styles)
             _formula(ws, amort, c, f'=IF({letter}{active},IF({letter}{month}<=\'Debt Config\'!$I{cfg},0,IF(OR(\'Debt Config\'!$M{cfg}="Bullet",\'Debt Config\'!$M{cfg}="PIK",\'Debt Config\'!$M{cfg}="Revolver"),0,IF(\'Debt Config\'!$M{cfg}="Annuity",PMT((\'Debt Config\'!$K{cfg}+\'Debt Config\'!$L{cfg})/12,MAX(1,\'Debt Config\'!$H{cfg}-{letter}{month}+1),-{letter}{opening}),{letter}{opening}*(1-\'Debt Config\'!$N{cfg})/MAX(1,\'Debt Config\'!$H{cfg}-{letter}{month}+1)))),0)', styles)
             _formula(ws, bullet, c, f'=IF({letter}{maturity},{letter}{opening}*\'Debt Config\'!$N{cfg},0)', styles)
             _formula(ws, sweep, c, f'=IF({letter}{active},MIN(MAX(0,{letter}{opening}+{letter}{draw}+{letter}{pik_interest}-{letter}{amort}-{letter}{bullet}),MAX(0,\'Financial Statements\'!{letter}20-\'Debt Config\'!$Q{cfg})*\'Debt Config\'!$O{cfg}),0)', styles)
@@ -651,12 +689,17 @@ def _build_financial_statements(ws, styles: dict) -> None:
         _formula(ws, 25, c, f"={letter}24-{letter}23", styles, output=True)
 
 
-def _build_covenants(ws, styles: dict) -> None:
+def _build_covenants(ws, styles: dict, assumptions: dict) -> None:
     ws["B2"] = "Covenants"
     ws["B2"].font = styles["section_font"]
     _write_period_headers(ws, 4, styles)
-    assumptions = [("Max Net Debt / EBITDA", 3.5), ("Min ICR", 2.0), ("Min Liquidity", 50000)]
-    for r, (label, value) in enumerate(assumptions, start=6):
+    covenants = assumptions.get("covenants", {})
+    covenant_rows = [
+        ("Max Net Debt / EBITDA", _num(covenants.get("max_net_debt_ebitda"), 3.5)),
+        ("Min ICR", _num(covenants.get("min_interest_cover"), 2.0)),
+        ("Min Liquidity", _num(covenants.get("min_liquidity"), 50000)),
+    ]
+    for r, (label, value) in enumerate(covenant_rows, start=6):
         ws.cell(r, 2, label)
         _input(ws, r, 3, value, styles)
     rows = ["Net Debt / EBITDA", "Interest Cover", "Liquidity", "Leverage Pass?", "ICR Pass?", "Liquidity Pass?", "All Covenants Pass?"]
@@ -912,6 +955,8 @@ def _build_lists(ws, project: dict, styles: dict) -> None:
     drivers = ["Fixed", "% Revenue", "Per FTE"]
     amort = ["Bullet", "Linear", "Annuity", "Cash Sweep", "Revolver", "Borrowing Base", "PIK", "PIK Toggle", "Interest Only Then Linear", "Revenue Share", "Operational Run-Off", "Debt Sculpting", "Sculpted"]
     bools = ["TRUE", "FALSE"]
+    interest_types = ["Cash", "PIK", "Cash / PIK Toggle"]
+    payment_frequencies = ["Monthly", "Quarterly", "Annual"]
     lists = [
         (1, "Currencies", currencies),
         (4, "Scenarios", scenarios),
@@ -920,6 +965,8 @@ def _build_lists(ws, project: dict, styles: dict) -> None:
         (13, "Debt Types", debt_type_options()),
         (16, "Amortization Types", amort),
         (19, "Boolean", bools),
+        (23, "Interest Type", interest_types),
+        (25, "Payment Frequency", payment_frequencies),
     ]
     for col, header, values in lists:
         ws.cell(1, col, header)
@@ -1000,6 +1047,52 @@ def _polish_sheet(ws, styles: dict) -> None:
             if isinstance(cell.value, (int, float)) or (isinstance(cell.value, str) and cell.value.startswith("=")):
                 if not cell.number_format or cell.number_format == "General":
                     cell.number_format = '#,##0;[Red](#,##0);-'
+
+
+def _num(value, fallback: float = 0) -> float:
+    try:
+        if value in (None, ""):
+            return fallback
+        return float(value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _date_value(value, fallback: date):
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        if value.startswith("="):
+            return value
+        try:
+            return date.fromisoformat(value[:10])
+        except ValueError:
+            return fallback
+    return fallback
+
+
+def _debt_values(tranche: dict) -> tuple:
+    return (
+        tranche.get("name", "Debt tranche"),
+        tranche.get("debt_type", "Senior Term Loan B"),
+        tranche.get("borrower", "OpCo"),
+        _date_value(tranche.get("start_date"), date(2026, 1, 31)),
+        _num(tranche.get("opening_balance"), 0),
+        _num(tranche.get("commitment"), 0),
+        max(1, int(_num(tranche.get("term_months"), 60))),
+        max(0, int(_num(tranche.get("moratorium_months"), 0))),
+        max(0, int(_num(tranche.get("interest_cap_months"), 0))),
+        _num(tranche.get("margin"), 0.03),
+        _num(tranche.get("base_rate"), 0.03),
+        tranche.get("amortization", "Bullet"),
+        _num(tranche.get("bullet_percent"), 1.0),
+        _num(tranche.get("cash_sweep_percent"), 0.0),
+        "TRUE" if tranche.get("pik") in (True, "TRUE", "true", "1", 1) else "FALSE",
+        _num(tranche.get("minimum_cash"), 50000),
+        tranche.get("interest_type", "PIK" if tranche.get("pik") else "Cash"),
+        tranche.get("cash_pay_frequency", "Monthly"),
+        _num(tranche.get("cash_pay_percent"), 0.0 if tranche.get("pik") else 1.0),
+    )
 
 
 def _period_cols() -> range:

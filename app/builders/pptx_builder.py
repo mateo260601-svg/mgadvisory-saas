@@ -11,10 +11,12 @@ WHITE = "FFFFFF"
 MUTED = "68726F"
 
 
-def build_lender_presentation(project: dict, financials: dict, output_path: Path, blueprint: dict | None = None) -> None:
+def build_lender_presentation(project: dict, financials: dict, output_path: Path, blueprint: dict | None = None, assumptions: dict | None = None) -> None:
     try:
         from pptx import Presentation
         from pptx.dml.color import RGBColor
+        from pptx.chart.data import CategoryChartData
+        from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_LEGEND_POSITION
         from pptx.enum.shapes import MSO_SHAPE
         from pptx.enum.text import PP_ALIGN
         from pptx.util import Inches, Pt
@@ -28,6 +30,10 @@ def build_lender_presentation(project: dict, financials: dict, output_path: Path
     ctx = {
         "Presentation": Presentation,
         "RGBColor": RGBColor,
+        "CategoryChartData": CategoryChartData,
+        "XL_CHART_TYPE": XL_CHART_TYPE,
+        "XL_LABEL_POSITION": XL_LABEL_POSITION,
+        "XL_LEGEND_POSITION": XL_LEGEND_POSITION,
         "MSO_SHAPE": MSO_SHAPE,
         "PP_ALIGN": PP_ALIGN,
         "Inches": Inches,
@@ -36,13 +42,17 @@ def build_lender_presentation(project: dict, financials: dict, output_path: Path
         "financials": financials,
         "template_manifest": load_pptx_template_manifest(),
         "blueprint": blueprint or {},
+        "assumptions": assumptions or {},
     }
 
     _cover(prs, ctx)
     _executive_snapshot(prs, ctx)
     _historical_financials(prs, ctx)
+    _bp_output_charts(prs, ctx)
+    _revenue_split(prs, ctx)
     _business_plan_bridge(prs, ctx)
     _debt_and_covenants(prs, ctx)
+    _capital_structure(prs, ctx)
     _restructuring_options(prs, ctx)
     _key_diligence(prs, ctx)
     _claude_slide_blueprint(prs, ctx)
@@ -137,6 +147,37 @@ def _business_plan_bridge(prs, ctx):
     _footer(slide, ctx, "Business plan model")
 
 
+def _bp_output_charts(prs, ctx):
+    slide = _blank_slide(prs, ctx)
+    _headline(slide, ctx, "BP output dashboard", "The deck converts the model into banker-readable revenue, EBITDA and leverage proof points.")
+    years, revenue, ebitda, debt = _bp_projection_series(ctx)
+    _chart(slide, ctx, 0.65, 1.65, 5.85, 3.25, "Revenue / EBITDA", years, [("Revenue", revenue), ("EBITDA", ebitda)], chart_type="column")
+    leverage = [(d / e if e else 0) for d, e in zip(debt, ebitda)]
+    _chart(slide, ctx, 7.0, 1.65, 5.65, 3.25, "Net leverage", years, [("Net debt / EBITDA", leverage)], chart_type="line")
+    _callout(slide, ctx, 0.65, 5.25, 5.85, 1.05, "Source", "Charts are generated from the BP Builder assumptions and refreshed when the deck is regenerated.")
+    _callout(slide, ctx, 7.0, 5.25, 5.65, 1.05, "Review point", "For final banking materials, reconcile these charts to the downloadable Excel BP and management-approved cases.")
+    _footer(slide, ctx, "BP outputs")
+
+
+def _revenue_split(prs, ctx):
+    slide = _blank_slide(prs, ctx)
+    _headline(slide, ctx, "Product and service revenue split", "Custom product/service names flow from the SaaS BP Builder into the deck narrative.")
+    rows = [["Product / service", "Type", "Start volume", "Start price", "Implied monthly revenue"]]
+    values = []
+    labels = []
+    for item in (ctx.get("assumptions", {}).get("revenue_streams") or [])[:5]:
+        revenue = float(item.get("volume") or 0) * float(item.get("price") or 0)
+        labels.append(item.get("name") or "Revenue stream")
+        values.append(revenue)
+        rows.append([item.get("name", ""), item.get("type", ""), f"{float(item.get('volume') or 0):,.0f}", _money(float(item.get("price") or 0)), _money(revenue)])
+    if len(rows) == 1:
+        rows.append(["No BP Builder revenue streams", "-", "-", "-", "-"])
+        labels, values = ["No data"], [1]
+    _table(slide, ctx, 0.65, 1.55, 7.0, 3.35, rows)
+    _chart(slide, ctx, 8.0, 1.65, 4.4, 3.15, "Opening revenue mix", labels, [("Revenue", values)], chart_type="pie")
+    _footer(slide, ctx, "Revenue split")
+
+
 def _debt_and_covenants(prs, ctx):
     slide = _blank_slide(prs, ctx)
     _headline(slide, ctx, "Debt and covenant analysis", "The lender view focuses on serviceability, covenant headroom, liquidity and refinancing risk.")
@@ -158,6 +199,35 @@ def _debt_and_covenants(prs, ctx):
     _callout(slide, ctx, 8.25, 1.55, 4.25, 1.55, "Bank case lens", "Focus lender narrative on downside cash generation, cure capacity and the first covenant tripwire.")
     _callout(slide, ctx, 8.25, 3.45, 4.25, 1.95, "Model rule", "Every debt output is formula-linked to assumptions. No presentation number should be typed over.")
     _footer(slide, ctx, "Debt analytics")
+
+
+def _capital_structure(prs, ctx):
+    slide = _blank_slide(prs, ctx)
+    _headline(slide, ctx, "Capital structure and interest mechanics", "Debt instruments are selected manually by dossier, including cash pay / PIK and payment frequency.")
+    rows = [["Instrument", "Type", "Opening", "Commitment", "Interest", "Frequency", "Amortisation"]]
+    labels = []
+    balances = []
+    for item in (ctx.get("assumptions", {}).get("debt_tranches") or [])[:5]:
+        opening = float(item.get("opening_balance") or 0)
+        commitment = float(item.get("commitment") or 0)
+        labels.append(item.get("name") or item.get("debt_type") or "Debt")
+        balances.append(opening)
+        rows.append([
+            item.get("name", ""),
+            item.get("debt_type", ""),
+            _money(opening),
+            _money(commitment),
+            item.get("interest_type") or ("PIK" if item.get("pik") else "Cash"),
+            item.get("cash_pay_frequency", "Monthly"),
+            item.get("amortization", ""),
+        ])
+    if len(rows) == 1:
+        rows.append(["No debt configured", "-", "-", "-", "-", "-", "-"])
+        labels, balances = ["No debt"], [0]
+    _table(slide, ctx, 0.55, 1.55, 8.0, 3.6, rows)
+    _chart(slide, ctx, 8.9, 1.65, 3.75, 3.2, "Opening debt stack", labels, [("Opening debt", balances)], chart_type="bar")
+    _callout(slide, ctx, 0.65, 5.45, 11.8, 0.85, "Model implication", "Cash interest affects liquidity and free cash flow, while PIK compounds closing debt and leverage until maturity or refinancing.")
+    _footer(slide, ctx, "Capital structure")
 
 
 def _restructuring_options(prs, ctx):
@@ -340,6 +410,39 @@ def _table(slide, ctx, x, y, w, h, rows):
                 paragraph.font.color.rgb = ctx["RGBColor"].from_string(WHITE if r == 0 else BRAND_DARK)
 
 
+def _chart(slide, ctx, x, y, w, h, title, categories, series, chart_type="column"):
+    chart_data = ctx["CategoryChartData"]()
+    chart_data.categories = [str(item) for item in categories]
+    for name, values in series:
+        chart_data.add_series(name, [float(value or 0) for value in values])
+    chart_map = {
+        "column": ctx["XL_CHART_TYPE"].COLUMN_CLUSTERED,
+        "line": ctx["XL_CHART_TYPE"].LINE_MARKERS,
+        "pie": ctx["XL_CHART_TYPE"].PIE,
+        "bar": ctx["XL_CHART_TYPE"].BAR_CLUSTERED,
+    }
+    chart_shape = slide.shapes.add_chart(
+        chart_map.get(chart_type, ctx["XL_CHART_TYPE"].COLUMN_CLUSTERED),
+        ctx["Inches"](x),
+        ctx["Inches"](y),
+        ctx["Inches"](w),
+        ctx["Inches"](h),
+        chart_data,
+    )
+    chart = chart_shape.chart
+    chart.has_title = True
+    chart.chart_title.text_frame.text = title
+    chart.has_legend = chart_type != "pie"
+    if chart.has_legend:
+        chart.legend.position = ctx["XL_LEGEND_POSITION"].BOTTOM
+        chart.legend.include_in_layout = False
+    if chart_type == "pie":
+        chart.plots[0].has_data_labels = True
+        chart.plots[0].data_labels.position = ctx["XL_LABEL_POSITION"].BEST_FIT
+        chart.plots[0].data_labels.show_percentage = True
+    return chart
+
+
 def _text(slide, ctx, x, y, w, h, text, size=12, color=BRAND_DARK, bold=False):
     box = slide.shapes.add_textbox(ctx["Inches"](x), ctx["Inches"](y), ctx["Inches"](w), ctx["Inches"](h))
     frame = box.text_frame
@@ -380,6 +483,32 @@ def _historical_table(financials: dict) -> list[list[str]]:
     for section, metric in [("income_statement", "Revenue"), ("income_statement", "EBITDA"), ("balance_sheet", "Cash"), ("balance_sheet", "Debt")]:
         rows.append([metric] + [_money(_line_value(financials, section, metric, period)) for period in periods])
     return rows
+
+
+def _bp_projection_series(ctx) -> tuple[list[str], list[float], list[float], list[float]]:
+    assumptions = ctx.get("assumptions", {})
+    revenue_streams = assumptions.get("revenue_streams") or []
+    cost_base = assumptions.get("cost_base") or {}
+    debt_tranches = assumptions.get("debt_tranches") or []
+    years = ["Y1", "Y2", "Y3", "Y4", "Y5"]
+    revenue = []
+    ebitda = []
+    debt = []
+    opening_debt = sum(float(item.get("opening_balance") or 0) for item in debt_tranches) or 500000
+    cogs = float(cost_base.get("cogs_percent") or 0.35)
+    fixed_opex = float(cost_base.get("opex_fixed_monthly") or 80000) * 12
+    for year in range(5):
+        annual_revenue = 0
+        for item in revenue_streams:
+            monthly = float(item.get("volume") or 0) * float(item.get("price") or 0)
+            growth = (float(item.get("volume_growth") or 0) + float(item.get("price_growth") or 0)) * 12
+            annual_revenue += monthly * 12 * ((1 + growth) ** year)
+        if annual_revenue == 0:
+            annual_revenue = 1200000 * (1.05 ** year)
+        revenue.append(annual_revenue)
+        ebitda.append(annual_revenue * (1 - cogs) - fixed_opex * (1.03 ** year))
+        debt.append(max(0, opening_debt * (1 - 0.12 * year)))
+    return years, revenue, ebitda, debt
 
 
 def _line_value(financials: dict, section: str, name: str, period: str) -> float:

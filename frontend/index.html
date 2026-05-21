@@ -88,6 +88,7 @@
             <button class="nav-item active" data-view="dashboardView">Dashboard</button>
             <button class="nav-item" data-view="libraryView">Project Library</button>
             <button class="nav-item" data-view="projectView">Active Project</button>
+            <button class="nav-item" data-view="bpBuilderView">BP Builder</button>
             <button class="nav-item" data-view="outputsView">Outputs</button>
           </nav>
         </div>
@@ -261,6 +262,135 @@
                   <div><span>PIK / sweep / bullet</span><strong>Supported</strong></div>
                   <div><span>Covenants</span><strong>Automated</strong></div>
                 </div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- BP Builder -->
+        <section id="bpBuilderView" class="view">
+          <div id="bpBuilderEmpty" class="empty-state">
+            <h3>Select a project before configuring the BP</h3>
+            <button data-view-button="libraryView">Open project library</button>
+          </div>
+
+          <div id="bpBuilderWorkspace" class="hidden">
+            <section class="project-hero">
+              <div>
+                <p class="eyebrow">Driver-based model</p>
+                <h3>BP assumptions cockpit</h3>
+                <p class="muted">Configure operating drivers, dates, debt terms and covenant thresholds before generating the formula-driven Excel model.</p>
+              </div>
+              <div class="hero-actions">
+                <button id="loadBpAssumptionsButton" class="secondary-button">Load</button>
+                <button id="saveBpAssumptionsButton">Save assumptions</button>
+                <button id="generateBpBuilderButton">Generate Excel BP</button>
+              </div>
+            </section>
+
+            <section class="builder-layout">
+              <div class="panel builder-panel">
+                <p class="eyebrow">Control</p>
+                <h3>Model setup</h3>
+                <div class="compact-grid">
+                  <label>Currency<input id="bpCurrency" value="EUR" /></label>
+                  <label>Scenario<select id="bpScenario"><option>Base</option><option>Downside</option><option>Upside</option><option>Bank Case</option><option>IC Case</option><option>Restructuring Case</option></select></label>
+                  <label>Model start<input id="bpModelStart" type="date" /></label>
+                  <label>Actuals end<input id="bpActualsEnd" type="date" /></label>
+                  <label>Forecast months<input id="bpForecastMonths" type="number" min="12" max="120" /></label>
+                  <label>Tax rate<input id="bpTaxRate" type="number" step="0.001" /></label>
+                  <label>Opening cash<input id="bpOpeningCash" type="number" step="1000" /></label>
+                  <label>Opening debt<input id="bpOpeningDebt" type="number" step="1000" /></label>
+                  <label>Minimum cash<input id="bpMinimumCash" type="number" step="1000" /></label>
+                </div>
+              </div>
+
+              <div class="panel builder-panel wide-builder">
+                <p class="eyebrow">Commercial engine</p>
+                <h3>Revenue streams</h3>
+                <div class="builder-table" id="revenueStreamTable">
+                  <div class="builder-row builder-head">
+                    <span>Name</span><span>Type</span><span>Volume</span><span>Price</span><span>Vol growth</span><span>Price growth</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel builder-panel">
+                <p class="eyebrow">Costs</p>
+                <h3>Cost base</h3>
+                <div class="compact-grid">
+                  <label>COGS % revenue<input id="bpCogsPercent" type="number" step="0.001" /></label>
+                  <label>Fulfilment / unit<input id="bpFulfilmentCost" type="number" step="100" /></label>
+                  <label>Fixed opex / month<input id="bpFixedOpex" type="number" step="1000" /></label>
+                  <label>Opex % revenue<input id="bpOpexPercent" type="number" step="0.001" /></label>
+                  <label>Rent / month<input id="bpRent" type="number" step="1000" /></label>
+                  <label>Professional fees<input id="bpProfessionalFees" type="number" step="1000" /></label>
+                  <label>IT / month<input id="bpIt" type="number" step="1000" /></label>
+                </div>
+              </div>
+
+              <div class="panel builder-panel wide-builder">
+                <p class="eyebrow">Cost structure</p>
+                <h3>Detailed opex items</h3>
+                <div class="builder-table" id="costItemTable">
+                  <div class="builder-row cost-head builder-head">
+                    <span>Cost item</span><span>Driver</span><span>Fixed / month</span><span>% revenue</span><span>Cost / FTE</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel builder-panel wide-builder">
+                <p class="eyebrow">People</p>
+                <h3>Headcount plan</h3>
+                <div class="builder-table" id="headcountTable">
+                  <div class="builder-row builder-head">
+                    <span>Department</span><span>Opening FTE</span><span>Salary / month</span><span>Hiring every</span><span>New hires</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel builder-panel">
+                <p class="eyebrow">Cash flow</p>
+                <h3>Working capital & capex</h3>
+                <div class="compact-grid">
+                  <label>DSO<input id="bpDso" type="number" /></label>
+                  <label>DIO<input id="bpDio" type="number" /></label>
+                  <label>DPO<input id="bpDpo" type="number" /></label>
+                  <label>Maintenance capex %<input id="bpMaintenanceCapex" type="number" step="0.001" /></label>
+                  <label>Growth capex / month<input id="bpGrowthCapex" type="number" step="1000" /></label>
+                  <label>Depreciation years<input id="bpDepreciationYears" type="number" step="1" /></label>
+                </div>
+              </div>
+
+              <div class="panel builder-panel wide-builder">
+                <p class="eyebrow">Debt engine</p>
+                <h3>Debt instruments</h3>
+                <div class="builder-table" id="debtTrancheTable">
+                  <div class="builder-row debt-head builder-head">
+                    <span>Name</span><span>Type</span><span>Borrower</span><span>Start</span><span>Opening</span><span>Commitment</span><span>Term</span><span>Moratorium</span><span>Margin</span><span>Base</span><span>Amort.</span><span>Interest</span><span>Freq.</span><span>Cash pay %</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel builder-panel">
+                <p class="eyebrow">Covenants</p>
+                <h3>Credit thresholds</h3>
+                <div class="compact-grid">
+                  <label>Max net debt / EBITDA<input id="bpMaxLeverage" type="number" step="0.1" /></label>
+                  <label>Min interest cover<input id="bpMinIcr" type="number" step="0.1" /></label>
+                  <label>Min liquidity<input id="bpMinLiquidity" type="number" step="1000" /></label>
+                </div>
+              </div>
+
+              <div class="panel builder-panel wide-builder">
+                <p class="eyebrow">Historical data</p>
+                <h3>AI extraction workflow</h3>
+                <div class="output-grid">
+                  <button id="extractHistoricalsBuilderButton" class="secondary-button">Run Claude extraction</button>
+                  <button id="downloadBpBuilderButton" class="secondary-button">Download BP</button>
+                </div>
+                <div class="model-note">Uploaded PDF/XLSX/CSV files are normalized by the extraction layer and written into the Historical Inputs sheet. The forecast, debt schedule, financial statements, covenants and outputs remain formula-driven.</div>
+                <div id="bpBuilderResult" class="result-box"></div>
               </div>
             </section>
           </div>

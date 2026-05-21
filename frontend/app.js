@@ -276,6 +276,7 @@ async function extractHistoricals() {
     const project = activeProject();
     if (!project) throw new Error("Select a project first.");
     setResult("uploadResult", "Running Claude historical extraction…");
+    setResult("bpBuilderResult", "Running Claude historical extraction...");
     const payload = await api(`/api/ai/projects/${project.id}/extract-historicals`, {
       method: "POST",
     });
@@ -289,8 +290,14 @@ async function extractHistoricals() {
       balance_sheet: payload.normalized?.balance_sheet,
       debt: payload.normalized?.debt,
     });
+    setResult("bpBuilderResult", {
+      status: "Historical data normalized for Excel Historical Inputs",
+      periods: payload.normalized?.periods,
+      extraction: payload.extraction,
+    });
   } catch (error) {
     setResult("uploadResult", error.message);
+    setResult("bpBuilderResult", error.message);
   }
 }
 
@@ -319,6 +326,343 @@ function downloadBp() {
   } catch (error) {
     setResult("outputResult", error.message);
   }
+}
+
+// ── BP Builder ────────────────────────────────────────────────────────────────
+async function loadBpAssumptions() {
+  try {
+    requireUnlocked();
+    const project = activeProject();
+    if (!project) throw new Error("Select a project first.");
+    setResult("bpBuilderResult", "Loading BP assumptions...");
+    const payload = await api(`/api/projects/${project.id}/bp/assumptions`);
+    populateBpBuilder(payload.assumptions || {});
+    setResult("bpBuilderResult", "BP assumptions loaded.");
+  } catch (error) {
+    setResult("bpBuilderResult", error.message);
+  }
+}
+
+async function saveBpAssumptions() {
+  try {
+    requireUnlocked();
+    const project = activeProject();
+    if (!project) throw new Error("Select a project first.");
+    const assumptions = collectBpBuilder();
+    setResult("bpBuilderResult", "Saving BP assumptions...");
+    const payload = await api(`/api/projects/${project.id}/bp/assumptions`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assumptions }),
+    });
+    populateBpBuilder(payload.assumptions || {});
+    setResult("bpBuilderResult", "BP assumptions saved.");
+    return payload.assumptions;
+  } catch (error) {
+    setResult("bpBuilderResult", error.message);
+    throw error;
+  }
+}
+
+async function generateBpFromBuilder() {
+  try {
+    await saveBpAssumptions();
+    setResult("bpBuilderResult", "Generating Excel BP with saved assumptions...");
+    const project = activeProject();
+    const payload = await api(`/api/projects/${project.id}/bp/generate`, { method: "POST" });
+    state.lastOutput = payload.output;
+    $("modelStatusMetric").textContent = "Generated";
+    setResult("bpBuilderResult", payload.output);
+  } catch (_) {
+    // saveBpAssumptions already writes the message
+  }
+}
+
+function populateBpBuilder(assumptions) {
+  const model = assumptions.model || {};
+  setValue("bpCurrency", model.currency || activeProject()?.currency || "EUR");
+  setValue("bpScenario", model.scenario || "Base");
+  setValue("bpModelStart", model.model_start_date || "2026-01-31");
+  setValue("bpActualsEnd", model.actuals_end_date || "2025-12-31");
+  setValue("bpForecastMonths", model.forecast_months || 60);
+  setValue("bpTaxRate", model.tax_rate ?? 0.25);
+  setValue("bpOpeningCash", model.opening_cash ?? 120000);
+  setValue("bpOpeningDebt", model.opening_debt ?? 500000);
+  setValue("bpMinimumCash", model.minimum_cash ?? 50000);
+
+  renderRevenueStreamRows(assumptions.revenue_streams || []);
+  const cost = assumptions.cost_base || {};
+  setValue("bpCogsPercent", cost.cogs_percent ?? 0.35);
+  setValue("bpFulfilmentCost", cost.fulfilment_cost_per_unit ?? 100);
+  setValue("bpFixedOpex", cost.opex_fixed_monthly ?? 80000);
+  setValue("bpOpexPercent", cost.opex_percent_revenue ?? 0.04);
+  setValue("bpRent", cost.rent_monthly ?? 12000);
+  setValue("bpProfessionalFees", cost.professional_fees_monthly ?? 8000);
+  setValue("bpIt", cost.it_monthly ?? 5000);
+  renderCostItemRows(assumptions.cost_items || []);
+
+  renderHeadcountRows(assumptions.headcount || []);
+  const wc = assumptions.working_capital || {};
+  setValue("bpDso", wc.dso ?? 60);
+  setValue("bpDio", wc.dio ?? 45);
+  setValue("bpDpo", wc.dpo ?? 55);
+
+  const capex = assumptions.capex || {};
+  setValue("bpMaintenanceCapex", capex.maintenance_percent_revenue ?? 0.015);
+  setValue("bpGrowthCapex", capex.growth_capex_monthly ?? 15000);
+  setValue("bpDepreciationYears", capex.depreciation_years ?? 7);
+
+  renderDebtTrancheRows(assumptions.debt_tranches || []);
+
+  const covenants = assumptions.covenants || {};
+  setValue("bpMaxLeverage", covenants.max_net_debt_ebitda ?? 3.5);
+  setValue("bpMinIcr", covenants.min_interest_cover ?? 2.0);
+  setValue("bpMinLiquidity", covenants.min_liquidity ?? 50000);
+}
+
+function collectBpBuilder() {
+  return {
+    model: {
+      currency: getValue("bpCurrency", "EUR"),
+      scenario: getValue("bpScenario", "Base"),
+      model_start_date: getValue("bpModelStart", "2026-01-31"),
+      actuals_end_date: getValue("bpActualsEnd", "2025-12-31"),
+      forecast_months: getNumber("bpForecastMonths", 60),
+      tax_rate: getNumber("bpTaxRate", 0.25),
+      opening_cash: getNumber("bpOpeningCash", 120000),
+      opening_debt: getNumber("bpOpeningDebt", 500000),
+      minimum_cash: getNumber("bpMinimumCash", 50000),
+    },
+    revenue_streams: readRevenueStreamRows(),
+    cost_base: {
+      cogs_percent: getNumber("bpCogsPercent", 0.35),
+      fulfilment_cost_per_unit: getNumber("bpFulfilmentCost", 100),
+      opex_fixed_monthly: getNumber("bpFixedOpex", 80000),
+      opex_percent_revenue: getNumber("bpOpexPercent", 0.04),
+      rent_monthly: getNumber("bpRent", 12000),
+      professional_fees_monthly: getNumber("bpProfessionalFees", 8000),
+      it_monthly: getNumber("bpIt", 5000),
+    },
+    cost_items: readCostItemRows(),
+    headcount: readHeadcountRows(),
+    working_capital: {
+      dso: getNumber("bpDso", 60),
+      dio: getNumber("bpDio", 45),
+      dpo: getNumber("bpDpo", 55),
+    },
+    capex: {
+      maintenance_percent_revenue: getNumber("bpMaintenanceCapex", 0.015),
+      growth_capex_monthly: getNumber("bpGrowthCapex", 15000),
+      depreciation_years: getNumber("bpDepreciationYears", 7),
+    },
+    debt_tranches: readDebtTrancheRows(),
+    covenants: {
+      max_net_debt_ebitda: getNumber("bpMaxLeverage", 3.5),
+      min_interest_cover: getNumber("bpMinIcr", 2.0),
+      min_liquidity: getNumber("bpMinLiquidity", 50000),
+    },
+  };
+}
+
+function renderRevenueStreamRows(rows) {
+  const table = $("revenueStreamTable");
+  if (!table) return;
+  const defaults = rows.length ? rows : [
+    { name: "Core product", type: "Product", volume: 100, price: 1000, volume_growth: 0.01, price_growth: 0.002 },
+    { name: "Services", type: "Service", volume: 80, price: 850, volume_growth: 0.008, price_growth: 0.002 },
+    { name: "Recurring revenue", type: "Recurring", volume: 60, price: 700, volume_growth: 0.012, price_growth: 0.001 },
+    { name: "Projects", type: "Project", volume: 40, price: 600, volume_growth: 0.006, price_growth: 0.001 },
+    { name: "Other", type: "Other", volume: 25, price: 500, volume_growth: 0.004, price_growth: 0.001 },
+  ];
+  table.querySelectorAll(".builder-row:not(.builder-head)").forEach((row) => row.remove());
+  defaults.slice(0, 5).forEach((row, idx) => {
+    table.insertAdjacentHTML("beforeend", `
+      <div class="builder-row revenue-row" data-index="${idx}">
+        <input data-field="name" value="${escapeHtml(row.name || "")}" />
+        <select data-field="type"><option>Product</option><option>Service</option><option>Recurring</option><option>Project</option><option>Consulting</option><option>License</option><option>Maintenance</option><option>Other</option></select>
+        <input data-field="volume" type="number" value="${row.volume ?? 0}" />
+        <input data-field="price" type="number" value="${row.price ?? 0}" />
+        <input data-field="volume_growth" type="number" step="0.001" value="${row.volume_growth ?? 0}" />
+        <input data-field="price_growth" type="number" step="0.001" value="${row.price_growth ?? 0}" />
+      </div>`);
+    table.lastElementChild.querySelector('[data-field="type"]').value = row.type || "Other";
+  });
+}
+
+function renderHeadcountRows(rows) {
+  const table = $("headcountTable");
+  if (!table) return;
+  const defaults = rows.length ? rows : [
+    { department: "Management", opening_fte: 2, avg_salary_month: 10000, hiring_every_months: 12, new_hires: 1 },
+    { department: "Sales", opening_fte: 4, avg_salary_month: 5000, hiring_every_months: 6, new_hires: 1 },
+    { department: "Operations", opening_fte: 8, avg_salary_month: 4200, hiring_every_months: 6, new_hires: 2 },
+    { department: "Finance", opening_fte: 2, avg_salary_month: 4800, hiring_every_months: 12, new_hires: 1 },
+    { department: "IT", opening_fte: 2, avg_salary_month: 5200, hiring_every_months: 12, new_hires: 1 },
+    { department: "Admin", opening_fte: 3, avg_salary_month: 3500, hiring_every_months: 12, new_hires: 1 },
+  ];
+  table.querySelectorAll(".builder-row:not(.builder-head)").forEach((row) => row.remove());
+  defaults.slice(0, 6).forEach((row, idx) => {
+    table.insertAdjacentHTML("beforeend", `
+      <div class="builder-row headcount-row" data-index="${idx}">
+        <input data-field="department" value="${escapeHtml(row.department || "")}" />
+        <input data-field="opening_fte" type="number" value="${row.opening_fte ?? 0}" />
+        <input data-field="avg_salary_month" type="number" value="${row.avg_salary_month ?? 0}" />
+        <input data-field="hiring_every_months" type="number" value="${row.hiring_every_months ?? 6}" />
+        <input data-field="new_hires" type="number" value="${row.new_hires ?? 0}" />
+      </div>`);
+  });
+}
+
+function renderCostItemRows(rows) {
+  const table = $("costItemTable");
+  if (!table) return;
+  const defaults = rows.length ? rows : [
+    { name: "Rent", driver: "Fixed", monthly_fixed: 12000, percent_revenue: 0, cost_per_fte: 0 },
+    { name: "Marketing", driver: "% Revenue", monthly_fixed: 0, percent_revenue: 0.03, cost_per_fte: 0 },
+    { name: "IT & software", driver: "Per FTE", monthly_fixed: 5000, percent_revenue: 0, cost_per_fte: 120 },
+    { name: "Professional fees", driver: "Fixed", monthly_fixed: 8000, percent_revenue: 0, cost_per_fte: 0 },
+    { name: "Travel & commercial", driver: "% Revenue", monthly_fixed: 0, percent_revenue: 0.01, cost_per_fte: 0 },
+    { name: "Other SG&A", driver: "Fixed", monthly_fixed: 10000, percent_revenue: 0, cost_per_fte: 0 },
+  ];
+  table.querySelectorAll(".builder-row:not(.builder-head)").forEach((row) => row.remove());
+  defaults.slice(0, 6).forEach((row, idx) => {
+    table.insertAdjacentHTML("beforeend", `
+      <div class="builder-row cost-row" data-index="${idx}">
+        <input data-field="name" value="${escapeHtml(row.name || "")}" />
+        <select data-field="driver"><option>Fixed</option><option>% Revenue</option><option>Per FTE</option></select>
+        <input data-field="monthly_fixed" type="number" value="${row.monthly_fixed ?? 0}" />
+        <input data-field="percent_revenue" type="number" step="0.001" value="${row.percent_revenue ?? 0}" />
+        <input data-field="cost_per_fte" type="number" value="${row.cost_per_fte ?? 0}" />
+      </div>`);
+    table.lastElementChild.querySelector('[data-field="driver"]').value = row.driver || "Fixed";
+  });
+}
+
+function renderDebtTrancheRows(rows) {
+  const table = $("debtTrancheTable");
+  if (!table) return;
+  const defaults = rows.length ? rows : [
+    { name: "Senior Term Loan A", debt_type: "Senior Term Loan A", borrower: "OpCo", start_date: "2026-01-31", opening_balance: 500000, commitment: 500000, term_months: 60, moratorium_months: 6, margin: 0.045, base_rate: 0.035, amortization: "Linear", interest_type: "Cash", cash_pay_frequency: "Monthly", cash_pay_percent: 1.0 },
+    { name: "Super Senior RCF", debt_type: "Super Senior RCF", borrower: "OpCo", start_date: "2026-01-31", opening_balance: 0, commitment: 100000, term_months: 60, moratorium_months: 0, margin: 0.025, base_rate: 0.035, amortization: "Revolver", interest_type: "Cash", cash_pay_frequency: "Quarterly", cash_pay_percent: 1.0 },
+    { name: "Mezzanine PIK", debt_type: "Mezzanine PIK", borrower: "HoldCo", start_date: "2026-01-31", opening_balance: 200000, commitment: 200000, term_months: 84, moratorium_months: 24, margin: 0.06, base_rate: 0.06, amortization: "PIK", interest_type: "PIK", cash_pay_frequency: "Annual", cash_pay_percent: 0 },
+  ];
+  table.querySelectorAll(".builder-row:not(.builder-head)").forEach((row) => row.remove());
+  defaults.slice(0, 5).forEach((row, idx) => {
+    table.insertAdjacentHTML("beforeend", `
+      <div class="builder-row debt-row" data-index="${idx}">
+        <input data-field="name" value="${escapeHtml(row.name || "")}" />
+        <select data-field="debt_type">${debtTypeOptions().map((value) => `<option>${escapeHtml(value)}</option>`).join("")}</select>
+        <input data-field="borrower" value="${escapeHtml(row.borrower || "")}" />
+        <input data-field="start_date" type="date" value="${row.start_date || "2026-01-31"}" />
+        <input data-field="opening_balance" type="number" value="${row.opening_balance ?? 0}" />
+        <input data-field="commitment" type="number" value="${row.commitment ?? 0}" />
+        <input data-field="term_months" type="number" value="${row.term_months ?? 60}" />
+        <input data-field="moratorium_months" type="number" value="${row.moratorium_months ?? 0}" />
+        <input data-field="margin" type="number" step="0.001" value="${row.margin ?? 0.03}" />
+        <input data-field="base_rate" type="number" step="0.001" value="${row.base_rate ?? 0.03}" />
+        <select data-field="amortization"><option>Linear</option><option>Bullet</option><option>Annuity</option><option>Cash Sweep</option><option>Revolver</option><option>PIK</option><option>PIK Toggle</option><option>Interest Only Then Linear</option></select>
+        <select data-field="interest_type"><option>Cash</option><option>PIK</option><option>Cash / PIK Toggle</option></select>
+        <select data-field="cash_pay_frequency"><option>Monthly</option><option>Quarterly</option><option>Annual</option></select>
+        <input data-field="cash_pay_percent" type="number" step="0.001" value="${row.cash_pay_percent ?? (row.pik ? 0 : 1)}" />
+      </div>`);
+    const tr = table.lastElementChild;
+    tr.querySelector('[data-field="debt_type"]').value = row.debt_type || "Senior Term Loan A";
+    tr.querySelector('[data-field="amortization"]').value = row.amortization || "Bullet";
+    tr.querySelector('[data-field="interest_type"]').value = row.interest_type || (row.pik ? "PIK" : "Cash");
+    tr.querySelector('[data-field="cash_pay_frequency"]').value = row.cash_pay_frequency || "Monthly";
+  });
+}
+
+function readRevenueStreamRows() {
+  return [...document.querySelectorAll(".revenue-row")].map((row) => ({
+    name: fieldValue(row, "name"),
+    type: fieldValue(row, "type"),
+    volume: fieldNumber(row, "volume"),
+    price: fieldNumber(row, "price"),
+    volume_growth: fieldNumber(row, "volume_growth"),
+    price_growth: fieldNumber(row, "price_growth"),
+  }));
+}
+
+function readCostItemRows() {
+  return [...document.querySelectorAll(".cost-row")].map((row) => ({
+    name: fieldValue(row, "name"),
+    driver: fieldValue(row, "driver"),
+    monthly_fixed: fieldNumber(row, "monthly_fixed"),
+    percent_revenue: fieldNumber(row, "percent_revenue"),
+    cost_per_fte: fieldNumber(row, "cost_per_fte"),
+  }));
+}
+
+function readHeadcountRows() {
+  return [...document.querySelectorAll(".headcount-row")].map((row) => ({
+    department: fieldValue(row, "department"),
+    opening_fte: fieldNumber(row, "opening_fte"),
+    avg_salary_month: fieldNumber(row, "avg_salary_month"),
+    hiring_every_months: fieldNumber(row, "hiring_every_months"),
+    new_hires: fieldNumber(row, "new_hires"),
+  }));
+}
+
+function readDebtTrancheRows() {
+  return [...document.querySelectorAll(".debt-row")]
+    .map((row) => ({
+      name: fieldValue(row, "name"),
+      debt_type: fieldValue(row, "debt_type"),
+      borrower: fieldValue(row, "borrower"),
+      start_date: fieldValue(row, "start_date") || "2026-01-31",
+      opening_balance: fieldNumber(row, "opening_balance"),
+      commitment: fieldNumber(row, "commitment"),
+      term_months: fieldNumber(row, "term_months"),
+      moratorium_months: fieldNumber(row, "moratorium_months"),
+      interest_cap_months: 0,
+      margin: fieldNumber(row, "margin"),
+      base_rate: fieldNumber(row, "base_rate"),
+      amortization: fieldValue(row, "amortization"),
+      bullet_percent: fieldValue(row, "amortization") === "Bullet" ? 1 : 0.2,
+      cash_sweep_percent: fieldValue(row, "amortization") === "Cash Sweep" ? 0.5 : 0.25,
+      interest_type: fieldValue(row, "interest_type"),
+      cash_pay_frequency: fieldValue(row, "cash_pay_frequency"),
+      cash_pay_percent: fieldNumber(row, "cash_pay_percent"),
+      pik: fieldValue(row, "interest_type") !== "Cash",
+      minimum_cash: getNumber("bpMinimumCash", 50000),
+    }))
+    .filter((row) => row.name || row.opening_balance || row.commitment);
+}
+
+function debtTypeOptions() {
+  return [
+    "Super Senior RCF", "RCF", "Senior Term Loan A", "Senior Term Loan B", "Unitranche",
+    "Second Lien", "Mezzanine Cash Pay", "Mezzanine PIK", "HoldCo PIK", "High Yield Bond",
+    "Senior Secured Notes", "Vendor Loan", "Seller Note", "Bridge Loan", "DIP Financing",
+    "Rescue Financing", "Tax Debt Payment Plan", "Supplier Payment Plan", "Project Finance",
+    "Equipment Loan", "Finance Lease", "Venture Debt", "Growth Debt", "FX Debt"
+  ];
+}
+
+function setValue(id, value) {
+  const el = $(id);
+  if (el) el.value = value;
+}
+
+function getValue(id, fallback = "") {
+  const el = $(id);
+  return el && el.value !== "" ? el.value : fallback;
+}
+
+function getNumber(id, fallback = 0) {
+  const value = Number(getValue(id, fallback));
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function fieldValue(row, field) {
+  const el = row.querySelector(`[data-field="${field}"]`);
+  return el ? el.value : "";
+}
+
+function fieldNumber(row, field) {
+  const value = Number(fieldValue(row, field));
+  return Number.isFinite(value) ? value : 0;
 }
 
 async function generateAiBrief() {
@@ -479,6 +823,8 @@ function renderActiveProject() {
   const project = activeProject();
   $("emptyProjectState").classList.toggle("hidden", Boolean(project));
   $("projectWorkspace").classList.toggle("hidden", !project);
+  if ($("bpBuilderEmpty")) $("bpBuilderEmpty").classList.toggle("hidden", Boolean(project));
+  if ($("bpBuilderWorkspace")) $("bpBuilderWorkspace").classList.toggle("hidden", !project);
   if (!project) return;
   $("activeProjectName").textContent = project.company_name;
   $("activeProjectMeta").textContent = `${project.project_type} | ${project.currency} | ${project.id}`;
@@ -505,9 +851,11 @@ function showView(viewId) {
     dashboardView: "Dashboard",
     libraryView: "Project Library",
     projectView: "Active Project",
+    bpBuilderView: "BP Builder",
     outputsView: "Outputs",
   };
   $("pageTitle").textContent = titles[viewId] || "Workspace";
+  if (viewId === "bpBuilderView" && activeProject()) loadBpAssumptions();
 }
 
 function setResult(id, payload) {
@@ -570,9 +918,14 @@ $("newProjectTopButton").addEventListener("click", () => showView("libraryView")
 $("createProjectButton").addEventListener("click", createProject);
 $("uploadButton").addEventListener("click", uploadFile);
 $("extractHistoricalsButton").addEventListener("click", extractHistoricals);
+$("extractHistoricalsBuilderButton").addEventListener("click", extractHistoricals);
 $("generateBpButton").addEventListener("click", generateBp);
 $("generateBpOutputButton").addEventListener("click", generateBp);
+$("loadBpAssumptionsButton").addEventListener("click", loadBpAssumptions);
+$("saveBpAssumptionsButton").addEventListener("click", saveBpAssumptions);
+$("generateBpBuilderButton").addEventListener("click", generateBpFromBuilder);
 $("downloadBpButton").addEventListener("click", downloadBp);
+$("downloadBpBuilderButton").addEventListener("click", downloadBp);
 $("aiBriefButton").addEventListener("click", generateAiBrief);
 $("qoePackButton").addEventListener("click", generateQoePack);
 $("restructuringButton").addEventListener("click", generateRestructuringPaper);

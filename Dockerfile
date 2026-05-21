@@ -1,9 +1,9 @@
-# MG Advisory Finance OS v3
-FROM python:3.11-slim
+# MG Advisory Finance OS
+FROM python:3.12-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN mkdir -p data/projects outputs
 ENV PYTHONPATH=/app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
