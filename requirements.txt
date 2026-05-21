@@ -1,0 +1,1621 @@
+{
+  "templates": [
+    {
+      "file": "book_schemas_janvier_2023_reference.pptx",
+      "slide_count": 236,
+      "slide_width": 12192000,
+      "slide_height": 6858000,
+      "slides": [
+        {
+          "slide": 1,
+          "layout": "TITLE SLIDE Left Horizontal Window_KPMG Blue",
+          "text_preview": "Book des sch\u00e9mas | Janvier 2023 | KPMG UK | KPMG Framework Slides v1 | February 2023",
+          "shape_count": 5
+        },
+        {
+          "slide": 2,
+          "layout": "Divider 1",
+          "text_preview": "Contents and agenda | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 3,
+          "layout": "1_Title Only",
+          "text_preview": "Contents",
+          "shape_count": 3
+        },
+        {
+          "slide": 4,
+          "layout": "1_Title Only",
+          "text_preview": "Contents",
+          "shape_count": 4
+        },
+        {
+          "slide": 5,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Contents",
+          "shape_count": 3
+        },
+        {
+          "slide": 6,
+          "layout": "6_3 COLUMN CHART TEXT",
+          "text_preview": "Contents",
+          "shape_count": 3
+        },
+        {
+          "slide": 7,
+          "layout": "Title Only",
+          "text_preview": "Agenda | 01 | Lorem ipsum dolor sit amet. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis dolor. Suspendisse urna nibh, viverra lorem. | 02 | Lorem ipsum dolor sit amet. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis dolor. Suspendisse urna nibh, viverra lorem. | 03 | Lorem ipsum dolor sit amet. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis dolor. Suspendisse urna nibh, viverra lorem. | 04 | Lorem ipsum dolor sit am",
+          "shape_count": 13
+        },
+        {
+          "slide": 8,
+          "layout": "Title Only",
+          "text_preview": "Agenda | 01 Lorem ipsum dolor sit amet mattis eros | Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis dolor. Suspendisse urna nibh, viverra lorem. | 03 | 02 Lorem ipsum dolor sit amet mattis eros | Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis dolor. Suspendisse urna nibh, viverra lorem. | 03 Lorem ipsum dolor sit amet mattis eros | Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis dolor. Suspendisse urna nibh, viverra ",
+          "shape_count": 10
+        },
+        {
+          "slide": 9,
+          "layout": "Divider 1",
+          "text_preview": "Timelines | 02",
+          "shape_count": 3
+        },
+        {
+          "slide": 10,
+          "layout": "Title Only",
+          "text_preview": "Timeline | 2018 | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra. | 2019 | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. | 2020 | Lorem ipsum dolor sit amet, conse",
+          "shape_count": 17
+        },
+        {
+          "slide": 11,
+          "layout": "Title Only",
+          "text_preview": "Timeline | 2018 | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra. | 2019 | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse. | 2020 | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nib",
+          "shape_count": 18
+        },
+        {
+          "slide": 12,
+          "layout": "Title Only",
+          "text_preview": "Timeline | Date 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Date 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Date 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. ",
+          "shape_count": 20
+        },
+        {
+          "slide": 13,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Timeline | Date 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Date 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Date 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. ",
+          "shape_count": 20
+        },
+        {
+          "slide": 14,
+          "layout": "Title Only",
+          "text_preview": "Timeline | 2023 | MAR | APR | MAY | JUN | JUL | AUG | SEP | OCT | 21 Jan 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | 21 Feb 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | 21 Jan 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Qu",
+          "shape_count": 23
+        },
+        {
+          "slide": 15,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Timeline",
+          "shape_count": 9
+        },
+        {
+          "slide": 16,
+          "layout": "Title Only",
+          "text_preview": "Timeline | Lorem ipsum dolor sit amet consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra non, semper suscipit, posuere a, pede. Donec nec justo eget felis facilisis fermen",
+          "shape_count": 10
+        },
+        {
+          "slide": 17,
+          "layout": "Title Only - Dark BG colour",
+          "text_preview": "Timeline | January 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | April 2023 | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Curabitur maximus sapien at turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Qui",
+          "shape_count": 8
+        },
+        {
+          "slide": 18,
+          "layout": "Title Only - Dark BG colour",
+          "text_preview": "Timeline | August 2023 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra. Lorem ipsum dolor sit amet. Sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra. Lorem ipsum dolor sit amet. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | June ",
+          "shape_count": 11
+        },
+        {
+          "slide": 19,
+          "layout": "Title Only - Dark BG colour",
+          "text_preview": "Timeline | January 2024 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra. Lorem ipsum dolor sit amet. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | November 2023 | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Curabitur maximus sapien at turpis. Lorem ipsum dolor sit amet, consectetuer a",
+          "shape_count": 8
+        },
+        {
+          "slide": 20,
+          "layout": "Divider 1",
+          "text_preview": "Journey maps | 03",
+          "shape_count": 3
+        },
+        {
+          "slide": 21,
+          "layout": "Title Only",
+          "text_preview": "Journey map | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer ",
+          "shape_count": 16
+        },
+        {
+          "slide": 22,
+          "layout": "Title Only",
+          "text_preview": "Journey map | Lorem ipsum dolor sit amet consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. | Lorem ipsum dolor sit amet consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio",
+          "shape_count": 8
+        },
+        {
+          "slide": 23,
+          "layout": "Title Only",
+          "text_preview": "Journey map | Workstream 01 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque. | Workstream 02 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. Lorem ipsum dolor sit amet, consectetuer ",
+          "shape_count": 16
+        },
+        {
+          "slide": 24,
+          "layout": "Title Only",
+          "text_preview": "Journey map | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit",
+          "shape_count": 15
+        },
+        {
+          "slide": 25,
+          "layout": "Title Only",
+          "text_preview": "Journey map | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis ero",
+          "shape_count": 12
+        },
+        {
+          "slide": 26,
+          "layout": "2_Title Only",
+          "text_preview": "Journey map | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis ero",
+          "shape_count": 12
+        },
+        {
+          "slide": 27,
+          "layout": "Divider 1",
+          "text_preview": "Charts | 04",
+          "shape_count": 3
+        },
+        {
+          "slide": 28,
+          "layout": "Title Only",
+          "text_preview": "Charts | Lorem ipsum dolor Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum sit dolor. | Lorem ipsum dolor Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsu",
+          "shape_count": 11
+        },
+        {
+          "slide": 29,
+          "layout": "Title Only",
+          "text_preview": "Charts | \u00a3546.7m | \u00a375.3m Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | \u00a350.3m Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | \u00a3350.6m Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. N",
+          "shape_count": 10
+        },
+        {
+          "slide": 30,
+          "layout": "Title Only",
+          "text_preview": "Charts | 25% | 45% | 50% | 23% | 15% | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetu. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetu. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adip",
+          "shape_count": 12
+        },
+        {
+          "slide": 31,
+          "layout": "Title Only",
+          "text_preview": "Charts | 80% | 35% | 15% | 50% | 5%",
+          "shape_count": 11
+        },
+        {
+          "slide": 32,
+          "layout": "Title Only",
+          "text_preview": "Charts | Chart title | Chart title | \u00a375.3m Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | $1.92b Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | \u00a52,560m Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada.",
+          "shape_count": 19
+        },
+        {
+          "slide": 33,
+          "layout": "Title Only",
+          "text_preview": "Lorem ipsum dolor sit amet consectetuer | Charts | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Curabitur maximus sapien at turpis elementum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra non, semper suscipit, posuere a, pede. Donec nec justo eget felis facilisis fermentum. Aliquam porttitor.",
+          "shape_count": 4
+        },
+        {
+          "slide": 34,
+          "layout": "Title Only",
+          "text_preview": "Charts | 30% Lorem ipsum dolor sit consectetuer adipiscing | 60% Lorem ipsum dolor sit consectetuer adipiscing | 40% Lorem ipsum dolor sit consectetuer adipiscing | 70% Lorem ipsum dolor sit consectetuer adipiscing | 40% Lorem ipsum dolor sit consectetuer adipiscing | 15% Lorem ipsum dolor sit consectetuer adipiscing | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | Lorem ipsum dolor sit Lorem ipsum dol",
+          "shape_count": 15
+        },
+        {
+          "slide": 35,
+          "layout": "One Column Text",
+          "text_preview": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Lorem ipsum dolor sit amet. | Charts | 32% growth | Lorem ipsum Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | 65% growth | Lorem ipsum Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. N",
+          "shape_count": 11
+        },
+        {
+          "slide": 36,
+          "layout": "One Column Text",
+          "text_preview": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Lorem ipsum dolor sit amet. | Charts | Lorem ipsum dolor sit amet consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Lorem ipsum dolor sit amet, ",
+          "shape_count": 4
+        },
+        {
+          "slide": 37,
+          "layout": "Title Only",
+          "text_preview": "Charts | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Consectetur met adipiscing elit. Aenean ac elit a felis pharetra Met adipiscing. Nam tincidunt enim sit Amet Gravida nunc vel Fringilla elit. Consequat met adipiscing elit. Aenean ac elit a felis pharetra. Consectetur met adipiscing elit. Aenean ac elit a felis pharetra Met adipiscing. Nam tincidunt nunc vel Fringilla elit. Consequat met adipiscing elit. Aenean ac elit a felis pharetra Consequat met adi",
+          "shape_count": 8
+        },
+        {
+          "slide": 38,
+          "layout": "Title Only",
+          "text_preview": "Charts | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Consectetur met adipiscing elit. Aenean ac elit a felis pharetra Met adipiscing. Nam tincidunt enim sit Amet Gravida nunc vel Fringilla elit. Consequat met adipiscing elit. Aenean ac elit a felis pharetra. Consectetur met adipiscing elit. Aenean ac elit a felis pharetra Met adipiscing. Nam tincidunt nunc vel Fringilla elit. Consequat met adipiscing elit. Aenean ac elit a felis pharetra Consequat met adi",
+          "shape_count": 28
+        },
+        {
+          "slide": 39,
+          "layout": "Title Only",
+          "text_preview": "Chart | Heading here | 40% | Heading here | 50% | Heading here | 80% | Lorem ipsum dolor sit amet, consectetur adipiscing elit. | Lorem ipsum Dolor sit amet, consectetur adipiscing elit. Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat efficitur id ut velit. | Lorem ipsum Dolor sit amet, consectetur adipiscing elit. Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat efficitur id ut velit. | Lorem ipsum Dolo",
+          "shape_count": 18
+        },
+        {
+          "slide": 40,
+          "layout": "Title Only",
+          "text_preview": "Chart | Ed ut perspiciatis unde omnis iste natus error sit voluptatem | Target | 80% growth | Ed ut perspiciatis unde omnis iste natus error sit voluptatem | Process | Ed ut perspiciatis unde omnis iste natus error sit voluptatem | Our Support | Lorem ipsum Dolor sit amet, consectetur adipiscing elit. Praesent sed pulvinar tortor, sit amet vulputate tellus. | 65% growth | Subtitle Dolor sit amet, consectetur adipiscing elitsed pulvinar tortoramet vulputate tellus. | Subtitle Dolor sit amet, cons",
+          "shape_count": 133
+        },
+        {
+          "slide": 41,
+          "layout": "Divider 1",
+          "text_preview": "Venn diagrams | 05",
+          "shape_count": 3
+        },
+        {
+          "slide": 42,
+          "layout": "Title Only",
+          "text_preview": "Venn diagram | Lorem ipsum dolor sit amet consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. | Lorem ipsum dolor sit amet consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odi",
+          "shape_count": 18
+        },
+        {
+          "slide": 43,
+          "layout": "Title Only",
+          "text_preview": "Venn diagram | Lorem ipsum | Lorem ipsum | Lorem ipsum | Lorem ipsum | Lorem ipsum dolor sit amet consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. | Lorem ipsum dolor sit amet consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum",
+          "shape_count": 22
+        },
+        {
+          "slide": 44,
+          "layout": "Title Only",
+          "text_preview": "Venn diagram | Lorem ipsum dolor sit amet consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. | Lorem ipsum 1 | Lorem ipsum 2 | Lorem ipsum 3 | Lorem ipsum dolor sit amet consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor s",
+          "shape_count": 16
+        },
+        {
+          "slide": 45,
+          "layout": "Title Only",
+          "text_preview": "Venn diagram | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. N",
+          "shape_count": 18
+        },
+        {
+          "slide": 46,
+          "layout": "Title Only",
+          "text_preview": "Venn diagram",
+          "shape_count": 13
+        },
+        {
+          "slide": 47,
+          "layout": "Divider 1",
+          "text_preview": "Statistics | 06",
+          "shape_count": 3
+        },
+        {
+          "slide": 48,
+          "layout": "Title Only",
+          "text_preview": "Stats",
+          "shape_count": 6
+        },
+        {
+          "slide": 49,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Stats",
+          "shape_count": 6
+        },
+        {
+          "slide": 50,
+          "layout": "Title Only",
+          "text_preview": "Stats | \u00a312m | Lorem ipsum dolor sit amet, consectetuer | 92% Lorem ipsum dolor sit amet consectetuer | $1.92b Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | \u00a52,560m Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | 123,456 Lorem ipsum dolor sit amet, consectetuer | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Lorem ipsum dolor sit amet Consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam ma",
+          "shape_count": 26
+        },
+        {
+          "slide": 51,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Stats | \u00a312m | Lorem ipsum dolor sit amet, consectetuer | 92% Lorem ipsum dolor sit amet consectetuer | $1.92b Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | \u00a52,560m Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | 123,456 Lorem ipsum dolor sit amet, consectetuer | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Lorem ipsum dolor sit amet Consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam ma",
+          "shape_count": 26
+        },
+        {
+          "slide": 52,
+          "layout": "Title Only",
+          "text_preview": "Stats | \u00a312m | Lorem ipsum dolor sit amet, consectetuer | 92% Lorem ipsum dolor sit amet consectetuer | $1.92b Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | \u00a52,560m Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | 123,456 Lorem ipsum dolor sit amet, consectetuer | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Lorem ipsum dolor sit amet Consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam ma",
+          "shape_count": 24
+        },
+        {
+          "slide": 53,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Stats | \u00a312m | Lorem ipsum dolor sit amet, consectetuer | 92% Lorem ipsum dolor sit amet consectetuer | 123,456 Lorem ipsum dolor sit amet, consectetuer | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Lorem ipsum dolor sit amet Consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum. | 3.5TB Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Consectetuer adipiscing elit. | $",
+          "shape_count": 24
+        },
+        {
+          "slide": 54,
+          "layout": "Title Only",
+          "text_preview": "Stats | $31bn | Lorem ipsum dolor sit amet, consectetuer | Lorem ipsum dolor sit amet, consectetuer adipiscing elit | Lorem ipsum dolor sit amet Consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum. Consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum. | $1.92b Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | \u00a52,560m Lorem ipsum dolor sit amet, consectetuer adi",
+          "shape_count": 32
+        },
+        {
+          "slide": 55,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Stats | $31bn | Lorem ipsum dolor sit amet, consectetuer | Lorem ipsum dolor sit amet, consectetuer adipiscing elit | Lorem ipsum dolor sit amet Consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum. Consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum. | 24,900 Lorem ipsum dolor sit consectetuer adipiscing | 16,490 Lorem ipsum dolor sit consectetuer adipiscing | 12,815 Lo",
+          "shape_count": 52
+        },
+        {
+          "slide": 56,
+          "layout": "Divider 1",
+          "text_preview": "Dashboards | 07",
+          "shape_count": 3
+        },
+        {
+          "slide": 57,
+          "layout": "Title Only",
+          "text_preview": "Dashboard | Low | High | Lorem ipsum dolor sit amet consectetuer | Lorem ipsum dolor sit amet consectetuer | Lorem ipsum dolor sit amet consectetuer | Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat | 2.43 | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum | Lorem ipsum | Lorem ipsum | Lorem ipsum | Lorem ipsum dolor sit a",
+          "shape_count": 41
+        },
+        {
+          "slide": 58,
+          "layout": "Title Only - Dark BG colour",
+          "text_preview": "Dashboard | Low | High | Low | High | Low | High | Lorem ipsum dolor sit amet consectetuer | Lorem ipsum dolor sit amet consectetuer | Lorem ipsum dolor sit amet consectetuer | Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum | Lorem ipsum | Lorem ipsum | Lorem ipsum | 2.43",
+          "shape_count": 41
+        },
+        {
+          "slide": 59,
+          "layout": "One Column Text",
+          "text_preview": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Dashboard",
+          "shape_count": 9
+        },
+        {
+          "slide": 60,
+          "layout": "One Column Text",
+          "text_preview": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Dashboard",
+          "shape_count": 6
+        },
+        {
+          "slide": 61,
+          "layout": "Divider 1",
+          "text_preview": "Tables | 08",
+          "shape_count": 3
+        },
+        {
+          "slide": 62,
+          "layout": "Title Only",
+          "text_preview": "Table",
+          "shape_count": 7
+        },
+        {
+          "slide": 63,
+          "layout": "Title Only",
+          "text_preview": "Table",
+          "shape_count": 2
+        },
+        {
+          "slide": 64,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Table",
+          "shape_count": 9
+        },
+        {
+          "slide": 65,
+          "layout": "Title Only",
+          "text_preview": "Table",
+          "shape_count": 6
+        },
+        {
+          "slide": 66,
+          "layout": "Title Only",
+          "text_preview": "Table",
+          "shape_count": 2
+        },
+        {
+          "slide": 67,
+          "layout": "Divider 1",
+          "text_preview": "Organizational charts | 09",
+          "shape_count": 3
+        },
+        {
+          "slide": 68,
+          "layout": "Title Only",
+          "text_preview": "Organizational chart",
+          "shape_count": 28
+        },
+        {
+          "slide": 69,
+          "layout": "Title Only",
+          "text_preview": "Subject Matter Experts | Organizational chart | Name Surname Title | Name Surname Title | Name Surname Title | Name Surname Title | Name Surname Title | Name Surname Title",
+          "shape_count": 17
+        },
+        {
+          "slide": 70,
+          "layout": "Title Only",
+          "text_preview": "Organizational chart | Country teams | Core team | Name Position | EMEA | Name Position | Americas | ASPAC | Name Position, Country | Name Position | Name Position | Name Position | Name Position | Name Position | Name Position | Name Position | Name Position | Name Position | Name Position, Country | Name Position, Country | Name Position, Country | Name Position, Country | Name Position, Country | Name Position",
+          "shape_count": 29
+        },
+        {
+          "slide": 71,
+          "layout": "Title Only",
+          "text_preview": "Organizational chart",
+          "shape_count": 22
+        },
+        {
+          "slide": 72,
+          "layout": "Divider 1",
+          "text_preview": "CVs and contacts | 10",
+          "shape_count": 3
+        },
+        {
+          "slide": 73,
+          "layout": "Title Only",
+          "text_preview": "Contacts | 01 | 02 | 03 | 04 | Name here Service line/Industry | Name here Service line/Industry | Name here Service line/Industry | Name here Service line/Industry | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat efficitur id ut velit. | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat effi",
+          "shape_count": 21
+        },
+        {
+          "slide": 74,
+          "layout": "Title Only",
+          "text_preview": "CVs | Firstname Surname Et volor aliqui aut officil inveliatur sitis nullabor moluptatio blacest, omnisin velitio nsentesciis simaximinist. Ma volo tem quasi nihil et id ut audi nullandis volupta corum etur sed eatis que post, untem a pligendae eristiatur aut ommolo etur. Xeruptatiunt aborem qui quature perfers perem. Et volor aliqui aut officil inveliatur sitis nullabor moluptatio blacest, omnisin velitio nsentesciis simaximinist. | Firstname Surname Et volor aliqui aut officil inveliatur sitis",
+          "shape_count": 12
+        },
+        {
+          "slide": 75,
+          "layout": "Title Only - Dark BG colour",
+          "text_preview": "CVs | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Curabitur lorem. | Firstname Surname Et volor aliqui aut officil inveliatur sitis nullabor moluptatio blacest, omnisin velitio nsentesciis simaximinist. Ma volo tem quasi nihil et id ut audi nullandis volupta corum etur sed eatis que post, untem a pligendae eristiatur aut ommolo etur. Xeruptatiunt aborem qui quature perfers perem. Et volor aliqui aut officil inveliatur sitis nullabor moluptatio blacest, om",
+          "shape_count": 12
+        },
+        {
+          "slide": 76,
+          "layout": "Title Only",
+          "text_preview": "CVs | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Soluptat uresti dis dent latur, ut im fugit ad qui volo exere.\u201d | Firstname Surname Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus hendrerit. Pellentesque aliquet nibh nec urna. In nisi neque, aliquet vel, dapibus id, mattis vel, nisi. Sed pretium, ligula sollicitudin laoreet viverra, tortor libero sodales leo, eget blandit nunc tortor eu nibh. Nullam mollis. Ut justo. S",
+          "shape_count": 8
+        },
+        {
+          "slide": 77,
+          "layout": "Title Only - Dark BG colour",
+          "text_preview": "CVs",
+          "shape_count": 8
+        },
+        {
+          "slide": 78,
+          "layout": "Title Only",
+          "text_preview": "CVs | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra non, semper suscipit, posuere.",
+          "shape_count": 9
+        },
+        {
+          "slide": 79,
+          "layout": "2_Title Only",
+          "text_preview": "CVs",
+          "shape_count": 14
+        },
+        {
+          "slide": 80,
+          "layout": "Title Only - Dark BG colour",
+          "text_preview": "CVs",
+          "shape_count": 5
+        },
+        {
+          "slide": 81,
+          "layout": "Title Only",
+          "text_preview": "CVs",
+          "shape_count": 5
+        },
+        {
+          "slide": 82,
+          "layout": "Title Only",
+          "text_preview": "CVs",
+          "shape_count": 6
+        },
+        {
+          "slide": 83,
+          "layout": "Title Only",
+          "text_preview": "Presenters | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra non, semper suscipit, posuere.",
+          "shape_count": 5
+        },
+        {
+          "slide": 84,
+          "layout": "Title Only",
+          "text_preview": "Presenter | Firstname Surname Title, Sector Magnis eris ut oditis ipid untia coribus exernam qui velessincte alic toresti issecti doluptas rem ulpa niendis aciducimpore vit. Lorem ipsum sit dolor. Ma volo tem quasi nihil et id ut audi nullandis volupta corum etur sed eatis que post, untem a pligendae aut ommolo etur. Optat. Lore num etur. Magnis eris ut oditis ipid untia coribus exernam qui velessincte alic toresti issecti doluptas rem ulpa niendis aciducimpore vit, quo ipsum labore cus deribus ",
+          "shape_count": 3
+        },
+        {
+          "slide": 85,
+          "layout": "Title Only",
+          "text_preview": "Contacts | Contact us",
+          "shape_count": 11
+        },
+        {
+          "slide": 86,
+          "layout": "Title Only",
+          "text_preview": "Contacts | Contact us",
+          "shape_count": 11
+        },
+        {
+          "slide": 87,
+          "layout": "Title Only",
+          "text_preview": "List of contacts",
+          "shape_count": 2
+        },
+        {
+          "slide": 88,
+          "layout": "Divider 1",
+          "text_preview": "Devices | 11",
+          "shape_count": 3
+        },
+        {
+          "slide": 89,
+          "layout": "Title Only",
+          "text_preview": "Devices | Note: To be replaced by relevant screenshots",
+          "shape_count": 7
+        },
+        {
+          "slide": 90,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Devices | Note: To be replaced by relevant screenshots",
+          "shape_count": 7
+        },
+        {
+          "slide": 91,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Devices | Note: To be replaced by relevant screenshots",
+          "shape_count": 7
+        },
+        {
+          "slide": 92,
+          "layout": "Title Only",
+          "text_preview": "Devices \u2013 tablet horizontal | Note: To be replaced by relevant screenshot",
+          "shape_count": 4
+        },
+        {
+          "slide": 93,
+          "layout": "Title Only",
+          "text_preview": "Devices \u2013 tablet vertical | Note: To be replaced by relevant screenshot",
+          "shape_count": 4
+        },
+        {
+          "slide": 94,
+          "layout": "Title Only",
+          "text_preview": "Devices \u2013 laptop | Note: To be replaced by relevant screenshot",
+          "shape_count": 3
+        },
+        {
+          "slide": 95,
+          "layout": "Title Only",
+          "text_preview": "Devices \u2013 monitor | Note: To be replaced by relevant screenshot",
+          "shape_count": 4
+        },
+        {
+          "slide": 96,
+          "layout": "Title Only",
+          "text_preview": "Devices \u2013 mobile | Note: To be replaced by relevant screenshot",
+          "shape_count": 4
+        },
+        {
+          "slide": 97,
+          "layout": "Title Only",
+          "text_preview": "Device usage | Note: To be replaced by relevant screenshot | 75% | Lorem ipsum dolor sit Consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum. Consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum.",
+          "shape_count": 9
+        },
+        {
+          "slide": 98,
+          "layout": "Title Only",
+          "text_preview": "Device usage | Note: To be replaced by relevant screenshot | Lorem ipsum dolor sit amet nullam Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | Lorem ipsum dolor sit amet nullam Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | Lorem ipsum dolor sit amet nullam Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis ero",
+          "shape_count": 9
+        },
+        {
+          "slide": 99,
+          "layout": "Title Only",
+          "text_preview": "Device usage | Note: To be replaced by relevant screenshot | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Curabitur maximus sapien at turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra non, semper suscipit, posuere a, pede. Donec nec justo eget felis facilisis fermentum. Aliquam porttitor. | 10,234 | Consectetuer adipiscing elit. Donec o",
+          "shape_count": 9
+        },
+        {
+          "slide": 100,
+          "layout": "Title Only",
+          "text_preview": "Device usage | Note: To be replaced by relevant screenshot",
+          "shape_count": 7
+        },
+        {
+          "slide": 101,
+          "layout": "Title Only",
+          "text_preview": "Device usage | Note: To be replaced by relevant screenshot | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Curabitur maximus sapien at turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra non, semper suscipit, posuere a, pede. Donec nec justo eget felis facilisis fermentum. Aliquam porttitor. | Lorem ipsum | Lorem ipsum | Lorem ipsum",
+          "shape_count": 10
+        },
+        {
+          "slide": 102,
+          "layout": "Title Only",
+          "text_preview": "Device usage | Note: To be replaced by relevant screenshot | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. Curabitur maximus. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna nibh, viverra non, semper suscipit, posuere a, pede. Donec nec justo eget felis facilisis fermentum. Aliquam porttitor.",
+          "shape_count": 10
+        },
+        {
+          "slide": 103,
+          "layout": "Divider 1",
+          "text_preview": "Maps | 12",
+          "shape_count": 3
+        },
+        {
+          "slide": 104,
+          "layout": "Title Only",
+          "text_preview": "Maps | Americas | Asia Pacific | EMEA | $2.92bn Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | $7.92bn Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | $3.92bn Lorem ipsum dolor sit amet, consectetuer adipiscing elit.",
+          "shape_count": 32
+        },
+        {
+          "slide": 105,
+          "layout": "Title Only",
+          "text_preview": "Maps",
+          "shape_count": 10
+        },
+        {
+          "slide": 106,
+          "layout": "Title Only",
+          "text_preview": "Maps - Australia",
+          "shape_count": 7
+        },
+        {
+          "slide": 107,
+          "layout": "Title Only",
+          "text_preview": "Maps - Canada",
+          "shape_count": 8
+        },
+        {
+          "slide": 108,
+          "layout": "Title Only",
+          "text_preview": "Maps - China",
+          "shape_count": 7
+        },
+        {
+          "slide": 109,
+          "layout": "Title Only",
+          "text_preview": "Maps - France",
+          "shape_count": 8
+        },
+        {
+          "slide": 110,
+          "layout": "Title Only",
+          "text_preview": "Maps - Japan",
+          "shape_count": 9
+        },
+        {
+          "slide": 111,
+          "layout": "Title Only",
+          "text_preview": "Maps - Germany",
+          "shape_count": 8
+        },
+        {
+          "slide": 112,
+          "layout": "Title Only",
+          "text_preview": "Maps - UK",
+          "shape_count": 8
+        },
+        {
+          "slide": 113,
+          "layout": "Title Only",
+          "text_preview": "Maps - USA",
+          "shape_count": 8
+        },
+        {
+          "slide": 114,
+          "layout": "Divider 1",
+          "text_preview": "Processes | 13",
+          "shape_count": 3
+        },
+        {
+          "slide": 115,
+          "layout": "Title Only",
+          "text_preview": "Process",
+          "shape_count": 8
+        },
+        {
+          "slide": 116,
+          "layout": "Title Only",
+          "text_preview": "Process",
+          "shape_count": 13
+        },
+        {
+          "slide": 117,
+          "layout": "Title Only",
+          "text_preview": "Process",
+          "shape_count": 7
+        },
+        {
+          "slide": 118,
+          "layout": "Title Only",
+          "text_preview": "Process | Process 1 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. | Process 2 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. | Process 3 Lorem ipsum dolor sit amet, consectetuer adipiscin",
+          "shape_count": 14
+        },
+        {
+          "slide": 119,
+          "layout": "Title Only",
+          "text_preview": "Process | Process 1 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. | Process 4 Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. | Process 2 Lorem ipsum dolor sit amet, consectetuer adipiscin",
+          "shape_count": 10
+        },
+        {
+          "slide": 120,
+          "layout": "Title Only",
+          "text_preview": "Process | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. | Heading here Lorem ipsum dolor consectetur adelit | Heading here Lorem ipsum dolor consectetur adelit | Heading here Lorem ipsum dolor consectetur adelit | Heading here Lorem ipsum dolor consectetur adelit | Heading here Lorem ipsum dolor sit amet | Heading here Lorem ipsum dolor siamet | Heading here Lorem ipsum dolor sit amet | Heading here Lorem ipsum dolor sit amet",
+          "shape_count": 49
+        },
+        {
+          "slide": 121,
+          "layout": "Title Only",
+          "text_preview": "Process | Lorem ipsum dolor sit amet, consectetur adipiscing elit. | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur elementum posuere pretium. | Heading here | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur elementum posuere pretium. | Heading here | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur elementum posuere pretium. | Heading here | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur elementum posuere pretium. | He",
+          "shape_count": 21
+        },
+        {
+          "slide": 122,
+          "layout": "Title Only",
+          "text_preview": "Process | Lorem ipsum dolor sit amet, consectetur adipiscing elit. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer. Donec odio. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer. Donec odio. | L",
+          "shape_count": 19
+        },
+        {
+          "slide": 123,
+          "layout": "Title Only",
+          "text_preview": "Process | Lorem ipsum dolor sit amet, consectetur adipiscing elit. | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur elementum posuere pretium. | 90% | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur elementum posuere pretium. Quisque nibh dolor, dignissim ac dignissim ut, luctus ac urna. Aliquam aliquet non massa quis tincidunt. | Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+          "shape_count": 13
+        },
+        {
+          "slide": 124,
+          "layout": "Title Only",
+          "text_preview": "Process | Lorem ipsum dolor sit amet, consectetur adipiscing elit. | Lorem ipsum Dolor sit amet, consectetur adipiscing elit. Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat efficitur id ut velit. | Lorem ipsum Dolor sit amet, consectetur adipiscing elit. Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat efficitur id ut velit. | Lorem ipsum Dolor sit amet, consectetur adipiscing elit. Praesent sed pulvina",
+          "shape_count": 11
+        },
+        {
+          "slide": 125,
+          "layout": "Divider 1",
+          "text_preview": "Funnels | 14",
+          "shape_count": 3
+        },
+        {
+          "slide": 126,
+          "layout": "Title Only",
+          "text_preview": "Funnel | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet",
+          "shape_count": 15
+        },
+        {
+          "slide": 127,
+          "layout": "Title Only",
+          "text_preview": "Funnel",
+          "shape_count": 7
+        },
+        {
+          "slide": 128,
+          "layout": "Title Only",
+          "text_preview": "Funnel | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Lo",
+          "shape_count": 12
+        },
+        {
+          "slide": 129,
+          "layout": "Title Only",
+          "text_preview": "Funnel",
+          "shape_count": 8
+        },
+        {
+          "slide": 130,
+          "layout": "Divider 1",
+          "text_preview": "Value chain | 15",
+          "shape_count": 3
+        },
+        {
+          "slide": 131,
+          "layout": "Title Only",
+          "text_preview": "Value chain | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit",
+          "shape_count": 10
+        },
+        {
+          "slide": 132,
+          "layout": "Title Only",
+          "text_preview": "Value chain | 01 | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat ",
+          "shape_count": 19
+        },
+        {
+          "slide": 133,
+          "layout": "4_3 COLUMN CHART TEXT",
+          "text_preview": "Value chain | 02 | 03 | 04 | 05 | 06 | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odi",
+          "shape_count": 24
+        },
+        {
+          "slide": 134,
+          "layout": "Title Only",
+          "text_preview": "Value chain | 4. Lorem ipsum Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | 3. Lorem ipsum Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | 2. Lorem ipsum Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | 1. Lorem ipsum Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec od",
+          "shape_count": 24
+        },
+        {
+          "slide": 135,
+          "layout": "Title Only",
+          "text_preview": "Value chain | Lorem ipsum Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | Lorem ipsum sit dolor | Lorem ipsum sit dolor | Lorem ipsum sit dolor | Lorem ipsum sit dolor | Lorem ipsum sit dolor | Lorem ipsum sit dolor | Lorem ipsum sit dolor | Lorem ipsum sit dolor",
+          "shape_count": 11
+        },
+        {
+          "slide": 136,
+          "layout": "Divider 1",
+          "text_preview": "Boxes | 16",
+          "shape_count": 3
+        },
+        {
+          "slide": 137,
+          "layout": "Title Only",
+          "text_preview": "Boxes",
+          "shape_count": 4
+        },
+        {
+          "slide": 138,
+          "layout": "Title Only",
+          "text_preview": "Lorem ipsum dolor sit consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. | Boxes | 01 | Lorem ipsum dolor sit c",
+          "shape_count": 9
+        },
+        {
+          "slide": 139,
+          "layout": "Title Only",
+          "text_preview": "Boxes",
+          "shape_count": 6
+        },
+        {
+          "slide": 140,
+          "layout": "Title Only",
+          "text_preview": "Boxes | 01 Lorem ipsum dolor sit consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis.Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. ",
+          "shape_count": 4
+        },
+        {
+          "slide": 141,
+          "layout": "Title Only",
+          "text_preview": "Boxes | 01 Lorem ipsum dolor sit consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum. | 02 Lorem ipsum dolor sit consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam ",
+          "shape_count": 5
+        },
+        {
+          "slide": 142,
+          "layout": "Title Only",
+          "text_preview": "Boxes | 01 Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio lorem ipsum. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. | 02 Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio lorem ipsum. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consecte",
+          "shape_count": 6
+        },
+        {
+          "slide": 143,
+          "layout": "Title Only",
+          "text_preview": "Boxes | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. | Lorem ipsum | Lorem ipsum | Lorem ipsum | Lorem ipsum | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. ",
+          "shape_count": 10
+        },
+        {
+          "slide": 144,
+          "layout": "Title Only",
+          "text_preview": "Boxes | \u201cLorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit.\u201d | Lorem ipsum dolor sit consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam m",
+          "shape_count": 9
+        },
+        {
+          "slide": 145,
+          "layout": "Title Only",
+          "text_preview": "Boxes | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio.",
+          "shape_count": 18
+        },
+        {
+          "slide": 146,
+          "layout": "Title Only",
+          "text_preview": "Boxes | 04 Lorem ipsum sit dolor Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros.",
+          "shape_count": 9
+        },
+        {
+          "slide": 147,
+          "layout": "Title Only",
+          "text_preview": "Boxes",
+          "shape_count": 8
+        },
+        {
+          "slide": 148,
+          "layout": "Title Only",
+          "text_preview": "Boxes | 01 Lorem ipsum dolor sit consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum. | 02 Lorem ipsum dolor sit consectetuer Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam males",
+          "shape_count": 6
+        },
+        {
+          "slide": 149,
+          "layout": "Title Only",
+          "text_preview": "Boxes | 01 Lorem ipsum dolor sit Lorem ipsum dolor sit amet,lorem consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum. Donec odio. | 02 Lorem ipsum dolor sit Lorem ipsum dolor sit amet,lorem consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum. Donec odio. | 03 Lorem ipsum dolor sit Lorem ipsum dolor sit amet,lorem consectetuer adipiscing elit. Donec odio. Quisque volu",
+          "shape_count": 8
+        },
+        {
+          "slide": 150,
+          "layout": "Title Only",
+          "text_preview": "Boxes | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Qu",
+          "shape_count": 9
+        },
+        {
+          "slide": 151,
+          "layout": "Title Only",
+          "text_preview": "Boxes | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet, consectetuer. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Qu",
+          "shape_count": 14
+        },
+        {
+          "slide": 152,
+          "layout": "One Column Text",
+          "text_preview": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Boxes | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | 93% Lorem ipsum dolor sit amet, consectetuer. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quis",
+          "shape_count": 10
+        },
+        {
+          "slide": 153,
+          "layout": "One Column Text - Dark BG colour",
+          "text_preview": "Boxes | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | 93% Lorem ipsum dolor sit amet, consectetuer. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quis",
+          "shape_count": 10
+        },
+        {
+          "slide": 154,
+          "layout": "Title Only",
+          "text_preview": "Boxes | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi non porttitor tellus. | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer. Donec odio. | Lorem ipsum | Lorem ipsum | Lorem ipsum | Lorem ipsum | Lorem ipsum dolor ",
+          "shape_count": 14
+        },
+        {
+          "slide": 155,
+          "layout": "Divider 1",
+          "text_preview": "Bullets | 17",
+          "shape_count": 3
+        },
+        {
+          "slide": 156,
+          "layout": "Title Only",
+          "text_preview": "Bullets",
+          "shape_count": 3
+        },
+        {
+          "slide": 157,
+          "layout": "Title Only",
+          "text_preview": "Bullets | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Lorem ipsum dolor sit amet consectetuer | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit",
+          "shape_count": 18
+        },
+        {
+          "slide": 158,
+          "layout": "Title Only",
+          "text_preview": "Bullets | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada. | Lorem ipsu",
+          "shape_count": 8
+        },
+        {
+          "slide": 159,
+          "layout": "Title Only",
+          "text_preview": "Bullets | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lore",
+          "shape_count": 13
+        },
+        {
+          "slide": 160,
+          "layout": "Title Only",
+          "text_preview": "Bullets | Lorem ipsum dolor sit amet consectetuer | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer. | Lorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Do",
+          "shape_count": 12
+        },
+        {
+          "slide": 161,
+          "layout": "Title Only",
+          "text_preview": "Bullets | Lorem ipsum dolor sit amet consectetuer | Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer.",
+          "shape_count": 16
+        },
+        {
+          "slide": 162,
+          "layout": "Title Only",
+          "text_preview": "Bullets | Lorem ipsum dolor sit amet Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Lorem ipsum dolor sit amet. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. Lorem ipsum. | Lorem ipsum dolor sit amet Nullam malesuada erat ut turpis. Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Lorem ipsum dolor sit amet. Quisque volutpat mattis eros. Nullam malesuada erat ut turpis. L",
+          "shape_count": 12
+        },
+        {
+          "slide": 163,
+          "layout": "Title Only",
+          "text_preview": "Bullets",
+          "shape_count": 7
+        },
+        {
+          "slide": 164,
+          "layout": "Title Only",
+          "text_preview": "Bullets | Lorem ipsum dolor sit amet, consectetur adipiscing elit. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer. Donec odio. | Lorem ipsum dolor sit amet Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque volutpat mattis eros. Nullam malesuad erat ut turpis. Lorem ipsum dolor sit amet, consectetuer. Donec odio. | L",
+          "shape_count": 14
+        },
+        {
+          "slide": 165,
+          "layout": "Divider 1",
+          "text_preview": "Infographics | 18",
+          "shape_count": 3
+        },
+        {
+          "slide": 166,
+          "layout": "Title Only",
+          "text_preview": "Infographic | Lorem ipsum dolor sit amet, consectetur adipiscing elit. | Heading here | Heading here | Heading here | Heading here | Heading here | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur elementum posuere pretium. | 90% | Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur elementum posuere pretium. Quisque nibh dolor, dignissim ac dignissim ut, luctus ac urna. Aliquam aliquet non massa quis tincidunt.",
+          "shape_count": 17
+        },
+        {
+          "slide": 167,
+          "layout": "Title Only - Dark BG colour",
+          "text_preview": "Infographic | Lorem ipsum dolor sit amet, consectetur adipiscing elit. | Lorem ipsum Dolor sit amet, consectetur adipiscing elit. Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat efficitur id ut velit. | Lorem ipsum dolor sit amet Dolor sit amet, consectetur adipiscing elit. Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat efficitur id ut velit. | Praesent sed pulvinar tortor, sit amet vulputate tellus. C",
+          "shape_count": 11
+        },
+        {
+          "slide": 168,
+          "layout": "Title Only - Dark BG colour",
+          "text_preview": "Infographic | Lorem ipsum dolor sit amet, consectetur adipiscing elit. | Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat efficitur id ut velit. | Lorem ipsum | Lorem ipsum | Lorem ipsum | 01 | 02 | 03 | Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat efficitur id ut velit. | Praesent sed pulvinar tortor, sit amet vulputate tellus. Cras sit amet massa ut eros consequat efficitur id ut velit. | Praesent s",
+          "shape_count": 19
+        },
+        {
+          "slide": 169,
+          "layout": "Divider 1",
+          "text_preview": "Icons | 19",
+          "shape_count": 3
+        },
+        {
+          "slide": 170,
+          "layout": "1_One Column Text",
+          "text_preview": "B\u00e2timents",
+          "shape_count": 37
+        },
+        {
+          "slide": 171,
+          "layout": "2_One Column Text",
+          "text_preview": "Communications",
+          "shape_count": 41
+        },
+        {
+          "slide": 172,
+          "layout": "3_One Column Text",
+          "text_preview": "Communications",
+          "shape_count": 9
+        },
+        {
+          "slide": 173,
+          "layout": "4_One Column Text",
+          "text_preview": "Communications & technologies",
+          "shape_count": 41
+        },
+        {
+          "slide": 174,
+          "layout": "5_One Column Text",
+          "text_preview": "Communications & technologies",
+          "shape_count": 41
+        },
+        {
+          "slide": 175,
+          "layout": "6_One Column Text",
+          "text_preview": "Communications & technologies",
+          "shape_count": 45
+        },
+        {
+          "slide": 176,
+          "layout": "7_One Column Text",
+          "text_preview": "Communications & technologies",
+          "shape_count": 33
+        },
+        {
+          "slide": 177,
+          "layout": "8_One Column Text",
+          "text_preview": "Documents",
+          "shape_count": 29
+        },
+        {
+          "slide": 178,
+          "layout": "9_One Column Text",
+          "text_preview": "Energie & environnement",
+          "shape_count": 41
+        },
+        {
+          "slide": 179,
+          "layout": "10_One Column Text",
+          "text_preview": "Energie & environnement",
+          "shape_count": 31
+        },
+        {
+          "slide": 180,
+          "layout": "11_One Column Text",
+          "text_preview": "Mode",
+          "shape_count": 41
+        },
+        {
+          "slide": 181,
+          "layout": "12_One Column Text",
+          "text_preview": "Mode",
+          "shape_count": 41
+        },
+        {
+          "slide": 182,
+          "layout": "13_One Column Text",
+          "text_preview": "Mode",
+          "shape_count": 41
+        },
+        {
+          "slide": 183,
+          "layout": "14_One Column Text",
+          "text_preview": "Mode",
+          "shape_count": 31
+        },
+        {
+          "slide": 184,
+          "layout": "15_One Column Text",
+          "text_preview": "Services Financiers",
+          "shape_count": 41
+        },
+        {
+          "slide": 185,
+          "layout": "16_One Column Text",
+          "text_preview": "Services Financiers",
+          "shape_count": 31
+        },
+        {
+          "slide": 186,
+          "layout": "17_One Column Text",
+          "text_preview": "Services Financiers",
+          "shape_count": 47
+        },
+        {
+          "slide": 187,
+          "layout": "18_One Column Text",
+          "text_preview": "Services Financiers",
+          "shape_count": 49
+        },
+        {
+          "slide": 188,
+          "layout": "19_One Column Text",
+          "text_preview": "Services Financiers",
+          "shape_count": 12
+        },
+        {
+          "slide": 189,
+          "layout": "20_One Column Text",
+          "text_preview": "Gouvernement & infrastructures",
+          "shape_count": 75
+        },
+        {
+          "slide": 190,
+          "layout": "21_One Column Text",
+          "text_preview": "Gouvernement & infrastructures",
+          "shape_count": 5
+        },
+        {
+          "slide": 191,
+          "layout": "22_One Column Text",
+          "text_preview": "Sant\u00e9 & m\u00e9dical",
+          "shape_count": 42
+        },
+        {
+          "slide": 192,
+          "layout": "23_One Column Text",
+          "text_preview": "Sant\u00e9 & m\u00e9dical",
+          "shape_count": 34
+        },
+        {
+          "slide": 193,
+          "layout": "24_One Column Text",
+          "text_preview": "BTP & construction",
+          "shape_count": 82
+        },
+        {
+          "slide": 194,
+          "layout": "25_One Column Text",
+          "text_preview": "BTP & construction",
+          "shape_count": 15
+        },
+        {
+          "slide": 195,
+          "layout": "26_One Column Text",
+          "text_preview": "Personnages",
+          "shape_count": 35
+        },
+        {
+          "slide": 196,
+          "layout": "27_One Column Text",
+          "text_preview": "Risque, Assurance & S\u00e9curit\u00e9",
+          "shape_count": 41
+        },
+        {
+          "slide": 197,
+          "layout": "28_One Column Text",
+          "text_preview": "Risque, Assurance & S\u00e9curit\u00e9",
+          "shape_count": 31
+        },
+        {
+          "slide": 198,
+          "layout": "29_One Column Text",
+          "text_preview": "Sports",
+          "shape_count": 31
+        },
+        {
+          "slide": 199,
+          "layout": "30_One Column Text",
+          "text_preview": "Transports",
+          "shape_count": 31
+        },
+        {
+          "slide": 200,
+          "layout": "31_One Column Text",
+          "text_preview": "B\u00e2timents & Construction, Consumer Market",
+          "shape_count": 39
+        },
+        {
+          "slide": 201,
+          "layout": "32_One Column Text",
+          "text_preview": "D\u00e9fense & A\u00e9rospatial, Education, Gouvernement, Alimentation",
+          "shape_count": 41
+        },
+        {
+          "slide": 202,
+          "layout": "33_One Column Text",
+          "text_preview": "Ressources naturelles, Finance, Sant\u00e9",
+          "shape_count": 37
+        },
+        {
+          "slide": 203,
+          "layout": "34_One Column Text",
+          "text_preview": "M\u00e9dias, IT, T\u00e9l\u00e9communications, Pharmaceutique",
+          "shape_count": 41
+        },
+        {
+          "slide": 204,
+          "layout": "35_One Column Text",
+          "text_preview": "M\u00e9dias, IT, T\u00e9l\u00e9communications, Pharmaceutique",
+          "shape_count": 5
+        },
+        {
+          "slide": 205,
+          "layout": "36_One Column Text",
+          "text_preview": "Science, Transport & Logistique, Industries",
+          "shape_count": 41
+        },
+        {
+          "slide": 206,
+          "layout": "37_One Column Text",
+          "text_preview": "Science, Transport & Logistique, Industries",
+          "shape_count": 5
+        },
+        {
+          "slide": 207,
+          "layout": "38_One Column Text",
+          "text_preview": "Commerce",
+          "shape_count": 35
+        },
+        {
+          "slide": 208,
+          "layout": "Divider 1",
+          "text_preview": "Dividers | 20",
+          "shape_count": 3
+        },
+        {
+          "slide": 209,
+          "layout": "2_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 210,
+          "layout": "2_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 211,
+          "layout": "4_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 212,
+          "layout": "7_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 213,
+          "layout": "5_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 214,
+          "layout": "6_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 215,
+          "layout": "8_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 216,
+          "layout": "9_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 217,
+          "layout": "10_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 218,
+          "layout": "11_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 219,
+          "layout": "12_DIVIDER 1",
+          "text_preview": "01 | Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing",
+          "shape_count": 3
+        },
+        {
+          "slide": 220,
+          "layout": "13_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 221,
+          "layout": "14_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 222,
+          "layout": "15_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 223,
+          "layout": "16_DIVIDER 1",
+          "text_preview": "Lorem ipsum sit dolor amet | Lorem ipsum dolor sit amet, consectetuer adipiscing | 01",
+          "shape_count": 3
+        },
+        {
+          "slide": 224,
+          "layout": "Divider 1",
+          "text_preview": "Final slides | 21",
+          "shape_count": 3
+        },
+        {
+          "slide": 225,
+          "layout": "1_FINAL SLIDE",
+          "text_preview": "",
+          "shape_count": 0
+        },
+        {
+          "slide": 226,
+          "layout": "2_FINAL SLIDE",
+          "text_preview": "",
+          "shape_count": 0
+        },
+        {
+          "slide": 227,
+          "layout": "4_FINAL SLIDE",
+          "text_preview": "",
+          "shape_count": 0
+        },
+        {
+          "slide": 228,
+          "layout": "10_FINAL SLIDE",
+          "text_preview": "",
+          "shape_count": 0
+        },
+        {
+          "slide": 229,
+          "layout": "7_FINAL SLIDE",
+          "text_preview": "",
+          "shape_count": 0
+        },
+        {
+          "slide": 230,
+          "layout": "11_FINAL SLIDE",
+          "text_preview": "",
+          "shape_count": 0
+        },
+        {
+          "slide": 231,
+          "layout": "9_FINAL SLIDE",
+          "text_preview": "",
+          "shape_count": 0
+        },
+        {
+          "slide": 232,
+          "layout": "6_FINAL SLIDE",
+          "text_preview": "",
+          "shape_count": 0
+        },
+        {
+          "slide": 233,
+          "layout": "8_FINAL SLIDE",
+          "text_preview": "",
+          "shape_count": 0
+        },
+        {
+          "slide": 234,
+          "layout": "Back Cover dark Gradient",
+          "text_preview": "Les informations contenues dans ce document sont d\u2019ordre g\u00e9n\u00e9ral et ne sont pas destin\u00e9es \u00e0 traiter les particularit\u00e9s d\u2019une personne ou d\u2019une entit\u00e9. Bien que nous fassions tout notre possible pour fournir des informations exactes et appropri\u00e9es, nous ne pouvons garantir que ces informations seront toujours exactes \u00e0 une date ult\u00e9rieure. Elles ne peuvent ni ne doivent servir de support \u00e0 des d\u00e9cisions sans validation par les professionnels ad hoc. KPMG S.A. est le membre fran\u00e7ais de l\u2019organisat",
+          "shape_count": 2
+        },
+        {
+          "slide": 235,
+          "layout": "Back Cover light gradient",
+          "text_preview": "kpmg.fr | Les informations contenues dans ce document sont d\u2019ordre g\u00e9n\u00e9ral et ne sont pas destin\u00e9es \u00e0 traiter les particularit\u00e9s d\u2019une personne ou d\u2019une entit\u00e9. Bien que nous fassions tout notre possible pour fournir des informations exactes et appropri\u00e9es, nous ne pouvons garantir que ces informations seront toujours exactes \u00e0 une date ult\u00e9rieure. Elles ne peuvent ni ne doivent servir de support \u00e0 des d\u00e9cisions sans validation par les professionnels ad hoc. KPMG S.A. est le membre fran\u00e7ais de l",
+          "shape_count": 2
+        },
+        {
+          "slide": 236,
+          "layout": "Color palette",
+          "text_preview": "Color usage",
+          "shape_count": 1
+        }
+      ]
+    },
+    {
+      "file": "jbf_ge_im_draft_reference.pptx",
+      "slide_count": 30,
+      "slide_width": 12192000,
+      "slide_height": 6858000,
+      "slides": [
+        {
+          "slide": 1,
+          "layout": "5_GE_Title Slide",
+          "text_preview": "Introduction to JBF Global Europe - RB Karesi March 2026 | JBF Global Europe The PET Experts | Private & Confidential \u2013 Not For Distribution",
+          "shape_count": 5
+        },
+        {
+          "slide": 2,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "2 | 13.03.2026 | Disclaimer | The company identified herein as JBF Global Europe (the \"Company\") has prepared this information presentation (the \"Information Presentation\") and has issued it confidentially to a limited number of recipients for the sole purpose of assisting them in deciding whether they wish to proceed with further investigation and evaluation in connection with a proposed transaction involving the Company. The issue of this Information Presentation shall not be taken as any form",
+          "shape_count": 5
+        },
+        {
+          "slide": 3,
+          "layout": "1_GE_Index with Picture_2",
+          "text_preview": "3 | Contents | Executive Summary & Investment Highlights Overview of JBF Global Europe and the key reasons to invest | Why Acquire vs. Build a European PET Platform Strategic rationale for acquiring JBF Global Europe versus developing a new greenfield asset | Blue-Chip Customer Base & Commercial Position Established relationships with leading European converters and brand owners, contracted volumes and market footprint | 1 | 2 | 3 | 4 | 5 | 13.03.2026 | 6 | 7 | 8 | Strategic European PET Product",
+          "shape_count": 19
+        },
+        {
+          "slide": 4,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "4 | 13.03.2026 | Why Acquire vs. Build | Why Acquire JBF Global Europe vs Build a New European PET Platform | Capital Intensity | \u2714 ACQUIRE | Acquisition at discount to replacement cost | \u2717 BUILD | Greenfield replacement cost in Europe: \u20ac250m+* | Capital Saving | Customer Relationships | \u2714 ACQUIRE | Active customer relationships: Nestl\u00e9, Coca-Cola, Danone, Refresco & others | \u2717 BUILD | Multi-year customer qualification cycles required | Immediate Blue-Chip Base | Regulatory Position | \u2714 ACQUIRE ",
+          "shape_count": 58
+        },
+        {
+          "slide": 5,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "5 | 13.03.2026 | Investment Highlights | Five compelling reasons to invest in JBF Global Europe, one of Europe's most modern large-scale PET & rPET production platforms | Strategic European Production Platform Modern 432k Mt nameplate PET & rPET facility located in the Antwerp\u2013Geel chemical cluster, co-commissioned in 2013 and expanded in 2018\u201319. One of the most modern large-scale PET assets in Europe, operating across two continuous production lines with significant capacity headroom. | Immedi",
+          "shape_count": 20
+        },
+        {
+          "slide": 6,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Blue-Chip Customer Portfolio and Contracted Volumes | 6 | 34% of CY26 Production Capacity Already Secured Through Contracted Volumes | Sales Volume (Mt) \u2013 Monthly Evolution FY24\u2013FY27 | Summary of \u201cContracted\u201d Volumes for CY26 by customer (Mt) | 13.03.2026",
+          "shape_count": 11
+        },
+        {
+          "slide": 7,
+          "layout": "Title Only",
+          "text_preview": "01 Executive Summary | 7 | 13.03.2026",
+          "shape_count": 4
+        },
+        {
+          "slide": 8,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Why JBF Belgium is Interesting (1/2) | 8 | JBF Global Europe is a strategic European PET production platform offering immediate market access, advanced technology, and significant operating leverage. | 13.03.2026",
+          "shape_count": 7
+        },
+        {
+          "slide": 9,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Why JBF Belgium is Interesting (2/2) | 9 | Leading PET & rPET Resin Producer with Direct Access to European Markets via Co-location with INEOS in Geel | Two PET production lines (1 MtR\u00ae, 1 FTR\u00ae) with 432k Mt nameplate capacity, supporting virgin PET and rPET blends (up to ~30% PCR) Integrated feedstock supply via co-location with INEOS, ensuring secure and competitive PTA sourcing Prime location in the Antwerp chemical cluster, enabling efficient distribution across mainland Europe and exports v",
+          "shape_count": 73
+        },
+        {
+          "slide": 10,
+          "layout": "Title Only",
+          "text_preview": "02 Strategic European PET Production Platform | 10 | 13.03.2026",
+          "shape_count": 4
+        },
+        {
+          "slide": 11,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "A Structurally Critical Asset in the European PET Landscape | 11 | Structural Advantages in a Consolidating European Market | Modern & reliable asset base | One of the newest large-scale PET production assets in Europe, with few comparable greenfield opportunities remaining due to permitting, ESG and capital constraints. State-of-the-art, energy-efficient facility, designed to operate at high uptime and low variable cost. Structural advantage versus older, legacy European plants facing higher en",
+          "shape_count": 26
+        },
+        {
+          "slide": 12,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Modern High-Performance PET & rPET Platform | 12 | Advanced Production Technology and Integrated Logistics Supporting Scale, Flexibility and Circularity | 440 ktpa modern PET & rPET platform, best-in-class energy efficiency and carbon footprint, strategically located within the Antwerp industrial cluster | Nameplate capacity: 440 ktpa PET & rPET across dual large-scale continuous production trains Commissioning & upgrades: Site commissioned 2013, capacity expansion and debottlenecking 2018\u20132019 ",
+          "shape_count": 21
+        },
+        {
+          "slide": 13,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Strategic Advantages of a Belgian Production Platform | 13 | Strategic EU Manufacturing Base \u00b7 Zero Intra-EU Tariffs \u00b7 rPET Leadership | Zero-tariff EU 27-market access from Geel, Belgium | Port of Antwerp-Bruges handled 278 million nes in 2024 (+2.3% YoY), reaching 98% of Rotterdam's container volume \u2014 the narrowest gap in history (source: Port of Antwerp-Bruges annual results, Jan. 2025) Antwerp holds 30.6% market share in the Hamburg\u2013Le Havre Range, Europe's dominant trade corridor \u2014 Geel sit",
+          "shape_count": 16
+        },
+        {
+          "slide": 14,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Geographic Sales Distribution and Logistics Cost Structure | 14 | Concentrated Exposure To Core Western European Markets Supported By Efficient Logistics Routes | Belgium \u2013 2nd Largest Market 39kt shipments (16% of volumes) Average freight cost: \u20ac18/t | France - Core Market 56kt (22% of volumes) Average freight cost: \u20ac55/t | Italy - Key Southern European Market 33kt shipments (13% of volumes) Average freight (Big Bags) cost: \u20ac60/t | Germany \u2013 Key Industrial Market 33kt shipments (13% of volumes)",
+          "shape_count": 33
+        },
+        {
+          "slide": 15,
+          "layout": "Title and Content",
+          "text_preview": "Leader in Sustainability | A fully integrated sustainability strategy across the entire value chain | Key Pillars | 15 | 13.03.2026 | Private & Confidential \u2013 Not For Distribution",
+          "shape_count": 38
+        },
+        {
+          "slide": 16,
+          "layout": "Title Only",
+          "text_preview": "03 European PET Market Dynamics | 16 | 13.03.2026 | Private & Confidential \u2013 Not For Distribution",
+          "shape_count": 5
+        },
+        {
+          "slide": 17,
+          "layout": "Title and Content",
+          "text_preview": "European PET Market Outlook \u2013 Structural Drivers | PET demand expected to grow steadily across packaging applications through the decade Structural shift toward rPET and circular packaging solutions driven by sustainability targets Increasing demand for recycled content in food-grade packaging | Industry overcapacity is accelerating rationalisation across European PET producers However, European producers have benefited from recent plant closures (Indorama, Netherlands), unplanned shutdowns (Alp",
+          "shape_count": 16
+        },
+        {
+          "slide": 18,
+          "layout": "Title and Content",
+          "text_preview": "2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 2026 2027 2028 2029 2030 2031 2032 2033 2034 2035 2036 2037 2038 2039 2040 2041 2042 2043 2044 2045 2046 2047 2048 2049 2050 Capacity Demand Utilisation % | 0% | 10% | 20% | 30% | 40% | 50% | 60% | 70% | 80% | 90% | - | 10,000 | 20,000 | 30,000 | 40,000 | 50,000 | 60,000 | 70,000 | Source: Wood Mackenzie Global PET Supply Demand Outlook November 2023 | Strategic Advantages of a European PET Production Base | Global PET film supply and demand outl",
+          "shape_count": 31
+        },
+        {
+          "slide": 19,
+          "layout": "Title Only",
+          "text_preview": "04 Experienced Leadership and Institutional Ownership | 19 | 13.03.2026 | Private & Confidential \u2013 Not For Distribution",
+          "shape_count": 5
+        },
+        {
+          "slide": 20,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Strengthened Leadership and Execution Capability | 20 | Strengthened leadership team focused on operational discipline and performance | Leadership & governance reset | Operational Stabilisation and Performance Roadmap | New commercial, finance and procurement leadership established Simplified organisation and clearer single point accountabilities implemented Performance-driven operating culture implemented Clear ownership of key processes (Order-to-Cash and Procure-to-Pay) Enhanced governance, ",
+          "shape_count": 13
+        },
+        {
+          "slide": 21,
+          "layout": "_GE_Title Slide",
+          "text_preview": "21 | The JBF Belgium business today represents a clean standalone platform with i) consolidated ownership, ii) strong operational assets, iii) simplified capital structure and iv) no encumbrances at the operating level | JBF Belgium (Belgium) Operating entity | Belgium HoldCo (UK) * | JBF Belgium operates under a simple, ring-fenced UK holding structure comprising two layers: Belgium HoldCo JBF Belgium (operating entity) The platform today is a fully consolidated, standalone international busine",
+          "shape_count": 15
+        },
+        {
+          "slide": 22,
+          "layout": "Title and Content",
+          "text_preview": "22 | Experienced Leadership Team and Institutional Shareholder Support | Leadership team with deep experience in PET production, chemicals and international industrial operations | 13.03.2026 | Private & Confidential \u2013 Not For Distribution",
+          "shape_count": 8
+        },
+        {
+          "slide": 23,
+          "layout": "Title Only",
+          "text_preview": "05 Value Creation Opportunity | 23 | 13.03.2026 | Private & Confidential \u2013 Not For Distribution",
+          "shape_count": 5
+        },
+        {
+          "slide": 24,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Key Unit Economics - Revenue and Cost Drivers | 24 | L6M average pricing and cost metrics | Jul\u2013Dec 2025 | 140,290 Mt production forecasted over the next 6 months | 217,200 Mt optimal production capacity over the next 6 months | Utilities cost per Mt is expected to decrease by c.15% at optimal production levels | 13.03.2026",
+          "shape_count": 22
+        },
+        {
+          "slide": 25,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Management BP - Post restructuring (Oct. \u201924) | 25 | EBITDA recovery to \u20ac20.9m by FY29, driven by utilisation ramp-up from 51% to 82% and improved fixed-cost absorption | EBITDA driven by improving utilisation, margin discipline and cost control | At normalised utilisation levels, the platform generates structurally attractive EBITDA due to fixed-cost leverage and secure feedstock access | 6% | 13% | 7% | -5% | 0% | -5% | 2% | 4% | 6% | Adjusted EBITDA (\u20acm) | 13.03.2026",
+          "shape_count": 20
+        },
+        {
+          "slide": 26,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Temporary EBITDA Compression During Controlled Utilisation Reduction | 26 | Adj. EBITDA reflects temporary utilisation reduction in CY25; recovery driven by controlled restart of second production line from Feb-26 | Adjusted EBITDA and Utilisation (by Quarter) | Management temporarily reduced utilisation to preserve liquidity and ensure a controlled operational restart. With liquidity stabilised, the second production line restarts from Feb-26, enabling progressive normalised utilisation through",
+          "shape_count": 13
+        },
+        {
+          "slide": 27,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "27 | EBITDA Expansion Driven by Volume, Margin and Cost Discipline | EBITDA improvement driven by utilisation ramp-up, commercial discipline and cost control - not dependent on market recovery | Path to EBITDA expansion: \u2013\u20ac11m (FY26) to +\u20ac21m (FY29) | Structural Pillars | Operationally driven EBITDA expansion supported by conservative assumptions and scalable operating leverage | 13.03.2026",
+          "shape_count": 10
+        },
+        {
+          "slide": 28,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "Path to EBITDA and Cash Generation | 28 | Break-even utilisation ~290kt; incremental volumes drive EBITDA due to high fixed-cost leverage | Gradual and observable EBITDA performace | Key takeaways | I | Conservative assumptions, no hockey-stick effect | II | rPET contribution conservatively modelled | III | Cash generation strengthens materially as utilisation and working capital stabilise | IV | From volume ramp-up to EBITDA and cash generation | 13.03.2026",
+          "shape_count": 17
+        },
+        {
+          "slide": 29,
+          "layout": "Title Only",
+          "text_preview": "06 Next Steps | 29 | 13.03.2026 | Private & Confidential \u2013 Not For Distribution",
+          "shape_count": 5
+        },
+        {
+          "slide": 30,
+          "layout": "1_Benutzerdefiniertes Layout",
+          "text_preview": "30 | Process & Next Steps | INVESTOR OBJECTIVE | W1 | W2 | W3 | W4 | W5 | W6 | W7 | W8 | W9 | W10+ | 01 | Evaluate the Strategic Rationale for Acquisition | On the basis of this IM, interested parties are invited to submit an indicative valuation range prior to full due diligence. Shortlisted bidders will be invited to attend Management Presentations. | Review IM \u2022 Buy vs. Build | Non-Binding Indicative Bid Due | 02 | Due Diligence & Management Interaction | Shortlisted parties attend Management",
+          "shape_count": 79
+        }
+      ]
+    }
+  ],
+  "usage_principles": [
+    "Use book_schemas_janvier_2023_reference.pptx as the slide-pattern library for charts, process pages, tables and analytics layouts.",
+    "Use jbf_ge_im_draft_reference.pptx as the IM / M&A narrative reference for executive flow, section rhythm and buyer-facing story.",
+    "Generated decks should inherit the analytical grammar and density, not blindly clone client-confidential wording."
+  ]
+}

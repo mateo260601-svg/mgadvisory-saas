@@ -1,0 +1,32 @@
+from pathlib import Path
+import sys
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from app.builders.pptx_builder import build_lender_presentation
+
+
+project = {
+    "id": "smoke-test",
+    "company_name": "Smoke Test Ltd",
+    "project_type": "Lender reporting",
+    "currency": "EUR",
+}
+
+financials = {
+    "periods": ["FY2023", "FY2024", "FY2025"],
+    "income_statement": [
+        {"name": "Revenue", "values": {"FY2023": 900000, "FY2024": 1000000, "FY2025": 1150000}},
+        {"name": "EBITDA", "values": {"FY2023": 240000, "FY2024": 285000, "FY2025": 330000}},
+    ],
+    "balance_sheet": [
+        {"name": "Cash", "values": {"FY2023": 90000, "FY2024": 110000, "FY2025": 125000}},
+        {"name": "Debt", "values": {"FY2023": 550000, "FY2024": 525000, "FY2025": 500000}},
+    ],
+    "extraction": {"mode": "local", "confidence": "medium"},
+}
+
+output = Path("outputs") / "smoke_test_Lender_Presentation.pptx"
+build_lender_presentation(project, financials, output)
+print(output)

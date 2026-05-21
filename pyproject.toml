@@ -1,0 +1,26 @@
+from pathlib import Path
+import json
+
+import openpyxl
+
+
+def main() -> None:
+    path = Path("outputs") / "smoke_test_BP_Model.xlsx"
+    wb = openpyxl.load_workbook(path, data_only=False)
+    summary = {"sheet_count": len(wb.sheetnames), "formula_count": 0, "validation_count": 0, "formula_errors": []}
+    for ws in wb.worksheets:
+        summary["validation_count"] += len(ws.data_validations.dataValidation) if ws.data_validations else 0
+        for row in ws.iter_rows():
+            for cell in row:
+                if isinstance(cell.value, str) and cell.value.startswith("="):
+                    summary["formula_count"] += 1
+                    if any(token in cell.value for token in ["#REF!", "#VALUE!", "#NAME?"]):
+                        summary["formula_errors"].append(
+                            {"sheet": ws.title, "cell": cell.coordinate, "formula": cell.value}
+                        )
+    print(json.dumps(summary, indent=2))
+
+
+if __name__ == "__main__":
+    main()
+
