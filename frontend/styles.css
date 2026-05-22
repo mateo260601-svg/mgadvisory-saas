@@ -453,6 +453,40 @@ h3 {
   align-items: center;
 }
 
+.claude-nav-button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #cfd9d2;
+  color: var(--ink);
+  display: inline-flex;
+  gap: 9px;
+  min-height: 44px;
+  padding: 8px 13px 8px 9px;
+}
+
+.claude-nav-button:hover,
+.claude-nav-button.active {
+  background: #f3f8f4;
+  border-color: var(--brand);
+  color: var(--brand-dark);
+}
+
+.claude-mark {
+  align-items: center;
+  background: #cc785c;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.38);
+  color: #fff8ef;
+  display: inline-flex;
+  font-family: Georgia, serif;
+  font-size: 18px;
+  font-weight: 800;
+  height: 28px;
+  justify-content: center;
+  line-height: 1;
+  width: 28px;
+}
+
 .secondary-button {
   background: #fff;
   color: var(--brand);
@@ -1012,27 +1046,24 @@ h3 {
 /* Claude mini assistant */
 .claude-assistant {
   position: fixed;
-  right: 22px;
-  bottom: 22px;
-  z-index: 80;
-}
-
-.claude-toggle {
-  border-radius: 999px;
-  box-shadow: 0 12px 28px rgba(24, 38, 32, 0.22);
-  padding: 12px 18px;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
 }
 
 .claude-panel {
-  position: absolute;
-  right: 0;
-  bottom: 58px;
-  width: min(460px, calc(100vw - 32px));
+  position: fixed;
+  right: 26px;
+  top: 82px;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 112px);
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 20px 54px rgba(24, 38, 32, 0.24);
+  overflow: auto;
   padding: 16px;
+  pointer-events: auto;
 }
 
 .claude-head {
@@ -1056,6 +1087,34 @@ h3 {
   max-height: 260px;
   overflow-y: auto;
   padding: 10px;
+}
+
+.claude-upload {
+  background: #fff;
+  border: 1px dashed #b6c9bb;
+  border-radius: 6px;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.claude-upload label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  margin: 0 0 7px;
+  text-transform: uppercase;
+}
+
+.claude-upload-row {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr auto;
+}
+
+.claude-upload-row input {
+  margin: 0;
+  min-width: 0;
 }
 
 .claude-message {
@@ -1089,4 +1148,18 @@ h3 {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-top: 10px;
+}
+
+@media (max-width: 980px) {
+  .claude-panel {
+    left: 16px;
+    right: 16px;
+    top: 72px;
+    width: auto;
+  }
+
+  .claude-upload-row,
+  .claude-actions {
+    grid-template-columns: 1fr;
+  }
 }

@@ -122,6 +122,7 @@ async function logout() {
   $("appView").classList.add("hidden");
   $("loginView").classList.remove("hidden");
   if ($("claudeAssistant")) $("claudeAssistant").classList.add("hidden");
+  if ($("claudeNavButton")) $("claudeNavButton").classList.add("hidden");
   if ($("claudePanel")) $("claudePanel").classList.add("hidden");
   hideOverlay();
 }
@@ -193,6 +194,7 @@ async function enterWorkspace(statusLabel) {
   $("loginView").classList.add("hidden");
   $("appView").classList.remove("hidden");
   if ($("claudeAssistant")) $("claudeAssistant").classList.remove("hidden");
+  if ($("claudeNavButton")) $("claudeNavButton").classList.remove("hidden");
   $("licenseStatus").textContent = statusLabel;
   hideOverlay();
   renderUserBadge();
@@ -326,6 +328,7 @@ function toggleClaudePanel(forceOpen) {
   if (!panel) return;
   const shouldOpen = forceOpen ?? panel.classList.contains("hidden");
   panel.classList.toggle("hidden", !shouldOpen);
+  if ($("claudeNavButton")) $("claudeNavButton").classList.toggle("active", shouldOpen);
 }
 
 function addClaudeMessage(role, text) {
@@ -358,6 +361,34 @@ async function sendClaudeMessage() {
     state.claudeHistory = state.claudeHistory.slice(-16);
     addClaudeMessage("assistant", reply);
     $("claudeResult").textContent = payload.source === "claude" ? "Claude response ready." : "Fallback response ready.";
+  } catch (error) {
+    $("claudeResult").textContent = error.message;
+  }
+}
+
+async function uploadFileFromClaude() {
+  try {
+    requireUnlocked();
+    const project = activeProject();
+    if (!project) throw new Error("Select a project first.");
+    const file = $("claudeFileInput").files[0];
+    if (!file) throw new Error("Choose a PDF, Excel or CSV file first.");
+    const body = new FormData();
+    body.append("file", file);
+    $("claudeResult").textContent = "Uploading and normalizing file...";
+    addClaudeMessage("user", `[Uploaded file] ${file.name}`);
+    const payload = await api(`/api/projects/${project.id}/upload`, {
+      method: "POST",
+      body,
+    });
+    $("claudeFileInput").value = "";
+    updateExtractionStatus(payload.normalized?.extraction);
+    addClaudeMessage(
+      "assistant",
+      `File uploaded and normalized: ${payload.file?.filename || file.name}.\nPeriods detected: ${(payload.normalized?.periods || []).join(", ") || "to review"}.\nYou can now ask Claude to extract the 3 financial statements or click Apply to BP data.`
+    );
+    $("claudeResult").textContent = "File attached to project.";
+    await refreshWorkspace();
   } catch (error) {
     $("claudeResult").textContent = error.message;
   }
@@ -1191,8 +1222,9 @@ function initials(value) {
 $("loginForm").addEventListener("submit", login);
 $("googleLoginButton").addEventListener("click", startGoogleLogin);
 $("logoutButton").addEventListener("click", logout);
-$("claudeToggleButton").addEventListener("click", () => toggleClaudePanel());
+$("claudeNavButton").addEventListener("click", () => toggleClaudePanel());
 $("claudeCloseButton").addEventListener("click", () => toggleClaudePanel(false));
+$("claudeUploadButton").addEventListener("click", uploadFileFromClaude);
 $("claudeSendButton").addEventListener("click", sendClaudeMessage);
 $("claudeApplyButton").addEventListener("click", applyClaudeToBp);
 $("refreshButton").addEventListener("click", refreshWorkspace);

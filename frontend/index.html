@@ -112,6 +112,10 @@
             <h2 id="pageTitle">Dashboard</h2>
           </div>
           <div class="topbar-actions">
+            <button id="claudeNavButton" class="claude-nav-button hidden" type="button" aria-label="Open Claude assistant">
+              <span class="claude-mark" aria-hidden="true">C</span>
+              <span>Claude</span>
+            </button>
             <button id="refreshButton" class="secondary-button">Refresh</button>
             <button id="newProjectTopButton">New project</button>
           </div>
@@ -525,7 +529,6 @@
     </main>
 
     <section id="claudeAssistant" class="claude-assistant hidden">
-      <button id="claudeToggleButton" class="claude-toggle" type="button">Claude</button>
       <div id="claudePanel" class="claude-panel hidden">
         <div class="claude-head">
           <div>
@@ -535,7 +538,14 @@
           <button id="claudeCloseButton" class="ghost-button" type="button">Close</button>
         </div>
         <div id="claudeMessages" class="claude-messages">
-          <div class="claude-message assistant">Ask Claude to analyse uploaded files, map historicals, propose assumptions, or extract financial statements into the BP format.</div>
+          <div class="claude-message assistant">Chat with Claude, upload financial files for the active project, then apply extracted historicals and assumptions directly to the BP builder.</div>
+        </div>
+        <div class="claude-upload">
+          <label for="claudeFileInput">Attach PDF/XLSX/CSV to active project</label>
+          <div class="claude-upload-row">
+            <input id="claudeFileInput" type="file" accept=".pdf,.xlsx,.xlsm,.csv" />
+            <button id="claudeUploadButton" class="secondary-button" type="button">Upload</button>
+          </div>
         </div>
         <textarea id="claudeInput" rows="4" placeholder="Example: Extract FY2023-FY2025 revenue, EBITDA, cash, debt and working capital from my notes/files and prepare them for the BP."></textarea>
         <div class="claude-actions">
