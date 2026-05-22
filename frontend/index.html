@@ -142,6 +142,7 @@
                   <text x="62" y="36">Claude</text>
                 </svg>
               </span>
+              <span id="claudeTopStatus" class="claude-top-status">Ready</span>
             </button>
             <button id="refreshButton" class="secondary-button hidden">Refresh</button>
             <button id="newProjectTopButton">New</button>
@@ -165,6 +166,18 @@
             <div class="dashboard-hero-actions">
               <button data-view-button="libraryView">Start</button>
               <button class="secondary-button" data-view-button="bpBuilderView">Open BP Builder</button>
+            </div>
+          </section>
+          <section class="ai-orchestration-card">
+            <div>
+              <p class="eyebrow">AI orchestration</p>
+              <h3>Ask Claude to move the dossier forward</h3>
+              <p id="dashboardAIContext" class="muted">Claude can extract actuals, map BP assumptions and identify missing model inputs once a project is active.</p>
+            </div>
+            <div class="ai-command-chips">
+              <button type="button" data-claude-prompt="Review the active project and tell me the next 5 BP configuration gaps to fix before generating the Excel model.">BP gaps</button>
+              <button type="button" data-claude-prompt="Extract and map the uploaded documents into historical revenue, EBITDA, cash, debt, working capital and BP assumptions.">Map actuals</button>
+              <button type="button" data-claude-prompt="Build a lender-style debt and covenant diagnostic from the current BP assumptions and extracted historicals.">Debt review</button>
             </div>
           </section>
           <section class="dashboard-command-grid">
@@ -684,11 +697,17 @@
           <div>
             <p class="eyebrow">Model copilot</p>
             <h3>Claude BP Assistant</h3>
+            <div id="claudeContextLine" class="claude-context-line">Select a project to unlock contextual modelling support.</div>
           </div>
           <div class="claude-head-actions">
             <button id="claudeRegenerateButton" class="quiet-action" type="button">Regenerate</button>
             <button id="claudeCloseButton" class="ghost-button" type="button">Close</button>
           </div>
+        </div>
+        <div class="claude-suggestion-row">
+          <button type="button" data-claude-prompt="Extract historical actuals from the uploaded files and tell me what will flow into the BP builder.">Extract actuals</button>
+          <button type="button" data-claude-prompt="Review my BP setup and identify missing revenue, cost, working capital and debt assumptions.">Review setup</button>
+          <button type="button" data-claude-prompt="Prepare BP assumptions for multiple debt layers, including cash interest, PIK interest, maturity, amortisation and covenant logic.">Debt layers</button>
         </div>
         <div id="claudeMessages" class="claude-messages">
           <div class="claude-message assistant">Chat with Claude, upload financial files for the active project, then apply extracted historicals, revenue lines, cost lines and debt layers directly to the BP builder.</div>
@@ -699,11 +718,14 @@
             <input id="claudeFileInput" type="file" accept=".pdf,.xlsx,.xlsm,.csv" />
             <button id="claudeUploadButton" class="secondary-button" type="button">Upload</button>
           </div>
+          <span class="claude-upload-hint">Claude reads the file, normalizes financials, then you can apply them into the BP builder.</span>
         </div>
-        <textarea id="claudeInput" rows="4" placeholder="Example: Extract FY2023-FY2025 revenue, EBITDA, cash, debt and working capital from my notes/files and prepare them for the BP."></textarea>
-        <div class="claude-actions">
-          <button id="claudeSendButton" type="button">Ask Claude</button>
-          <button id="claudeApplyButton" class="secondary-button" type="button">Apply to BP</button>
+        <div class="claude-composer">
+          <textarea id="claudeInput" rows="4" placeholder="Ask Claude to extract, challenge, map or prepare the BP..."></textarea>
+          <div class="claude-actions">
+            <button id="claudeSendButton" type="button">Ask Claude</button>
+            <button id="claudeApplyButton" class="secondary-button" type="button">Apply to BP</button>
+          </div>
         </div>
         <div id="claudeResult" class="message"></div>
       </div>

@@ -350,7 +350,11 @@ function toggleClaudePanel(forceOpen) {
   const shouldOpen = forceOpen ?? panel.classList.contains("hidden");
   panel.classList.toggle("hidden", !shouldOpen);
   if ($("claudeNavButton")) $("claudeNavButton").classList.toggle("active", shouldOpen);
-  if (shouldOpen) loadClaudeThread();
+  if (shouldOpen) {
+    updateClaudeContextLine();
+    loadClaudeThread();
+    setTimeout(() => $("claudeInput")?.focus(), 80);
+  }
 }
 
 function addClaudeMessage(role, text, status = "complete") {
@@ -397,7 +401,14 @@ function renderClaudeMessages() {
   const target = $("claudeMessages");
   if (!target) return;
   const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 80;
-  target.innerHTML = state.chat.messages.map(renderClaudeMessage).join("");
+  const messages = state.chat.messages.length ? state.chat.messages : [{
+    id: "empty_claude_state",
+    role: "assistant",
+    content: "I am ready to help with this dossier. Upload source files, ask for an extraction, or use a prompt chip to map data into the BP.",
+    status: "complete",
+    created_at: new Date().toISOString(),
+  }];
+  target.innerHTML = messages.map(renderClaudeMessage).join("");
   target.querySelectorAll("[data-copy-message]").forEach((button) => {
     button.addEventListener("click", () => copyClaudeMessage(button.dataset.copyMessage));
   });
@@ -405,6 +416,29 @@ function renderClaudeMessages() {
     button.addEventListener("click", () => editClaudeMessage(button.dataset.editMessage));
   });
   if (nearBottom) target.scrollTop = target.scrollHeight;
+}
+
+function setClaudeActivity(text, mode = "ready") {
+  if ($("claudeResult")) $("claudeResult").textContent = text || "";
+  if ($("claudeTopStatus")) $("claudeTopStatus").textContent = mode === "working" ? "Thinking" : mode === "error" ? "Review" : "Ready";
+  if ($("claudePanel")) $("claudePanel").dataset.state = mode;
+}
+
+function updateClaudeContextLine() {
+  if (!$("claudeContextLine")) return;
+  const project = activeProject();
+  $("claudeContextLine").textContent = project
+    ? `${project.company_name} | ${project.project_type} | ${project.currency} | contextual BP memory active`
+    : "Select a project to unlock contextual modelling support.";
+}
+
+function openClaudeWithPrompt(prompt) {
+  toggleClaudePanel(true);
+  if ($("claudeInput")) {
+    $("claudeInput").value = prompt;
+    $("claudeInput").focus();
+  }
+  setClaudeActivity("Prompt prepared. Review it, then ask Claude.", "ready");
 }
 
 function renderClaudeMessage(message) {
@@ -505,7 +539,7 @@ async function sendClaudeMessage() {
     $("claudeInput").value = "";
     addClaudeMessage("user", message);
     assistant = addClaudeMessage("assistant", "", "streaming");
-    $("claudeResult").textContent = "Claude is thinking...";
+    setClaudeActivity("Claude is reading the dossier context and drafting an answer...", "working");
     $("claudeSendButton").disabled = true;
     state.chat.streaming = true;
     const response = await fetch(`/api/ai/projects/${project.id}/chat/stream`, {
@@ -527,13 +561,13 @@ async function sendClaudeMessage() {
       updateClaudeMessage(assistant.id, { content, status: "streaming" });
     }
     updateClaudeMessage(assistant.id, { content, status: "complete" });
-    $("claudeResult").textContent = "Claude response ready.";
+    setClaudeActivity("Claude response ready.", "ready");
     await loadClaudeThread();
   } catch (error) {
     const errorMessage = `Claude could not answer yet: ${error.message}`;
     if (assistant) updateClaudeMessage(assistant.id, { content: errorMessage, status: "error" });
     else addClaudeMessage("assistant", errorMessage);
-    $("claudeResult").textContent = error.message;
+    setClaudeActivity(error.message, "error");
   } finally {
     state.chat.streaming = false;
     $("claudeSendButton").disabled = false;
@@ -548,7 +582,7 @@ async function uploadFileFromClaude() {
     if (!file) throw new Error("Choose a PDF, Excel or CSV file first.");
     const body = new FormData();
     body.append("file", file);
-    $("claudeResult").textContent = "Uploading and normalizing file...";
+    setClaudeActivity("Uploading, reading and normalizing the file...", "working");
     addClaudeMessage("user", `[Uploaded file] ${file.name}`);
     const payload = await api(`/api/projects/${project.id}/upload`, {
       method: "POST",
@@ -560,11 +594,11 @@ async function uploadFileFromClaude() {
       "assistant",
       `File uploaded and normalized: ${payload.file?.filename || file.name}.\nPeriods detected: ${(payload.normalized?.periods || []).join(", ") || "to review"}.\nYou can now ask Claude to extract the 3 financial statements or click Apply to BP data.`
     );
-    $("claudeResult").textContent = "File attached to project.";
+    setClaudeActivity("File attached and normalized. Ask Claude to map it, or apply to BP.", "ready");
     await refreshWorkspace();
   } catch (error) {
     addClaudeMessage("assistant", `Upload failed: ${error.message}`);
-    $("claudeResult").textContent = error.message;
+    setClaudeActivity(error.message, "error");
   }
 }
 
@@ -576,7 +610,7 @@ async function applyClaudeToBp() {
     const message = $("claudeInput").value.trim() || "Extract all useful financial statements, debt and BP assumptions from this conversation and apply them to the BP model.";
     addClaudeMessage("user", `[Apply to BP] ${message}`);
     pending = addClaudeMessage("assistant", "Claude is extracting and applying the data to the BP...");
-    $("claudeResult").textContent = "Extracting and applying to BP data...";
+    setClaudeActivity("Claude is extracting, mapping and applying to BP data...", "working");
     $("claudeApplyButton").disabled = true;
     const payload = await api(`/api/ai/projects/${project.id}/chat/apply`, {
       method: "POST",
@@ -595,13 +629,13 @@ async function applyClaudeToBp() {
       bridge: payload.bridge,
       extraction: payload.extraction,
     });
-    $("claudeResult").textContent = "Applied to BP data.";
+    setClaudeActivity("Applied to BP data.", "ready");
     await refreshWorkspace();
   } catch (error) {
     const errorMessage = `Claude could not apply the data: ${error.message}`;
     if (pending) updateClaudeMessage(pending.id, { content: errorMessage, status: "error" });
     else addClaudeMessage("assistant", errorMessage);
-    $("claudeResult").textContent = error.message;
+    setClaudeActivity(error.message, "error");
   } finally {
     $("claudeApplyButton").disabled = false;
   }
@@ -622,6 +656,7 @@ async function regenerateClaudeResponse() {
     await loadClaudeThread();
   } catch (error) {
     addClaudeMessage("assistant", `Regenerate failed: ${error.message}`, "error");
+    setClaudeActivity(error.message, "error");
   } finally {
     $("claudeRegenerateButton").disabled = false;
   }
@@ -1286,6 +1321,10 @@ function renderMetrics() {
   if ($("dashboardHealthData")) $("dashboardHealthData").textContent = project ? "Active" : "Data";
   if ($("dashboardHealthBp")) $("dashboardHealthBp").textContent = project ? bpReady : "BP";
   if ($("dashboardHealthOutputs")) $("dashboardHealthOutputs").textContent = project ? "Generate" : "Outputs";
+  if ($("dashboardAIContext")) $("dashboardAIContext").textContent = project
+    ? `Claude is attached to ${project.company_name}. Use it to extract actuals, challenge assumptions, and push mapped data into the BP builder.`
+    : "Claude can extract actuals, map BP assumptions and identify missing model inputs once a project is active.";
+  updateClaudeContextLine();
   if ($("dashboardAccountName")) $("dashboardAccountName").textContent = state.user?.email || "License workspace";
   if ($("dashboardActiveProject")) $("dashboardActiveProject").textContent = project ? project.company_name : "No active dossier";
   if ($("dashboardBpStatus")) $("dashboardBpStatus").textContent = bpReady;
@@ -1512,6 +1551,9 @@ $("claudeInput").addEventListener("keydown", (event) => {
     event.preventDefault();
     sendClaudeMessage();
   }
+});
+document.querySelectorAll("[data-claude-prompt]").forEach((button) => {
+  button.addEventListener("click", () => openClaudeWithPrompt(button.dataset.claudePrompt || ""));
 });
 $("refreshButton").addEventListener("click", refreshWorkspace);
 $("newProjectTopButton").addEventListener("click", () => showView("libraryView"));
