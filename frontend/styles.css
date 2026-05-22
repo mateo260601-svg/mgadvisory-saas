@@ -44,8 +44,10 @@ button {
   background: var(--brand);
   color: #fff;
   cursor: pointer;
+  font-size: 13px;
   font-weight: 800;
-  padding: 11px 15px;
+  min-height: 36px;
+  padding: 8px 12px;
   transition: background 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease, color 0.14s ease, transform 0.14s ease;
 }
 
@@ -69,7 +71,9 @@ select {
   border-radius: 8px;
   background: #fff;
   color: var(--ink);
-  padding: 10px 12px;
+  font-size: 13px;
+  min-height: 36px;
+  padding: 8px 10px;
   transition: border-color 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
 }
 
@@ -184,7 +188,7 @@ h3 {
 .login-card button,
 .full-button {
   width: 100%;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .finance-backdrop {
@@ -492,7 +496,7 @@ h3 {
 .hero-actions,
 .upload-zone {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
 }
 
@@ -503,8 +507,8 @@ h3 {
   box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.12);
   color: #7d3f2d;
   display: inline-flex;
-  min-height: 44px;
-  padding: 7px 12px;
+  min-height: 38px;
+  padding: 5px 10px;
 }
 
 .claude-nav-button:hover,
@@ -517,8 +521,8 @@ h3 {
 
 .claude-logo {
   display: inline-flex;
-  height: 30px;
-  width: 116px;
+  height: 26px;
+  width: 102px;
 }
 
 .claude-logo svg {
@@ -558,7 +562,7 @@ h3 {
   box-shadow: none;
   color: var(--muted);
   font-size: 13px;
-  padding: 9px 10px;
+  padding: 7px 9px;
 }
 
 .quiet-action:hover {
@@ -641,7 +645,7 @@ h3 {
   align-items: center;
   gap: 22px;
   margin-bottom: 18px;
-  padding: 24px;
+  padding: 22px;
   background:
     linear-gradient(135deg, rgba(37, 43, 42, 0.96), rgba(62, 79, 70, 0.92)),
     radial-gradient(circle at 86% 18%, rgba(155, 228, 95, 0.24), transparent 24%);
@@ -672,7 +676,7 @@ h3 {
 .dashboard-hero h3 {
   max-width: 760px;
   color: #fff;
-  font-size: 27px;
+  font-size: 25px;
   line-height: 1.15;
   margin-bottom: 10px;
 }
@@ -766,7 +770,7 @@ h3 {
 .metric-card {
   position: relative;
   overflow: hidden;
-  padding: 18px;
+  padding: 15px;
   transition: border-color 0.14s ease, box-shadow 0.14s ease, transform 0.14s ease;
 }
 
@@ -796,8 +800,8 @@ h3 {
 
 .metric-card strong {
   display: block;
-  margin-top: 8px;
-  font-size: 24px;
+  margin-top: 7px;
+  font-size: 21px;
 }
 
 .workbench {
@@ -821,7 +825,7 @@ h3 {
 }
 
 .panel {
-  padding: 20px;
+  padding: 18px;
 }
 
 .search-input {
@@ -926,6 +930,37 @@ h3 {
   word-break: break-word;
 }
 
+.quick-start-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quick-start-strip span {
+  align-items: center;
+  background: #f7faf8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  display: flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 7px;
+  padding: 8px 10px;
+}
+
+.quick-start-strip strong {
+  align-items: center;
+  background: #e8f2ea;
+  border-radius: 999px;
+  color: var(--brand-dark);
+  display: inline-flex;
+  height: 20px;
+  justify-content: center;
+  width: 20px;
+}
+
 .checklist {
   display: grid;
   gap: 8px;
@@ -979,8 +1014,8 @@ h3 {
 
 .output-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(160px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  gap: 8px;
 }
 
 .deliverable-grid {
@@ -996,8 +1031,8 @@ h3 {
   border-radius: 8px;
   display: grid;
   gap: 10px;
-  min-height: 230px;
-  padding: 16px;
+  min-height: 210px;
+  padding: 14px;
 }
 
 .deliverable-card span {
@@ -1184,7 +1219,8 @@ h3 {
   background: var(--panel-soft);
   color: var(--muted);
   font-size: 12px;
-  padding: 9px 8px;
+  min-height: 34px;
+  padding: 7px 8px;
   text-align: center;
   transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.14s ease;
 }
@@ -1218,7 +1254,7 @@ h3 {
 }
 
 .wizard-actions button {
-  min-width: 160px;
+  min-width: 124px;
 }
 
 .wide-builder {
@@ -1262,7 +1298,7 @@ h3 {
   background: #fff7f7;
   color: #8b2c2c;
   font-size: 12px;
-  padding: 8px;
+  padding: 6px 8px;
 }
 
 .builder-row {
@@ -1390,7 +1426,8 @@ h3 {
   .debt-grid,
   .wizard-steps,
   .builder-command-center,
-  .deliverable-grid {
+  .deliverable-grid,
+  .quick-start-strip {
     grid-template-columns: 1fr;
   }
 }

@@ -121,7 +121,7 @@
               </span>
             </button>
             <button id="refreshButton" class="secondary-button hidden">Refresh</button>
-            <button id="newProjectTopButton">New project</button>
+            <button id="newProjectTopButton">New</button>
           </div>
         </header>
 
@@ -134,7 +134,7 @@
               <p class="muted">This dashboard is your operating queue: choose the active company, complete historicals, configure the BP, then produce Excel and presentation deliverables.</p>
             </div>
             <div class="dashboard-hero-actions">
-              <button data-view-button="libraryView">Create dossier</button>
+              <button data-view-button="libraryView">Start</button>
               <button class="secondary-button" data-view-button="bpBuilderView">Open BP Builder</button>
             </div>
           </section>
@@ -240,7 +240,7 @@
               </div>
               <div class="hero-actions">
                 <button id="generateBpButton">Generate BP model</button>
-                <button id="downloadBpButton" class="secondary-button">Download</button>
+                <button id="downloadBpButton" class="secondary-button hidden">Download</button>
               </div>
             </section>
 
@@ -252,6 +252,12 @@
                   <input id="fileInput" type="file" accept=".pdf,.xlsx,.xlsm,.csv" />
                   <button id="uploadButton">Upload and normalize</button>
                   <button id="extractHistoricalsButton" class="secondary-button">AI extract historicals</button>
+                </div>
+                <div class="quick-start-strip">
+                  <span><strong>1</strong> Upload source files</span>
+                  <span><strong>2</strong> Run AI extraction</span>
+                  <span><strong>3</strong> Configure BP</span>
+                  <span><strong>4</strong> Generate outputs</span>
                 </div>
                 <div id="uploadResult" class="result-box"></div>
               </div>
@@ -304,7 +310,7 @@
               </div>
               <div class="hero-actions">
                 <button id="loadBpAssumptionsButton" class="secondary-button hidden">Load</button>
-                <button id="saveBpAssumptionsButton" class="quiet-action">Save</button>
+                <button id="saveBpAssumptionsButton" class="quiet-action hidden">Save</button>
                 <button id="generateBpBuilderButton">Generate Excel BP</button>
               </div>
             </section>
@@ -507,7 +513,7 @@
                 </div>
                 <div class="output-grid">
                   <button id="extractHistoricalsBuilderButton" class="secondary-button">Run Claude extraction</button>
-                  <button id="downloadBpBuilderButton" class="secondary-button">Download BP</button>
+                  <button id="downloadBpBuilderButton" class="secondary-button hidden">Download BP</button>
                 </div>
                 <div class="model-note">Uploaded PDF/XLSX/CSV files are normalized by the extraction layer and written into the Historical Inputs sheet. Manual lines below override the matching detailed historical line in Excel, then flow into Historical Detail Input, Historical Bridge and the 3FS Detail Output.</div>
                 <div class="assumption-guide">
