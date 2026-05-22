@@ -120,7 +120,7 @@
                 </svg>
               </span>
             </button>
-            <button id="refreshButton" class="secondary-button">Refresh</button>
+            <button id="refreshButton" class="secondary-button hidden">Refresh</button>
             <button id="newProjectTopButton">New project</button>
           </div>
         </header>
@@ -291,8 +291,8 @@
                 <p class="muted">Configure operating drivers, dates, debt terms and covenant thresholds before generating the formula-driven Excel model.</p>
               </div>
               <div class="hero-actions">
-                <button id="loadBpAssumptionsButton" class="secondary-button">Load</button>
-                <button id="saveBpAssumptionsButton">Save assumptions</button>
+                <button id="loadBpAssumptionsButton" class="secondary-button hidden">Load</button>
+                <button id="saveBpAssumptionsButton" class="quiet-action">Save</button>
                 <button id="generateBpBuilderButton">Generate Excel BP</button>
               </div>
             </section>
@@ -478,7 +478,7 @@
                 <h3>Generate formula-driven BP pack</h3>
                 <div class="model-note">This final step saves all assumptions, uses the latest normalized historicals as the base period, and generates the Excel BP with formula-driven forecast, debt, covenants, outputs, checks and detailed forecast line build.</div>
                 <div class="output-grid">
-                  <button id="saveBpFinalButton">Save all assumptions</button>
+                  <button id="saveBpFinalButton" class="hidden">Save all assumptions</button>
                   <button id="generateBpFinalButton">Generate Excel BP</button>
                   <button id="downloadBpFinalButton" class="secondary-button">Download latest BP</button>
                 </div>
@@ -500,14 +500,19 @@
               <h3>Institutional deliverables</h3>
               <div class="output-grid">
                 <button id="generateBpOutputButton">Excel BP model</button>
-                <button id="aiBriefButton" class="secondary-button">AI project brief</button>
-                <button id="planLenderDeckButton" class="secondary-button">Plan deck with Claude</button>
-                <button id="planImDeckButton" class="secondary-button">Plan IM with Claude</button>
-                <button id="qoePackButton" class="secondary-button">QoE pack</button>
-                <button id="restructuringButton" class="secondary-button">Restructuring options</button>
                 <button id="generateLenderDeckButton" class="secondary-button">Lender presentation</button>
                 <button id="generateImDeckButton" class="secondary-button">IM / M&A deck</button>
               </div>
+              <details class="more-actions">
+                <summary>More deliverables</summary>
+                <div class="compact-actions">
+                  <button id="aiBriefButton" class="secondary-button">AI project brief</button>
+                  <button id="planLenderDeckButton" class="secondary-button">Plan deck with Claude</button>
+                  <button id="planImDeckButton" class="secondary-button">Plan IM with Claude</button>
+                  <button id="qoePackButton" class="secondary-button">QoE pack</button>
+                  <button id="restructuringButton" class="secondary-button">Restructuring options</button>
+                </div>
+              </details>
               <div class="model-note">
                 The Excel BP model is a monthly formula-driven workbook with admin, group assumptions, 180-line historical detail input, formula-driven 3FS detail output, historical bridge, assumption map, detailed forecast lines, multi-entity inputs, monthly and annual outputs, revenue drivers, product economics, headcount, opex, working capital, capex, 10-tranche debt modelling, covenants, debt capacity, sensitivity matrix, restructuring options, IC summary and checks.
               </div>
@@ -540,7 +545,7 @@
             <h3>Claude BP Assistant</h3>
           </div>
           <div class="claude-head-actions">
-            <button id="claudeRegenerateButton" class="secondary-button" type="button">Regenerate</button>
+            <button id="claudeRegenerateButton" class="quiet-action" type="button">Regenerate</button>
             <button id="claudeCloseButton" class="ghost-button" type="button">Close</button>
           </div>
         </div>

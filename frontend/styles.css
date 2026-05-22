@@ -517,12 +517,26 @@ h3 {
   color: var(--nav);
 }
 
+.quiet-action {
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 9px 10px;
+}
+
+.quiet-action:hover {
+  background: #f7faf8;
+  border-color: var(--line);
+  color: var(--brand-dark);
+  transform: none;
+}
+
 #newProjectTopButton,
 #createProjectButton,
 #generateBpButton,
-#saveBpAssumptionsButton,
 #generateBpBuilderButton,
-#saveBpFinalButton,
 #generateBpFinalButton,
 #generateBpOutputButton,
 #bpWizardNextButton,
@@ -536,9 +550,7 @@ h3 {
 #newProjectTopButton:hover,
 #createProjectButton:hover,
 #generateBpButton:hover,
-#saveBpAssumptionsButton:hover,
 #generateBpBuilderButton:hover,
-#saveBpFinalButton:hover,
 #generateBpFinalButton:hover,
 #generateBpOutputButton:hover,
 #bpWizardNextButton:hover,
@@ -736,6 +748,46 @@ h3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(160px, 1fr));
   gap: 10px;
+}
+
+.more-actions {
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.more-actions summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  list-style: none;
+}
+
+.more-actions summary::-webkit-details-marker {
+  display: none;
+}
+
+.more-actions summary::after {
+  content: "+";
+  color: var(--brand);
+  margin-left: 8px;
+}
+
+.more-actions[open] summary::after {
+  content: "-";
+}
+
+.compact-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.compact-actions .secondary-button {
+  font-size: 13px;
+  padding: 8px 10px;
 }
 
 .model-note {
