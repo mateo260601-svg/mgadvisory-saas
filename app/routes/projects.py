@@ -6,8 +6,9 @@ CRUD endpoints for projects: create, list, get, update, archive.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
+from app.routes.auth import account_from_request
 from app.schemas.project_schema import ProjectCreate, ProjectUpdate
 from app.services.project_service import (
     archive_project,
@@ -22,13 +23,13 @@ router = APIRouter(prefix="/api/projects", tags=["projects"])
 
 
 @router.get("")
-def api_list_projects():
-    return {"projects": list_projects()}
+def api_list_projects(request: Request):
+    return {"projects": list_projects(account_from_request(request))}
 
 
 @router.post("")
-def api_create_project(payload: ProjectCreate):
-    project = create_project(payload)
+def api_create_project(payload: ProjectCreate, request: Request):
+    project = create_project(payload, account_from_request(request))
     return {"project": project}
 
 

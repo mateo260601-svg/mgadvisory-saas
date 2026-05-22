@@ -29,6 +29,7 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 GOOGLE_SCOPES = "openid email profile"
 COOKIE_NAME = "mg_google_user"
+LICENSE_ACCOUNT = "license:local-demo"
 
 
 class LoginRequest(BaseModel):
@@ -148,6 +149,15 @@ def session(request: Request):
     if not payload:
         return {"ok": False, "method": None, "user": None}
     return {"ok": True, "method": "google", "user": payload}
+
+
+def account_from_request(request: Request) -> str:
+    cookie = request.cookies.get(COOKIE_NAME)
+    payload = _verify_signed_payload(cookie, max_age_seconds=7 * 24 * 60 * 60) if cookie else None
+    if payload and payload.get("email"):
+        return str(payload["email"]).strip().lower()
+    account = request.headers.get("X-MG-Account", "").strip().lower()
+    return account or LICENSE_ACCOUNT
 
 
 @router.post("/api/auth/google/logout")

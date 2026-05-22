@@ -23,7 +23,7 @@ def project_metadata_path(project_id: str) -> Path:
     return project_dir(project_id) / "project.json"
 
 
-def create_project(payload: ProjectCreate) -> dict:
+def create_project(payload: ProjectCreate, owner_email: str | None = None) -> dict:
     now = datetime.now(timezone.utc).isoformat()
     project_id = uuid4().hex[:12]
     directory = project_dir(project_id)
@@ -41,6 +41,7 @@ def create_project(payload: ProjectCreate) -> dict:
         "country": payload.country.strip(),
         "description": payload.description.strip(),
         "notes": payload.notes.strip(),
+        "owner_email": (owner_email or "license:local-demo").strip().lower(),
         "created_at": now,
         "updated_at": now,
         "status": "active",
@@ -49,13 +50,21 @@ def create_project(payload: ProjectCreate) -> dict:
     return project
 
 
-def list_projects() -> list[dict]:
+def list_projects(owner_email: str | None = None) -> list[dict]:
     projects = []
     if not PROJECTS_DIR.exists():
         return projects
     for path in sorted(PROJECTS_DIR.glob("*/project.json")):
         try:
-            projects.append(_read_json(path))
+            project = _read_json(path)
+            owner = str(project.get("owner_email", "")).strip().lower()
+            if owner_email and not owner:
+                project["owner_email"] = owner_email.strip().lower()
+                _write_json(path, project)
+                owner = project["owner_email"]
+            if owner_email and owner and owner != owner_email.strip().lower():
+                continue
+            projects.append(project)
         except Exception:
             continue
     return sorted(projects, key=lambda item: item.get("created_at", ""), reverse=True)

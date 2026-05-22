@@ -129,9 +129,9 @@
         <section id="dashboardView" class="view active-view">
           <section class="dashboard-hero">
             <div>
-              <p class="eyebrow">Finance command centre</p>
-              <h3>Build institutional BP, debt and deck outputs from one controlled workspace.</h3>
-              <p class="muted">Create a dossier, upload source files, ask Claude to normalize the historicals, then generate formula-driven Excel and PPT deliverables.</p>
+              <p class="eyebrow">Workspace cockpit</p>
+              <h3>Start from a dossier, then move through data, assumptions and outputs.</h3>
+              <p class="muted">This dashboard is your operating queue: choose the active company, complete historicals, configure the BP, then produce Excel and presentation deliverables.</p>
             </div>
             <div class="dashboard-hero-actions">
               <button data-view-button="libraryView">Create dossier</button>
@@ -140,19 +140,19 @@
           </section>
           <div class="metric-grid">
             <div class="metric-card">
-              <span>Total projects</span>
+              <span>Active dossiers</span>
               <strong id="projectCount">0</strong>
             </div>
             <div class="metric-card">
-              <span>Active project</span>
+              <span>Selected dossier</span>
               <strong id="activeProjectMetric">None</strong>
             </div>
             <div class="metric-card">
-              <span>Excel model</span>
-              <strong id="modelStatusMetric">31k+ formulas</strong>
+              <span>BP engine</span>
+              <strong id="modelStatusMetric">59k formulas</strong>
             </div>
             <div class="metric-card">
-              <span>AI layer</span>
+              <span>Claude layer</span>
               <strong id="aiStatusMetric">Checking</strong>
             </div>
           </div>
@@ -161,8 +161,8 @@
             <div class="panel wide">
               <div class="panel-head">
                 <div>
-                  <p class="eyebrow">Pipeline</p>
-                  <h3>Recent dossiers</h3>
+                  <p class="eyebrow">Dossier pipeline</p>
+                  <h3>Current work queue</h3>
                 </div>
                 <button class="secondary-button" data-view-button="libraryView">Open library</button>
               </div>
@@ -170,14 +170,13 @@
             </div>
 
             <div class="panel">
-              <p class="eyebrow">System</p>
-              <h3>Modules</h3>
-              <div class="module-list">
-                <div><span>BP Model</span><strong>Online</strong></div>
-                <div><span>Debt Engine</span><strong>75 instruments</strong></div>
-                <div><span>QoE Engine</span><strong>Online</strong></div>
-                <div><span>Restructuring</span><strong>10 options</strong></div>
-                <div><span>Claude Brief</span><strong id="aiModuleStatus">Checking</strong></div>
+              <p class="eyebrow">Next actions</p>
+              <h3>Workspace flow</h3>
+              <div class="action-flow">
+                <button class="flow-step" data-view-button="libraryView"><span>1</span><strong>Project library</strong><em id="dashboardAccountName">Workspace</em></button>
+                <button class="flow-step" data-view-button="projectView"><span>2</span><strong>Upload data room</strong><em id="dashboardActiveProject">No active dossier</em></button>
+                <button class="flow-step" data-view-button="bpBuilderView"><span>3</span><strong>Configure BP</strong><em id="dashboardBpStatus">Select dossier</em></button>
+                <button class="flow-step" data-view-button="outputsView"><span>4</span><strong>Generate outputs</strong><em id="dashboardOutputStatus">No dossier selected</em></button>
               </div>
             </div>
           </section>
@@ -189,6 +188,7 @@
             <div class="panel">
               <p class="eyebrow">Create</p>
               <h3>New investment dossier</h3>
+              <p class="muted library-account">Saved under <strong id="libraryAccountLabel">Workspace</strong></p>
               <label for="companyName">Company</label>
               <input id="companyName" placeholder="Portfolio Company Ltd" />
               <label for="projectType">Project type</label>
@@ -213,8 +213,9 @@
             <div class="panel wide">
               <div class="panel-head">
                 <div>
-                  <p class="eyebrow">Library</p>
+                  <p class="eyebrow">Account library</p>
                   <h3>Project dossiers</h3>
+                  <p id="libraryProjectCount" class="muted">0 active dossiers</p>
                 </div>
                 <input id="projectSearch" class="search-input" placeholder="Search company or type" />
               </div>
@@ -547,12 +548,27 @@
         <section id="outputsView" class="view">
           <section class="workbench">
             <div class="panel wide">
-              <p class="eyebrow">Generation</p>
-              <h3>Institutional deliverables</h3>
-              <div class="output-grid">
-                <button id="generateBpOutputButton">Excel BP model</button>
-                <button id="generateLenderDeckButton" class="secondary-button">Lender presentation</button>
-                <button id="generateImDeckButton" class="secondary-button">IM / M&A deck</button>
+              <p class="eyebrow">Deliverable centre</p>
+              <h3>Generate banker-ready outputs</h3>
+              <div class="deliverable-grid">
+                <article class="deliverable-card primary-deliverable">
+                  <span>Excel</span>
+                  <strong>Business plan model</strong>
+                  <p>Formula-driven monthly/annual 3FS, debt schedule, covenants, checks and assumption map.</p>
+                  <button id="generateBpOutputButton">Generate Excel BP</button>
+                </article>
+                <article class="deliverable-card">
+                  <span>PPTX</span>
+                  <strong>Lender presentation</strong>
+                  <p>Credit-focused deck using BP outputs, debt capacity and covenant narrative.</p>
+                  <button id="generateLenderDeckButton" class="secondary-button">Generate lender deck</button>
+                </article>
+                <article class="deliverable-card">
+                  <span>PPTX</span>
+                  <strong>IM / M&A deck</strong>
+                  <p>Investment memorandum pack with company profile, market, financials and transaction story.</p>
+                  <button id="generateImDeckButton" class="secondary-button">Generate IM deck</button>
+                </article>
               </div>
               <details class="more-actions">
                 <summary>More deliverables</summary>

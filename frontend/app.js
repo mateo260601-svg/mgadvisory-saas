@@ -28,6 +28,9 @@ const MAX_HISTORICAL_LINES = 24;
 
 // ── API helper ────────────────────────────────────────────────────────────────
 async function api(path, options = {}) {
+  const headers = new Headers(options.headers || {});
+  if (state.user?.email) headers.set("X-MG-Account", accountKey());
+  options.headers = headers;
   const response = await fetch(path, options);
   const text = await response.text();
   let payload = {};
@@ -48,6 +51,10 @@ function requireUnlocked() {
 
 function activeProject() {
   return state.projects.find((p) => p.id === state.activeProjectId) || null;
+}
+
+function accountKey() {
+  return String(state.user?.email || "license:local-demo").trim().toLowerCase();
 }
 
 // ── Redirect overlay ──────────────────────────────────────────────────────────
@@ -74,7 +81,7 @@ async function login(event) {
       body: JSON.stringify({ license_key: $("licenseKey").value }),
     });
     state.unlocked = payload.ok;
-    state.user = { name: "License user", email: "license access", picture: "" };
+    state.user = { name: "License user", email: "license:local-demo", picture: "" };
     enterWorkspace("License active");
   } catch (error) {
     $("loginMessage").textContent = error.message;
@@ -238,11 +245,11 @@ async function loadAiStatus() {
     const status = await api("/api/ai/status");
     const label = status.configured ? "Claude ready" : "Fallback mode";
     $("aiStatusMetric").textContent = label;
-    $("aiModuleStatus").textContent = label;
+    if ($("aiModuleStatus")) $("aiModuleStatus").textContent = label;
     if ($("aiTemplateStatus")) $("aiTemplateStatus").textContent = label;
   } catch (_) {
     $("aiStatusMetric").textContent = "Offline";
-    $("aiModuleStatus").textContent = "Offline";
+    if ($("aiModuleStatus")) $("aiModuleStatus").textContent = "Offline";
   }
 }
 
@@ -1251,9 +1258,17 @@ function renderUserBadge() {
 }
 
 function renderMetrics() {
-  $("projectCount").textContent = state.projects.length;
   const project = activeProject();
+  const activeCount = state.projects.filter((p) => (p.status || "active") === "active").length;
+  const bpReady = project ? "Ready to configure" : "Select dossier";
+  $("projectCount").textContent = activeCount;
   $("activeProjectMetric").textContent = project ? project.company_name : "None";
+  if ($("dashboardAccountName")) $("dashboardAccountName").textContent = state.user?.email || "License workspace";
+  if ($("dashboardActiveProject")) $("dashboardActiveProject").textContent = project ? project.company_name : "No active dossier";
+  if ($("dashboardBpStatus")) $("dashboardBpStatus").textContent = bpReady;
+  if ($("dashboardOutputStatus")) $("dashboardOutputStatus").textContent = project ? "Available after generation" : "No dossier selected";
+  if ($("libraryAccountLabel")) $("libraryAccountLabel").textContent = state.user?.email || "License workspace";
+  if ($("libraryProjectCount")) $("libraryProjectCount").textContent = `${activeCount} active dossier${activeCount === 1 ? "" : "s"}`;
 }
 
 function renderProjectTables() {
