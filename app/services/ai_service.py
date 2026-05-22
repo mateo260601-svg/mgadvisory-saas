@@ -50,6 +50,8 @@ def chat_with_claude(project: dict, financials: dict, message: str, history: lis
     prompt = _chat_prompt(project, financials, message, history)
     try:
         reply = _call_claude(prompt, max_tokens=2200)
+        if not reply.strip():
+            raise RuntimeError("Claude API returned an empty answer")
         return {"configured": True, "source": "claude", "reply": reply}
     except Exception as exc:
         return {
@@ -145,7 +147,7 @@ def _call_claude(prompt: str, max_tokens: int = 1400) -> str:
         method="POST",
     )
     try:
-        with urlopen(request, timeout=45) as response:
+        with urlopen(request, timeout=25) as response:
             data = json.loads(response.read().decode("utf-8"))
     except HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="ignore")

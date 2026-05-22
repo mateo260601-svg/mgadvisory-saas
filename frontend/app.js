@@ -25,7 +25,12 @@ const MAX_HISTORICAL_LINES = 24;
 async function api(path, options = {}) {
   const response = await fetch(path, options);
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : {};
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch (_) {
+    payload = { detail: text || "Empty server response" };
+  }
   if (!response.ok) {
     throw new Error(payload.detail || `Request failed (${response.status})`);
   }
@@ -333,24 +338,40 @@ function toggleClaudePanel(forceOpen) {
 
 function addClaudeMessage(role, text) {
   const target = $("claudeMessages");
-  if (!target) return;
+  if (!target) return null;
   const div = document.createElement("div");
   div.className = `claude-message ${role}`;
   div.textContent = text;
   target.appendChild(div);
   target.scrollTop = target.scrollHeight;
+  return div;
+}
+
+async function activeProjectForClaude() {
+  let project = activeProject();
+  if (!project) {
+    await loadProjects();
+    renderAll();
+    project = activeProject();
+  }
+  if (!project) {
+    throw new Error("Create or select a project before chatting with Claude.");
+  }
+  return project;
 }
 
 async function sendClaudeMessage() {
+  let pending = null;
   try {
     requireUnlocked();
-    const project = activeProject();
-    if (!project) throw new Error("Select a project first.");
+    const project = await activeProjectForClaude();
     const message = $("claudeInput").value.trim();
     if (!message) throw new Error("Write a message for Claude.");
     $("claudeInput").value = "";
     addClaudeMessage("user", message);
+    pending = addClaudeMessage("assistant", "Claude is thinking...");
     $("claudeResult").textContent = "Claude is thinking...";
+    $("claudeSendButton").disabled = true;
     const payload = await api(`/api/ai/projects/${project.id}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -359,18 +380,22 @@ async function sendClaudeMessage() {
     const reply = payload.reply || "No response.";
     state.claudeHistory.push({ role: "user", content: message }, { role: "assistant", content: reply });
     state.claudeHistory = state.claudeHistory.slice(-16);
-    addClaudeMessage("assistant", reply);
+    if (pending) pending.textContent = reply;
     $("claudeResult").textContent = payload.source === "claude" ? "Claude response ready." : "Fallback response ready.";
   } catch (error) {
+    const errorMessage = `Claude could not answer yet: ${error.message}`;
+    if (pending) pending.textContent = errorMessage;
+    else addClaudeMessage("assistant", errorMessage);
     $("claudeResult").textContent = error.message;
+  } finally {
+    $("claudeSendButton").disabled = false;
   }
 }
 
 async function uploadFileFromClaude() {
   try {
     requireUnlocked();
-    const project = activeProject();
-    if (!project) throw new Error("Select a project first.");
+    const project = await activeProjectForClaude();
     const file = $("claudeFileInput").files[0];
     if (!file) throw new Error("Choose a PDF, Excel or CSV file first.");
     const body = new FormData();
@@ -390,18 +415,21 @@ async function uploadFileFromClaude() {
     $("claudeResult").textContent = "File attached to project.";
     await refreshWorkspace();
   } catch (error) {
+    addClaudeMessage("assistant", `Upload failed: ${error.message}`);
     $("claudeResult").textContent = error.message;
   }
 }
 
 async function applyClaudeToBp() {
+  let pending = null;
   try {
     requireUnlocked();
-    const project = activeProject();
-    if (!project) throw new Error("Select a project first.");
+    const project = await activeProjectForClaude();
     const message = $("claudeInput").value.trim() || "Extract all useful financial statements, debt and BP assumptions from this conversation and apply them to the BP model.";
     addClaudeMessage("user", `[Apply to BP] ${message}`);
+    pending = addClaudeMessage("assistant", "Claude is extracting and applying the data to the BP...");
     $("claudeResult").textContent = "Extracting and applying to BP data...";
+    $("claudeApplyButton").disabled = true;
     const payload = await api(`/api/ai/projects/${project.id}/chat/apply`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -409,7 +437,8 @@ async function applyClaudeToBp() {
     });
     populateBpBuilder(payload.assumptions || {});
     updateExtractionStatus(payload.extraction);
-    addClaudeMessage("assistant", "Applied to BP data. Historical actuals and normalized financials were updated; generate a new Excel BP to push this into the workbook.");
+    const appliedMessage = "Applied to BP data. Historical actuals and normalized financials were updated; generate a new Excel BP to push this into the workbook.";
+    if (pending) pending.textContent = appliedMessage;
     setResult("bpBuilderResult", {
       status: "Claude chat applied to BP",
       periods: payload.normalized?.periods,
@@ -418,7 +447,12 @@ async function applyClaudeToBp() {
     $("claudeResult").textContent = "Applied to BP data.";
     await refreshWorkspace();
   } catch (error) {
+    const errorMessage = `Claude could not apply the data: ${error.message}`;
+    if (pending) pending.textContent = errorMessage;
+    else addClaudeMessage("assistant", errorMessage);
     $("claudeResult").textContent = error.message;
+  } finally {
+    $("claudeApplyButton").disabled = false;
   }
 }
 
@@ -1227,6 +1261,12 @@ $("claudeCloseButton").addEventListener("click", () => toggleClaudePanel(false))
 $("claudeUploadButton").addEventListener("click", uploadFileFromClaude);
 $("claudeSendButton").addEventListener("click", sendClaudeMessage);
 $("claudeApplyButton").addEventListener("click", applyClaudeToBp);
+$("claudeInput").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendClaudeMessage();
+  }
+});
 $("refreshButton").addEventListener("click", refreshWorkspace);
 $("newProjectTopButton").addEventListener("click", () => showView("libraryView"));
 $("createProjectButton").addEventListener("click", createProject);

@@ -468,9 +468,8 @@ h3 {
   box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.12);
   color: #7d3f2d;
   display: inline-flex;
-  gap: 9px;
   min-height: 44px;
-  padding: 8px 13px 8px 9px;
+  padding: 7px 12px;
 }
 
 .claude-nav-button:hover,
@@ -481,20 +480,28 @@ h3 {
   color: #663120;
 }
 
-.claude-mark {
-  align-items: center;
-  background: #cc785c;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.38);
-  color: #fff8ef;
+.claude-logo {
   display: inline-flex;
-  font-family: Georgia, serif;
-  font-size: 18px;
-  font-weight: 800;
-  height: 28px;
-  justify-content: center;
-  line-height: 1;
-  width: 28px;
+  height: 30px;
+  width: 116px;
+}
+
+.claude-logo svg {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.claude-logo text {
+  fill: #111;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.claude-burst {
+  fill: var(--amber);
 }
 
 .secondary-button {
