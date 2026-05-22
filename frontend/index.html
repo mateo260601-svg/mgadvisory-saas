@@ -30,20 +30,38 @@
 
       <div class="login-brand">
         <img class="brand-logo hero-logo" src="/frontend/assets/mg-strategic-finance-ai-logo.png" alt="MG Strategic Finance AI" />
-        <p class="eyebrow">MG Advisory</p>
-        <h1>Strategic Finance AI</h1>
-        <p class="login-copy">Institutional business planning, debt analytics and transaction outputs in one controlled workspace.</p>
+        <p class="eyebrow">Institutional finance operating system</p>
+        <h1>From source files to banker-grade BP packs.</h1>
+        <p class="login-copy">A controlled SaaS workspace for historical extraction, driver-based business planning, debt modelling, covenant analysis and investment committee outputs.</p>
+        <div class="login-product-preview" aria-hidden="true">
+          <div class="preview-topline">
+            <span>Live model preview</span>
+            <strong>BP engine online</strong>
+          </div>
+          <div class="preview-grid">
+            <div><span>Revenue CAGR</span><strong>14.8%</strong></div>
+            <div><span>EBITDA margin</span><strong>22.4%</strong></div>
+            <div><span>Net debt / EBITDA</span><strong>2.7x</strong></div>
+          </div>
+          <div class="preview-table">
+            <span>Historical actuals</span><i></i><i></i><i></i>
+            <span>Revenue build</span><i></i><i></i><i></i>
+            <span>Debt schedule</span><i></i><i></i><i></i>
+            <span>Covenant checks</span><i></i><i></i><i></i>
+          </div>
+        </div>
         <div class="login-proof-grid">
-          <span>BP models</span>
-          <span>Debt packs</span>
-          <span>QoE outputs</span>
-          <span>Board decks</span>
+          <span>59k formulas</span>
+          <span>53 Excel tabs</span>
+          <span>Claude extraction</span>
+          <span>PPTX outputs</span>
         </div>
       </div>
 
       <form id="loginForm" class="login-card">
-        <p class="eyebrow">Secure Access</p>
-        <h2>Sign in</h2>
+        <p class="eyebrow">Secure workspace</p>
+        <h2>Access your finance OS</h2>
+        <p class="login-card-copy">Use Google SSO for a personal workspace, or the demo license for internal testing.</p>
 
         <!-- Google SSO button -->
         <button id="googleLoginButton" class="google-button" type="button" disabled>
@@ -68,6 +86,11 @@
         <label for="licenseKey">License key</label>
         <input id="licenseKey" type="password" value="MG-ADVISORY-DEMO-2026" autocomplete="current-password" />
         <button type="submit" id="licenseSubmitButton">Enter workspace</button>
+        <div class="login-assurance">
+          <span>Project-level storage</span>
+          <span>Formula-driven Excel</span>
+          <span>Railway-ready deployment</span>
+        </div>
 
         <p id="loginMessage" class="message"></p>
       </form>
@@ -130,12 +153,34 @@
           <section class="dashboard-hero">
             <div>
               <p class="eyebrow">Workspace cockpit</p>
-              <h3>Start from a dossier, then move through data, assumptions and outputs.</h3>
-              <p class="muted">This dashboard is your operating queue: choose the active company, complete historicals, configure the BP, then produce Excel and presentation deliverables.</p>
+              <h3 id="dashboardHeroTitle">Turn one active dossier into a complete finance pack.</h3>
+              <p id="dashboardHeroCopy" class="muted">Choose the active company, load source files, configure assumptions, then generate Excel and presentation outputs.</p>
             </div>
             <div class="dashboard-hero-actions">
               <button data-view-button="libraryView">Start</button>
               <button class="secondary-button" data-view-button="bpBuilderView">Open BP Builder</button>
+            </div>
+          </section>
+          <section class="dashboard-command-grid">
+            <div class="command-card primary-command">
+              <p class="eyebrow">Next best action</p>
+              <h3 id="dashboardNextAction">Create or select a dossier</h3>
+              <p id="dashboardNextActionCopy" class="muted">Your projects are saved by account. Start in the library, then continue into data upload and BP setup.</p>
+              <button id="dashboardPrimaryAction" data-view-button="libraryView">Open project library</button>
+            </div>
+            <div class="command-card">
+              <p class="eyebrow">Model path</p>
+              <div class="readiness-mini">
+                <span><strong>1</strong>Dossier</span>
+                <span><strong>2</strong>Data</span>
+                <span><strong>3</strong>BP</span>
+                <span><strong>4</strong>Outputs</span>
+              </div>
+            </div>
+            <div class="command-card">
+              <p class="eyebrow">Active workspace</p>
+              <h3 id="dashboardWorkspaceLabel">No dossier selected</h3>
+              <p id="dashboardWorkspaceMeta" class="muted">Select a project to unlock the operating workflow.</p>
             </div>
           </section>
           <div class="metric-grid">

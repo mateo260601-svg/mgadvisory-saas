@@ -1263,6 +1263,20 @@ function renderMetrics() {
   const bpReady = project ? "Ready to configure" : "Select dossier";
   $("projectCount").textContent = activeCount;
   $("activeProjectMetric").textContent = project ? project.company_name : "None";
+  if ($("dashboardHeroTitle")) $("dashboardHeroTitle").textContent = project ? `${project.company_name}: move from data to outputs.` : "Turn one active dossier into a complete finance pack.";
+  if ($("dashboardHeroCopy")) $("dashboardHeroCopy").textContent = project
+    ? `${project.project_type} | ${project.currency} | ${project.id}. Continue with source files, assumptions, debt and deliverables.`
+    : "Choose the active company, load source files, configure assumptions, then generate Excel and presentation outputs.";
+  if ($("dashboardNextAction")) $("dashboardNextAction").textContent = project ? "Continue BP configuration" : "Create or select a dossier";
+  if ($("dashboardNextActionCopy")) $("dashboardNextActionCopy").textContent = project
+    ? "The fastest path is to review uploaded data, complete the BP Builder, then generate the institutional Excel pack."
+    : "Your projects are saved by account. Start in the library, then continue into data upload and BP setup.";
+  if ($("dashboardPrimaryAction")) {
+    $("dashboardPrimaryAction").textContent = project ? "Open BP Builder" : "Open project library";
+    $("dashboardPrimaryAction").dataset.viewButton = project ? "bpBuilderView" : "libraryView";
+  }
+  if ($("dashboardWorkspaceLabel")) $("dashboardWorkspaceLabel").textContent = project ? project.company_name : "No dossier selected";
+  if ($("dashboardWorkspaceMeta")) $("dashboardWorkspaceMeta").textContent = project ? `${project.project_type} | ${project.currency} | updated ${formatDate(project.updated_at)}` : "Select a project to unlock the operating workflow.";
   if ($("dashboardAccountName")) $("dashboardAccountName").textContent = state.user?.email || "License workspace";
   if ($("dashboardActiveProject")) $("dashboardActiveProject").textContent = project ? project.company_name : "No active dossier";
   if ($("dashboardBpStatus")) $("dashboardBpStatus").textContent = bpReady;
