@@ -6,6 +6,7 @@ from app.engines.debt_engine import debt_type_options
 
 
 PERIODS = 60
+QUARTERS = PERIODS // 3
 MAX_DEBT_TRANCHES = 10
 FIRST_PERIOD_COL = 4
 FINANCIAL_MONTHLY_COL = 10
@@ -47,6 +48,8 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     admin = wb.create_sheet("Admin")
     group_assumptions = wb.create_sheet("Group Assumptions")
     cover = wb.create_sheet("Cover")
+    model_guide = wb.create_sheet("Model Guide")
+    macro_inputs = wb.create_sheet("Macro Inputs")
     data_room = wb.create_sheet("Data Room")
     control = wb.create_sheet("Control Panel")
     assumption_map = wb.create_sheet("Assumption Input Map")
@@ -69,6 +72,9 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     detail_lines = wb.create_sheet("Detailed Forecast Lines")
     covenants = wb.create_sheet("Covenants")
     outputs = wb.create_sheet("Outputs")
+    summary_quarter = wb.create_sheet("Summary Financials Quarter")
+    summary_annual = wb.create_sheet("Summary Financials Annual")
+    ebitda_bridges = wb.create_sheet("EBITDA Bridges")
     packaged = wb.create_sheet("Packaged Output")
     ic_summary = wb.create_sheet("IC Summary")
     restructuring = wb.create_sheet("Restructuring Options")
@@ -83,6 +89,8 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_admin(admin, project, styles)
     _build_group_assumptions(group_assumptions, project, styles, DataValidation)
     _build_cover(cover, project, styles)
+    _build_model_guide(model_guide, styles)
+    _build_macro_inputs(macro_inputs, styles)
     _build_data_room(data_room, project, financials, styles)
     _build_control(control, project, styles, DataValidation, assumptions)
     _build_assumption_input_map(assumption_map, assumptions, styles)
@@ -108,6 +116,9 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_detail_forecast_lines(detail_lines, styles)
     _build_covenants(covenants, styles, assumptions)
     _build_outputs(outputs, styles)
+    _build_summary_financials_quarter(summary_quarter, styles)
+    _build_summary_financials_annual(summary_annual, styles)
+    _build_ebitda_bridges(ebitda_bridges, styles)
     _build_packaged_output(packaged, project, styles)
     _build_ic_summary(ic_summary, project, styles)
     _build_restructuring_options(restructuring, styles)
@@ -212,6 +223,75 @@ def _build_cover(ws, project: dict, styles: dict) -> None:
         ws.cell(row, 3, value)
     ws["B22"] = "Operating Rule"
     ws["C22"] = "Inputs live in blue cells. Calculations and outputs are formula-driven."
+
+
+def _build_model_guide(ws, styles: dict) -> None:
+    ws["B2"] = "Model Guide"
+    ws["B2"].font = styles["title_font"]
+    ws["B4"] = "Workbook Flow"
+    ws["B4"].font = styles["section_font"]
+    _table_header(ws, 6, ["Step", "Tab / Section", "Purpose", "Colour / Rule"], styles)
+    rows = [
+        ("1", "Control Panel / Macro Inputs", "Set dates, scenario, currency and core case controls.", "Blue = user inputs"),
+        ("2", "Historical Detail Input", "Claude/manual historicals mapped to detailed 3FS lines.", "Blue inputs, green calculated actuals"),
+        ("3", "Revenue and cost build", "Product, COGS, headcount and opex drivers.", "No hardcoded formulas"),
+        ("4", "Working capital / capex / debt", "Cash conversion, depreciation and debt instruments.", "Debt supports cash, PIK and frequency"),
+        ("5", "Financial Statements", "Annual left, grouped monthly detail right.", "Green = review outputs"),
+        ("6", "Summary Financials Quarter / Annual", "BOLT-style banker output sheets for review and export.", "Formula-linked"),
+        ("7", "EBITDA Bridges / Checks", "QoE-style bridge and model integrity controls.", "All checks should show OK"),
+    ]
+    for row_idx, values in enumerate(rows, start=7):
+        for col_idx, value in enumerate(values, start=2):
+            ws.cell(row_idx, col_idx, value)
+
+    ws["B17"] = "Distribution Rules"
+    ws["B17"].font = styles["section_font"]
+    rules = [
+        "Review the Checks sheet before sending any external model.",
+        "Use the Summary Financials Quarter and Summary Financials Annual tabs for banker-style review.",
+        "Actuals should be reviewed in Historical Detail Input before relying on the forecast bridge.",
+        "Debt tranches should be entered individually, not netted into one generic facility.",
+    ]
+    for row_idx, rule in enumerate(rules, start=19):
+        ws.cell(row_idx, 2, row_idx - 18)
+        ws.cell(row_idx, 3, rule)
+
+
+def _build_macro_inputs(ws, styles: dict) -> None:
+    ws["B2"] = "Macro Inputs"
+    ws["B2"].font = styles["section_font"]
+    ws["B4"] = "Model Control Links"
+    ws["B4"].font = styles["section_font"]
+    _table_header(ws, 6, ["Input", "Value", "Source / Rule", "Reviewer Note"], styles)
+    rows = [
+        ("Company", "='Control Panel'!$C$5", "Control Panel", "Client / target name"),
+        ("Currency", "='Control Panel'!$C$6", "Control Panel", "Workbook currency"),
+        ("Scenario", "='Control Panel'!$C$7", "Control Panel", "Base / downside / upside"),
+        ("Forecast Start", "='Control Panel'!$C$8", "Control Panel", "First model month"),
+        ("Actuals End", "='Control Panel'!$C$9", "Control Panel", "Latest historical period"),
+        ("Forecast Months", "='Control Panel'!$C$10", "Control Panel", "60-month institutional default"),
+        ("Opening Cash", "='Control Panel'!$C$11", "Control Panel", "Opening liquidity"),
+        ("Opening Debt", "='Control Panel'!$C$12", "Control Panel", "Opening gross debt"),
+        ("Tax Rate", "='Control Panel'!$C$13", "Control Panel", "Applied to PBT"),
+        ("Minimum Cash", "='Control Panel'!$C$14", "Control Panel", "Liquidity sweep floor"),
+        ("Historical Source", "='Control Panel'!$C$15", "Control Panel", "Claude/manual/hybrid"),
+    ]
+    for row_idx, (label, formula, source, note) in enumerate(rows, start=7):
+        ws.cell(row_idx, 2, label)
+        _formula(ws, row_idx, 3, formula, styles, output=True, fmt="0.0%" if label == "Tax Rate" else None)
+        ws.cell(row_idx, 4, source)
+        ws.cell(row_idx, 5, note)
+
+    ws["B22"] = "Timeline"
+    ws["B22"].font = styles["section_font"]
+    _table_header(ws, 24, ["Month #", "Month End", "Fiscal Year", "Quarter", "Actual / Forecast"], styles)
+    for idx in range(PERIODS):
+        row = 25 + idx
+        ws.cell(row, 2, idx + 1)
+        _formula(ws, row, 3, f"='Lists & Dates'!V{idx + 2}", styles, output=True, fmt="mmm-yy")
+        _formula(ws, row, 4, f"=YEAR(C{row})", styles, output=True)
+        _formula(ws, row, 5, f'="Q"&ROUNDUP(MONTH(C{row})/3,0)', styles, output=True)
+        _formula(ws, row, 6, f'=IF(C{row}<=$C$11,"Actual","Forecast")', styles, output=True)
 
 
 def _build_data_room(ws, project: dict, financials: dict, styles: dict) -> None:
@@ -1080,6 +1160,105 @@ def _build_outputs(ws, styles: dict) -> None:
         _formula(ws, row_idx, 3, formula, styles, output=True)
 
 
+def _build_summary_financials_quarter(ws, styles: dict) -> None:
+    ws["B2"] = "Summary Financials Quarter"
+    ws["B2"].font = styles["section_font"]
+    ws["B3"] = "BOLT-style quarterly output sheet. Core metrics link to Financial Statements; detailed lines link to 3FS Detail Output."
+    _table_header(ws, 5, ["Metric"] + [f"Q{(idx % 4) + 1} FY{2026 + idx // 4}" for idx in range(QUARTERS)], styles)
+    rows = _summary_financial_rows(include_details=True)
+    for row_idx, (label, source, mode) in enumerate(rows, start=6):
+        ws.cell(row_idx, 2, label)
+        for quarter_idx in range(QUARTERS):
+            col_idx = 3 + quarter_idx
+            start_month = quarter_idx * 3
+            start_ref = f"INDEX('Lists & Dates'!$V$2:$V$61,{start_month + 1})"
+            end_ref = f"EOMONTH({start_ref},2)"
+            if source.startswith("FS:"):
+                fs_row = int(source.split(":")[1])
+                if mode == "balance":
+                    _formula(ws, row_idx, col_idx, f"=XLOOKUP({end_ref},'Financial Statements'!$J$4:$BQ$4,'Financial Statements'!$J${fs_row}:$BQ${fs_row},0)", styles, output=True)
+                elif mode == "margin":
+                    numerator = int(source.split(":")[1])
+                    _formula(ws, row_idx, col_idx, f'=IFERROR(SUMIFS(\'Financial Statements\'!$J${numerator}:$BQ${numerator},\'Financial Statements\'!$J$4:$BQ$4,">="&{start_ref},\'Financial Statements\'!$J$4:$BQ$4,"<="&{end_ref})/SUMIFS(\'Financial Statements\'!$J$6:$BQ$6,\'Financial Statements\'!$J$4:$BQ$4,">="&{start_ref},\'Financial Statements\'!$J$4:$BQ$4,"<="&{end_ref}),0)', styles, output=True, fmt="0.0%")
+                else:
+                    _formula(ws, row_idx, col_idx, f'=SUMIFS(\'Financial Statements\'!$J${fs_row}:$BQ${fs_row},\'Financial Statements\'!$J$4:$BQ$4,">="&{start_ref},\'Financial Statements\'!$J$4:$BQ$4,"<="&{end_ref})', styles, output=True)
+            else:
+                detail_row = int(source.split(":")[1])
+                _formula(ws, row_idx, col_idx, f'=SUMIFS(\'3FS Detail Output\'!$M${detail_row}:$BT${detail_row},\'3FS Detail Output\'!$M$5:$BT$5,">="&{start_ref},\'3FS Detail Output\'!$M$5:$BT$5,"<="&{end_ref})', styles, output=True)
+
+
+def _build_summary_financials_annual(ws, styles: dict) -> None:
+    ws["B2"] = "Summary Financials Annual"
+    ws["B2"].font = styles["section_font"]
+    ws["B3"] = "Annual banker summary with the same line set as the quarterly output."
+    years = [2026, 2027, 2028, 2029, 2030]
+    _table_header(ws, 5, ["Metric"] + [f"FY{year}" for year in years], styles)
+    rows = _summary_financial_rows(include_details=True)
+    for row_idx, (label, source, mode) in enumerate(rows, start=6):
+        ws.cell(row_idx, 2, label)
+        for col_idx, year in enumerate(years, start=3):
+            if source.startswith("FS:"):
+                fs_row = int(source.split(":")[1])
+                if mode == "balance":
+                    _formula(ws, row_idx, col_idx, f"='Financial Statements'!{_col(col_idx)}{fs_row}", styles, output=True)
+                elif mode == "margin":
+                    _formula(ws, row_idx, col_idx, f"=IFERROR('Financial Statements'!{_col(col_idx)}{fs_row}/'Financial Statements'!{_col(col_idx)}6,0)", styles, output=True, fmt="0.0%")
+                else:
+                    _formula(ws, row_idx, col_idx, f"='Financial Statements'!{_col(col_idx)}{fs_row}", styles, output=True)
+            else:
+                detail_row = int(source.split(":")[1])
+                _formula(ws, row_idx, col_idx, f"='3FS Detail Output'!{_col(col_idx + 4)}{detail_row}", styles, output=True)
+
+
+def _build_ebitda_bridges(ws, styles: dict) -> None:
+    ws["B2"] = "EBITDA Bridges"
+    ws["B2"].font = styles["section_font"]
+    ws["B3"] = "QoE-style EBITDA bridge from revenue to reported/adjusted EBITDA, with annual and quarterly outputs."
+    years = [2026, 2027, 2028, 2029, 2030]
+    _table_header(ws, 5, ["Bridge Line"] + [f"FY{year}" for year in years], styles)
+    bridge_rows = [
+        ("Revenue", "='Summary Financials Annual'!{col}6"),
+        ("COGS", "='Summary Financials Annual'!{col}7"),
+        ("Gross Profit", "='Summary Financials Annual'!{col}8"),
+        ("Payroll", "='Summary Financials Annual'!{col}9"),
+        ("Opex", "='Summary Financials Annual'!{col}10"),
+        ("Reported EBITDA", "='Summary Financials Annual'!{col}11"),
+        ("Non-recurring income", "=-SUMIFS('Historical Detail Input'!$O$6:$O$185,'Historical Detail Input'!$G$6:$G$185,\"Non-recurring income\")/5"),
+        ("Non-recurring costs", "=SUMIFS('Historical Detail Input'!$O$6:$O$185,'Historical Detail Input'!$G$6:$G$185,\"Non-recurring costs\")/5"),
+        ("Run-rate cost savings", "=MAX(0,-'Summary Financials Annual'!{col}10*1.0%)"),
+        ("Management QoE adjustments", "=SUM({col}13:{col}15)"),
+        ("Adjusted EBITDA", "={col}12+{col}16"),
+        ("Adjusted EBITDA margin", "=IFERROR({col}17/{col}7,0)"),
+    ]
+    for row_idx, (label, template) in enumerate(bridge_rows, start=7):
+        ws.cell(row_idx, 2, label)
+        for col_idx in range(3, 8):
+            col = _col(col_idx)
+            fmt = "0.0%" if "margin" in label.lower() else None
+            _formula(ws, row_idx, col_idx, template.format(col=col), styles, output=True, fmt=fmt)
+
+    ws["B23"] = "Quarterly EBITDA Bridge"
+    ws["B23"].font = styles["section_font"]
+    _table_header(ws, 25, ["Bridge Line"] + [f"Q{(idx % 4) + 1} FY{2026 + idx // 4}" for idx in range(QUARTERS)], styles)
+    quarter_rows = [
+        ("Revenue", 6),
+        ("Gross Profit", 8),
+        ("Reported EBITDA", 11),
+        ("Adjusted EBITDA", None),
+        ("Adjusted EBITDA margin", None),
+    ]
+    for row_idx, (label, summary_row) in enumerate(quarter_rows, start=26):
+        ws.cell(row_idx, 2, label)
+        for col_idx in range(3, 3 + QUARTERS):
+            col = _col(col_idx)
+            if summary_row:
+                _formula(ws, row_idx, col_idx, f"='Summary Financials Quarter'!{col}{summary_row}", styles, output=True)
+            elif label == "Adjusted EBITDA":
+                _formula(ws, row_idx, col_idx, f"={col}28+MAX(0,-{col}27*1.0%)", styles, output=True)
+            else:
+                _formula(ws, row_idx, col_idx, f"=IFERROR({col}29/{col}26,0)", styles, output=True, fmt="0.0%")
+
+
 def _build_packaged_output(ws, project: dict, styles: dict) -> None:
     ws["B2"] = f"{project.get('company_name', 'Target Company')} - Packaged Output"
     ws["B2"].font = styles["title_font"]
@@ -1628,6 +1807,37 @@ def _detail_projection_formula(row: int, model_line: str, fs_col: str) -> str:
         f"*'Historical Detail Input'!$P{row}"
         f"/SUMIFS('Historical Detail Input'!$P:$P,'Historical Detail Input'!$F:$F,$E{row}),0)"
     )
+
+
+def _summary_financial_rows(include_details: bool = False) -> list[tuple[str, str, str]]:
+    rows = [
+        ("Revenue", "FS:6", "flow"),
+        ("COGS", "FS:7", "flow"),
+        ("Gross Profit", "FS:8", "flow"),
+        ("Payroll", "FS:9", "flow"),
+        ("Opex", "FS:10", "flow"),
+        ("EBITDA", "FS:11", "flow"),
+        ("EBITDA Margin", "FS:11", "margin"),
+        ("D&A", "FS:12", "flow"),
+        ("EBIT", "FS:13", "flow"),
+        ("Cash Interest", "FS:14", "flow"),
+        ("PBT", "FS:15", "flow"),
+        ("Tax", "FS:16", "flow"),
+        ("Net Income", "FS:17", "flow"),
+        ("Change in NWC", "FS:18", "flow"),
+        ("Capex", "FS:19", "flow"),
+        ("Cash Flow Before Debt", "FS:20", "flow"),
+        ("Debt Amortization / Sweep", "FS:21", "flow"),
+        ("Free Cash Flow", "FS:22", "flow"),
+        ("Closing Cash", "FS:23", "balance"),
+        ("Closing Debt", "FS:24", "balance"),
+        ("Net Debt", "FS:25", "balance"),
+    ]
+    if include_details:
+        templates = _historical_line_templates()
+        for idx, (_statement, category, _subcategory, model_line, detail_line, _sign) in enumerate(templates[:170], start=6):
+            rows.append((f"{category} - {detail_line}", f"DETAIL:{idx}", "flow" if model_line not in ["Cash", "Closing Debt", "Net Debt", "Receivables", "Inventory", "Payables", "Net PPE", "Equity"] else "balance"))
+    return rows
 
 
 def _period_cols() -> range:
