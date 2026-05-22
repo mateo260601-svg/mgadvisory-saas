@@ -1191,6 +1191,10 @@ function initials(value) {
 $("loginForm").addEventListener("submit", login);
 $("googleLoginButton").addEventListener("click", startGoogleLogin);
 $("logoutButton").addEventListener("click", logout);
+$("claudeToggleButton").addEventListener("click", () => toggleClaudePanel());
+$("claudeCloseButton").addEventListener("click", () => toggleClaudePanel(false));
+$("claudeSendButton").addEventListener("click", sendClaudeMessage);
+$("claudeApplyButton").addEventListener("click", applyClaudeToBp);
 $("refreshButton").addEventListener("click", refreshWorkspace);
 $("newProjectTopButton").addEventListener("click", () => showView("libraryView"));
 $("createProjectButton").addEventListener("click", createProject);
