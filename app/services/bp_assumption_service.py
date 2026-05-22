@@ -14,6 +14,7 @@ def default_bp_assumptions(project: dict | None = None) -> dict:
             "scenario": "Base",
             "model_start_date": "2026-01-31",
             "actuals_end_date": "2025-12-31",
+            "historical_source": "Claude extraction",
             "forecast_months": 60,
             "tax_rate": 0.25,
             "opening_cash": 120000,
@@ -26,6 +27,15 @@ def default_bp_assumptions(project: dict | None = None) -> dict:
             {"name": "Recurring revenue", "type": "Recurring", "volume": 60, "price": 700, "volume_growth": 0.012, "price_growth": 0.001},
             {"name": "Projects", "type": "Project", "volume": 40, "price": 600, "volume_growth": 0.006, "price_growth": 0.001},
             {"name": "Other", "type": "Other", "volume": 25, "price": 500, "volume_growth": 0.004, "price_growth": 0.001},
+        ],
+        "historical_actuals": [
+            {"model_line": "Revenue", "detail_line": "Product revenue", "fy2022": 0, "fy2023": 0, "fy2024": 0, "fy2025": 0, "latest_actual": 0},
+            {"model_line": "Revenue", "detail_line": "Service revenue", "fy2022": 0, "fy2023": 0, "fy2024": 0, "fy2025": 0, "latest_actual": 0},
+            {"model_line": "COGS", "detail_line": "Materials", "fy2022": 0, "fy2023": 0, "fy2024": 0, "fy2025": 0, "latest_actual": 0},
+            {"model_line": "Payroll", "detail_line": "Management payroll", "fy2022": 0, "fy2023": 0, "fy2024": 0, "fy2025": 0, "latest_actual": 0},
+            {"model_line": "Opex", "detail_line": "Rent", "fy2022": 0, "fy2023": 0, "fy2024": 0, "fy2025": 0, "latest_actual": 0},
+            {"model_line": "Cash", "detail_line": "Cash at bank", "fy2022": 0, "fy2023": 0, "fy2024": 0, "fy2025": 0, "latest_actual": 0},
+            {"model_line": "Closing Debt", "detail_line": "Senior term loan A", "fy2022": 0, "fy2023": 0, "fy2024": 0, "fy2025": 0, "latest_actual": 0},
         ],
         "cost_base": {
             "cogs_percent": 0.35,

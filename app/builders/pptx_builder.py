@@ -48,6 +48,7 @@ def build_lender_presentation(project: dict, financials: dict, output_path: Path
     _cover(prs, ctx)
     _executive_snapshot(prs, ctx)
     _historical_financials(prs, ctx)
+    _granular_historical_mapping(prs, ctx)
     _bp_output_charts(prs, ctx)
     _revenue_split(prs, ctx)
     _business_plan_bridge(prs, ctx)
@@ -66,9 +67,11 @@ def build_lender_presentation(project: dict, financials: dict, output_path: Path
 def _cover(prs, ctx):
     slide = _blank_slide(prs, ctx, dark=True)
     company = ctx["project"].get("company_name", "Target Company")
+    deck_type = (ctx.get("blueprint") or {}).get("blueprint", {}).get("deck_type", "lender")
+    deck_label = "IM / M&A deck" if deck_type == "im" else "Institutional lender presentation"
     _text(slide, ctx, 0.7, 0.65, 8.1, 0.35, "MG STRATEGIC FINANCE AI", size=10, color=LIGHT_BG, bold=True)
     _text(slide, ctx, 0.7, 1.52, 8.2, 1.1, company, size=34, color=WHITE, bold=True)
-    _text(slide, ctx, 0.72, 2.75, 6.4, 0.7, "Institutional lender presentation | Business plan, debt capacity and restructuring options", size=16, color="DCE4DF")
+    _text(slide, ctx, 0.72, 2.75, 6.4, 0.7, f"{deck_label} | Business plan, debt capacity and strategic options", size=16, color="DCE4DF")
     _metric_band(
         slide,
         ctx,
@@ -129,6 +132,23 @@ def _historical_financials(prs, ctx):
         "Map statutory line items to lender definitions, validate exceptional items, confirm units and reconcile EBITDA to management reporting.",
     )
     _footer(slide, ctx, "Historical extraction")
+
+
+def _granular_historical_mapping(prs, ctx):
+    slide = _blank_slide(prs, ctx)
+    _headline(slide, ctx, "Historical mapping architecture", "Uploaded documents are converted into a granular 3-statement input grid before flowing into the forecast.")
+    rows = [
+        ["Mapping layer", "Granularity", "Model use"],
+        ["Income statement", "Revenue, COGS, payroll, opex, QoE, D&A, interest, tax", "P&L bridge and EBITDA quality"],
+        ["Balance sheet", "Cash, receivables, inventory, PPE, intangibles, payables, tax, equity", "Working capital and opening balance sheet"],
+        ["Debt schedule", "RCF, TLA, TLB, unitranche, second lien, PIK, seller note, leases", "Debt roll-forward, interest and covenant outputs"],
+        ["Cash flow", "NWC, capex, drawdowns, amortisation, bullets, sweeps, equity", "Free cash flow and liquidity runway"],
+    ]
+    _table(slide, ctx, 0.65, 1.55, 7.7, 3.55, rows)
+    _callout(slide, ctx, 8.65, 1.55, 3.85, 1.35, "Excel control", "The workbook includes a 180-line Historical Detail Input tab plus a formula-driven 3FS Detail Output tab.")
+    _callout(slide, ctx, 8.65, 3.25, 3.85, 1.55, "Claude role", "Claude should extract and classify source lines; the analyst can then review, override and map each line before output generation.")
+    _callout(slide, ctx, 8.65, 5.15, 3.85, 1.05, "Audit trail", "Each line keeps source mode, source file and notes fields for diligence review.")
+    _footer(slide, ctx, "Historical mapping")
 
 
 def _business_plan_bridge(prs, ctx):

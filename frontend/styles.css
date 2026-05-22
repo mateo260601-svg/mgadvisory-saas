@@ -729,26 +729,46 @@ h3 {
   overflow-x: auto;
 }
 
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: -4px 0 12px;
+}
+
+.remove-row-button {
+  border: 1px solid #d7b6b6;
+  background: #fff7f7;
+  color: #8b2c2c;
+  font-size: 12px;
+  padding: 8px;
+}
+
 .builder-row {
   display: grid;
-  grid-template-columns: 1.25fr 0.95fr repeat(4, minmax(96px, 0.7fr));
+  grid-template-columns: 1.25fr 0.95fr repeat(4, minmax(96px, 0.7fr)) 76px;
   gap: 8px;
-  min-width: 760px;
+  min-width: 840px;
 }
 
 #headcountTable .builder-row {
-  grid-template-columns: 1.2fr repeat(4, minmax(110px, 0.8fr));
-  min-width: 680px;
+  grid-template-columns: 1.2fr repeat(4, minmax(110px, 0.8fr)) 76px;
+  min-width: 760px;
 }
 
 #costItemTable .builder-row {
-  grid-template-columns: 1.3fr 0.9fr repeat(3, minmax(110px, 0.75fr));
-  min-width: 720px;
+  grid-template-columns: 1.3fr 0.9fr repeat(3, minmax(110px, 0.75fr)) 76px;
+  min-width: 800px;
+}
+
+#historicalActualsTable .builder-row {
+  grid-template-columns: 1fr 1.4fr repeat(5, minmax(100px, 0.7fr)) 76px;
+  min-width: 1040px;
 }
 
 #debtTrancheTable .builder-row {
-  grid-template-columns: 1.25fr 1.2fr 0.85fr 120px repeat(6, 100px) 120px 105px 105px 100px;
-  min-width: 1540px;
+  grid-template-columns: 1.25fr 1.2fr 0.85fr 120px repeat(6, 100px) 120px 105px 105px 100px 76px;
+  min-width: 1620px;
 }
 
 .builder-head {

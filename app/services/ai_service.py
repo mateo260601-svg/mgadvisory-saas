@@ -139,6 +139,9 @@ def _historical_extraction_prompt(project: dict, document_context: dict) -> str:
         '  "income_statement": [{"name": "Revenue", "values": {"FY2023": 0}}],\n'
         '  "balance_sheet": [{"name": "Cash", "values": {"FY2023": 0}}],\n'
         '  "cash_flow": [{"name": "Operating Cash Flow", "values": {"FY2023": 0}}],\n'
+        '  "historical_detail": [\n'
+        '    {"statement": "Income Statement", "category": "Revenue", "subcategory": "Revenue streams", "model_line": "Revenue", "detail_line": "Product revenue", "values": {"FY2023": 0}, "source_file": "file.xlsx", "confidence": "medium"}\n'
+        "  ],\n"
         '  "debt": [{"lender": null, "facility": null, "amount": null, "maturity": null, "margin": null}],\n'
         '  "working_capital": [{"name": "Receivables", "values": {"FY2023": 0}}],\n'
         '  "confidence": "high|medium|low",\n'
@@ -147,6 +150,9 @@ def _historical_extraction_prompt(project: dict, document_context: dict) -> str:
         "}\n\n"
         "Project:\n"
         f"{json.dumps(project, indent=2)}\n\n"
+        "Also extract the maximum useful granularity for a business plan model: revenue by product/service/geography/customer if available, "
+        "cost lines, payroll, opex, assets, liabilities, working capital, debt layers and cash-flow movements. "
+        "The historical_detail array should map each source line to one of the model_line values used by the BP: Revenue, COGS, Payroll, Opex, EBITDA, D&A, Cash Interest, Tax, Cash, Receivables, Inventory, Payables, Closing Debt, Capex, Change in NWC, Free Cash Flow, Equity.\n\n"
         "Document context:\n"
         f"{json.dumps(document_context, indent=2)[:65000]}"
     )

@@ -230,7 +230,7 @@ def _merge_ai_extraction(normalized: dict, ai_result: dict) -> dict:
     extraction = ai_result.get("extraction") or {}
     merged = dict(normalized)
 
-    for key in ["periods", "income_statement", "balance_sheet", "cash_flow", "source_files"]:
+    for key in ["periods", "income_statement", "balance_sheet", "cash_flow", "historical_detail", "source_files"]:
         value = extraction.get(key)
         if value:
             merged[key] = value

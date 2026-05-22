@@ -1,4 +1,5 @@
 from datetime import date
+from datetime import date
 from pathlib import Path
 
 from app.engines.debt_engine import debt_type_options
@@ -8,6 +9,18 @@ PERIODS = 60
 MAX_DEBT_TRANCHES = 10
 FIRST_PERIOD_COL = 4
 FINANCIAL_MONTHLY_COL = 10
+MAX_REVENUE_STREAMS = 10
+MAX_COST_ITEMS = 12
+MAX_HEADCOUNT_LINES = 10
+HISTORICAL_DETAIL_LINES = 180
+REVENUE_TOTAL_ROW = 7 + MAX_REVENUE_STREAMS + 2
+PRODUCT_COGS_ROW = REVENUE_TOTAL_ROW
+PRODUCT_GP_ROW = PRODUCT_COGS_ROW + 1
+PRODUCT_MARGIN_ROW = PRODUCT_COGS_ROW + 2
+HEADCOUNT_TOTAL_FTE_ROW = 7 + MAX_HEADCOUNT_LINES + 2
+HEADCOUNT_PAYROLL_ROW = HEADCOUNT_TOTAL_FTE_ROW + 1
+OPEX_TOTAL_EXCL_PAYROLL_ROW = 7 + MAX_COST_ITEMS + 2
+OPEX_TOTAL_INCL_PAYROLL_ROW = OPEX_TOTAL_EXCL_PAYROLL_ROW + 1
 ENTITIES = ["Group", "OpCo", "HoldCo"]
 INPUT_FILL = "D9EAF7"
 HEADER_FILL = "1F4E78"
@@ -37,6 +50,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     data_room = wb.create_sheet("Data Room")
     control = wb.create_sheet("Control Panel")
     assumption_map = wb.create_sheet("Assumption Input Map")
+    historical_detail = wb.create_sheet("Historical Detail Input")
     historical = wb.create_sheet("Historical Inputs")
     historical_bridge = wb.create_sheet("Historical Bridge")
     entity_input_sheets = [wb.create_sheet(f"{entity} Data Input") for entity in ENTITIES]
@@ -51,6 +65,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     debt_config = wb.create_sheet("Debt Config")
     debt_schedule = wb.create_sheet("Debt Schedule")
     statements = wb.create_sheet("Financial Statements")
+    detail_3fs = wb.create_sheet("3FS Detail Output")
     detail_lines = wb.create_sheet("Detailed Forecast Lines")
     covenants = wb.create_sheet("Covenants")
     outputs = wb.create_sheet("Outputs")
@@ -71,6 +86,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_data_room(data_room, project, financials, styles)
     _build_control(control, project, styles, DataValidation, assumptions)
     _build_assumption_input_map(assumption_map, assumptions, styles)
+    _build_historical_detail_input(historical_detail, financials, styles, DataValidation, assumptions)
     _build_historical(historical, financials, styles)
     _build_historical_bridge(historical_bridge, styles)
     for idx, sheet in enumerate(entity_input_sheets):
@@ -88,6 +104,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_debt_config(debt_config, styles, DataValidation, assumptions)
     _build_debt_schedule(debt_schedule, styles)
     _build_financial_statements(statements, styles)
+    _build_3fs_detail_output(detail_3fs, styles)
     _build_detail_forecast_lines(detail_lines, styles)
     _build_covenants(covenants, styles, assumptions)
     _build_outputs(outputs, styles)
@@ -237,6 +254,7 @@ def _build_control(ws, project: dict, styles: dict, DataValidation, assumptions:
         ("Opening Debt", _num(model.get("opening_debt"), 500000)),
         ("Tax Rate", _num(model.get("tax_rate"), 0.25)),
         ("Minimum Cash", _num(model.get("minimum_cash"), 50000)),
+        ("Historical Source", model.get("historical_source", "Claude extraction")),
     ]
     for row, (label, value) in enumerate(controls, start=5):
         _label(ws, row, 2, label, styles)
@@ -246,6 +264,7 @@ def _build_control(ws, project: dict, styles: dict, DataValidation, assumptions:
     ws["C13"].number_format = "0.0%"
     _add_list_validation(ws, "C7", "'Lists & Dates'!$E$2:$E$7", DataValidation)
     _add_list_validation(ws, "C6", "'Lists & Dates'!$B$2:$B$8", DataValidation)
+    _add_list_validation(ws, "C15", "'Lists & Dates'!$AB$2:$AB$4", DataValidation)
     _write_period_headers(ws, 17, styles, source_sheet="'Lists & Dates'")
 
 
@@ -256,6 +275,7 @@ def _build_assumption_input_map(ws, assumptions: dict, styles: dict) -> None:
     _table_header(ws, 5, ["Category", "Parameter", "Value", "Input Type", "Model Destination"], styles)
     destination_map = {
         "model": "Control Panel",
+        "historical_actuals": "Historical Detail Input / Historical Bridge",
         "revenue_streams": "Revenue Drivers / Product Build",
         "cost_base": "Product Build / Opex",
         "cost_items": "Opex",
@@ -271,6 +291,59 @@ def _build_assumption_input_map(ws, assumptions: dict, styles: dict) -> None:
         _input(ws, row, 4, value, styles)
         ws.cell(row, 5, _assumption_type(value))
         ws.cell(row, 6, destination_map.get(category.split("[")[0], "Model workbook"))
+
+
+def _build_historical_detail_input(ws, financials: dict, styles: dict, DataValidation, assumptions: dict) -> None:
+    ws["B2"] = "Historical Detail Input"
+    ws["B2"].font = styles["section_font"]
+    ws["B3"] = "Manual or Claude-reviewed granular historical inputs. Map each line to a model line; Latest Actual feeds the Historical Bridge where available."
+    headers = [
+        "Line ID",
+        "Statement",
+        "Category",
+        "Subcategory",
+        "Model Line",
+        "Detail Line",
+        "Sign",
+        "Source Mode",
+        "Source File",
+        "FY2022",
+        "FY2023",
+        "FY2024",
+        "FY2025",
+        "LTM",
+        "Latest Actual",
+        "Notes / audit trail",
+    ]
+    _table_header(ws, 5, headers, styles)
+    templates = _historical_line_templates()
+    extracted_lookup = _financial_lookup(financials)
+    manual_lookup = _manual_historical_lookup(assumptions)
+    for idx in range(HISTORICAL_DETAIL_LINES):
+        row = 6 + idx
+        statement, category, subcategory, model_line, detail_line, sign = templates[idx]
+        ws.cell(row, 2, f"HIST-{idx + 1:03d}")
+        _input(ws, row, 3, statement, styles)
+        _input(ws, row, 4, category, styles)
+        _input(ws, row, 5, subcategory, styles)
+        _input(ws, row, 6, model_line, styles)
+        _input(ws, row, 7, detail_line, styles)
+        _input(ws, row, 8, sign, styles)
+        manual_values = manual_lookup.get(detail_line.lower()) or manual_lookup.get(model_line.lower())
+        source_mode = "Manual input" if manual_values else "Claude extraction"
+        _input(ws, row, 9, source_mode, styles)
+        ws.cell(row, 10, "")
+        values = manual_values or extracted_lookup.get(detail_line.lower(), {}) or extracted_lookup.get(model_line.lower(), {})
+        for col, period in enumerate(["FY2022", "FY2023", "FY2024", "FY2025"], start=11):
+            fallback_latest = values.get("latest_actual", 0) if period == "FY2025" else 0
+            _input(ws, row, col, float(values.get(period, fallback_latest) or 0), styles)
+        _formula(ws, row, 15, f"=SUM(K{row}:N{row})", styles, output=True)
+        _formula(ws, row, 16, f"=IF(N{row}<>0,N{row},IF(M{row}<>0,M{row},IF(L{row}<>0,L{row},K{row})))", styles, output=True)
+        ws.cell(row, 17, "")
+        _add_list_validation(ws, f"C{row}", "'Lists & Dates'!$AE$2:$AE$5", DataValidation)
+        _add_list_validation(ws, f"D{row}", "'Lists & Dates'!$AH$2:$AH$30", DataValidation)
+        _add_list_validation(ws, f"F{row}", "'Lists & Dates'!$AK$2:$AK$30", DataValidation)
+        _add_list_validation(ws, f"I{row}", "'Lists & Dates'!$AN$2:$AN$5", DataValidation)
 
 
 def _build_historical(ws, financials: dict, styles: dict) -> None:
@@ -310,7 +383,9 @@ def _build_historical_bridge(ws, styles: dict) -> None:
     ]
     for row, (metric, target) in enumerate(metrics, start=5):
         ws.cell(row, 2, metric)
-        _formula(ws, row, 3, f'=IFERROR(INDEX(\'Historical Inputs\'!$D:$K,MATCH($B{row},\'Historical Inputs\'!$B:$B,0),MAX(1,COUNTA(\'Historical Inputs\'!$D$4:$K$4))),0)', styles, output=True)
+        detail_formula = f"SUMIFS('Historical Detail Input'!$P:$P,'Historical Detail Input'!$F:$F,$B{row})"
+        extracted_formula = f"IFERROR(INDEX('Historical Inputs'!$D:$K,MATCH($B{row},'Historical Inputs'!$B:$B,0),MAX(1,COUNTA('Historical Inputs'!$D$4:$K$4))),0)"
+        _formula(ws, row, 3, f"=IF({detail_formula}<>0,{detail_formula},{extracted_formula})", styles, output=True)
         if metric in ["Cash", "Debt", "Receivables", "Inventory", "Payables"]:
             _formula(ws, row, 4, f"=C{row}", styles, output=True)
         else:
@@ -336,10 +411,10 @@ def _build_entity_input(ws, entity: str, styles: dict) -> None:
     ws["B2"].font = styles["section_font"]
     _write_period_headers(ws, 4, styles)
     rows = [
-        ("Revenue", "000s", "='Revenue Drivers'!{col}14"),
-        ("COGS", "000s", "='Product Build'!{col}14"),
-        ("Payroll", "000s", "='Headcount'!{col}16"),
-        ("Opex", "000s", "='Opex'!{col}15"),
+        ("Revenue", "000s", f"='Revenue Drivers'!{{col}}{REVENUE_TOTAL_ROW}"),
+        ("COGS", "000s", f"='Product Build'!{{col}}{PRODUCT_COGS_ROW}"),
+        ("Payroll", "000s", f"='Headcount'!{{col}}{HEADCOUNT_PAYROLL_ROW}"),
+        ("Opex", "000s", f"='Opex'!{{col}}{OPEX_TOTAL_EXCL_PAYROLL_ROW}"),
         ("EBITDA", "000s", "={col}6+{col}7+{col}8+{col}9"),
         ("Capex", "000s", "='Capex D&A'!{col}13"),
         ("Receivables", "000s", "='Working Capital'!{col}9"),
@@ -427,7 +502,7 @@ def _build_revenue_drivers(ws, styles: dict, DataValidation, assumptions: dict) 
         {"name": "Product / Service 5", "type": "Other", "volume": 180, "price": 600, "volume_growth": 0.01, "price_growth": 0.002},
     ]
     _table_header(ws, 6, ["Revenue Stream", "Type", "Start Volume", "Start Price", "Monthly Volume Growth", "Monthly Price Growth"], styles)
-    for idx in range(7, 12):
+    for idx in range(7, 7 + MAX_REVENUE_STREAMS):
         row = rows[idx - 7] if idx - 7 < len(rows) else {}
         ws.cell(idx, 2, row.get("name", f"Product / Service {idx - 6}"))
         _input(ws, idx, 3, row.get("type", "Other"), styles)
@@ -436,16 +511,16 @@ def _build_revenue_drivers(ws, styles: dict, DataValidation, assumptions: dict) 
         _input(ws, idx, 6, _num(row.get("volume_growth"), 0), styles, fmt="0.0%")
         _input(ws, idx, 7, _num(row.get("price_growth"), 0), styles, fmt="0.0%")
         _add_list_validation(ws, f"C{idx}", "'Lists & Dates'!$H$2:$H$20", DataValidation)
-    ws["B14"] = "Total Revenue"
-    ws["B14"].font = styles["bold_font"]
+    ws.cell(REVENUE_TOTAL_ROW, 2, "Total Revenue")
+    ws.cell(REVENUE_TOTAL_ROW, 2).font = styles["bold_font"]
     for c in _period_cols():
         letter = _col(c)
         formulas = []
-        for r in range(7, 12):
+        for r in range(7, 7 + MAX_REVENUE_STREAMS):
             month_index = c - FIRST_PERIOD_COL
             formulas.append(f"($D{r}*(1+$F{r})^{month_index})*($E{r}*(1+$G{r})^{month_index})")
         history_formula = f"'Historical Bridge'!$D$5*(1+'Historical Bridge'!$E$5)^({month_index}/12)"
-        _formula(ws, 14, c, f"=MAX({'+'.join(formulas)},{history_formula})", styles, output=True)
+        _formula(ws, REVENUE_TOTAL_ROW, c, f"=MAX({'+'.join(formulas)},{history_formula})", styles, output=True)
 
 
 def _build_product_build(ws, styles: dict, DataValidation, assumptions: dict) -> None:
@@ -454,21 +529,21 @@ def _build_product_build(ws, styles: dict, DataValidation, assumptions: dict) ->
     _write_period_headers(ws, 4, styles)
     cost_base = assumptions.get("cost_base", {})
     _table_header(ws, 6, ["Stream", "COGS % Revenue", "Fulfilment Cost / Unit", "Direct FTE / Unit"], styles)
-    for r in range(7, 12):
+    for r in range(7, 7 + MAX_REVENUE_STREAMS):
         ws.cell(r, 2, f"='Revenue Drivers'!B{r}")
         _input(ws, r, 3, _num(cost_base.get("cogs_percent"), 0.35), styles, fmt="0.0%")
         _input(ws, r, 4, _num(cost_base.get("fulfilment_cost_per_unit"), 100), styles)
         _input(ws, r, 5, 0.01, styles)
-    ws["B14"] = "Total COGS"
-    ws["B15"] = "Gross Profit"
-    ws["B16"] = "Gross Margin"
+    ws.cell(PRODUCT_COGS_ROW, 2, "Total COGS")
+    ws.cell(PRODUCT_GP_ROW, 2, "Gross Profit")
+    ws.cell(PRODUCT_MARGIN_ROW, 2, "Gross Margin")
     for c in _period_cols():
         letter = _col(c)
         revenue_col = letter
-        formulas = [f"('Revenue Drivers'!{revenue_col}14*($C{r}/5))" for r in range(7, 12)]
-        _formula(ws, 14, c, "=-(" + "+".join(formulas) + ")", styles, output=True)
-        _formula(ws, 15, c, f"='Revenue Drivers'!{letter}14+{letter}14", styles, output=True)
-        _formula(ws, 16, c, f"=IFERROR({letter}15/'Revenue Drivers'!{letter}14,0)", styles, output=True, fmt="0.0%")
+        formulas = [f"('Revenue Drivers'!{revenue_col}{REVENUE_TOTAL_ROW}*($C{r}/{MAX_REVENUE_STREAMS}))" for r in range(7, 7 + MAX_REVENUE_STREAMS)]
+        _formula(ws, PRODUCT_COGS_ROW, c, "=-(" + "+".join(formulas) + ")", styles, output=True)
+        _formula(ws, PRODUCT_GP_ROW, c, f"='Revenue Drivers'!{letter}{REVENUE_TOTAL_ROW}+{letter}{PRODUCT_COGS_ROW}", styles, output=True)
+        _formula(ws, PRODUCT_MARGIN_ROW, c, f"=IFERROR({letter}{PRODUCT_GP_ROW}/'Revenue Drivers'!{letter}{REVENUE_TOTAL_ROW},0)", styles, output=True, fmt="0.0%")
 
 
 def _build_headcount(ws, styles: dict, assumptions: dict) -> None:
@@ -484,22 +559,22 @@ def _build_headcount(ws, styles: dict, assumptions: dict) -> None:
         {"department": "IT", "opening_fte": 4, "avg_salary_month": 4500, "hiring_every_months": 6, "new_hires": 1},
         {"department": "Admin", "opening_fte": 4, "avg_salary_month": 4500, "hiring_every_months": 6, "new_hires": 1},
     ]
-    for r in range(7, 13):
+    for r in range(7, 7 + MAX_HEADCOUNT_LINES):
         dept = depts[r - 7] if r - 7 < len(depts) else {}
         ws.cell(r, 2, dept.get("department", f"Department {r - 6}"))
         _input(ws, r, 3, _num(dept.get("opening_fte"), 0), styles)
         _input(ws, r, 4, _num(dept.get("avg_salary_month"), 0), styles)
         _input(ws, r, 5, max(1, int(_num(dept.get("hiring_every_months"), 6))), styles)
         _input(ws, r, 6, _num(dept.get("new_hires"), 0), styles)
-    ws["B15"] = "Total FTE"
-    ws["B16"] = "Payroll Cost"
+    ws.cell(HEADCOUNT_TOTAL_FTE_ROW, 2, "Total FTE")
+    ws.cell(HEADCOUNT_PAYROLL_ROW, 2, "Payroll Cost")
     for c in _period_cols():
         letter = _col(c)
         month_idx = c - FIRST_PERIOD_COL
-        for r in range(7, 13):
+        for r in range(7, 7 + MAX_HEADCOUNT_LINES):
             _formula(ws, r, c, f"=$C{r}+INT({month_idx}/$E{r})*$F{r}", styles)
-        _formula(ws, 15, c, f"=SUM({letter}7:{letter}12)", styles, output=True)
-        _formula(ws, 16, c, f"=-SUMPRODUCT({letter}7:{letter}12,$D$7:$D$12)", styles, output=True)
+        _formula(ws, HEADCOUNT_TOTAL_FTE_ROW, c, f"=SUM({letter}7:{letter}{6 + MAX_HEADCOUNT_LINES})", styles, output=True)
+        _formula(ws, HEADCOUNT_PAYROLL_ROW, c, f"=-SUMPRODUCT({letter}7:{letter}{6 + MAX_HEADCOUNT_LINES},$D$7:$D${6 + MAX_HEADCOUNT_LINES})", styles, output=True)
 
 
 def _build_opex(ws, styles: dict, DataValidation, assumptions: dict) -> None:
@@ -517,7 +592,7 @@ def _build_opex(ws, styles: dict, DataValidation, assumptions: dict) -> None:
         {"name": "Travel", "driver": "% Revenue", "monthly_fixed": 0, "percent_revenue": 0.01, "cost_per_fte": 0},
         {"name": "Other SG&A", "driver": "Fixed", "monthly_fixed": _num(cost_base.get("opex_fixed_monthly"), 10000), "percent_revenue": 0, "cost_per_fte": 0},
     ]
-    for r in range(7, 13):
+    for r in range(7, 7 + MAX_COST_ITEMS):
         row = rows[r - 7] if r - 7 < len(rows) else {}
         ws.cell(r, 2, row.get("name", f"Cost item {r - 6}"))
         _input(ws, r, 3, row.get("driver", "Fixed"), styles)
@@ -525,14 +600,14 @@ def _build_opex(ws, styles: dict, DataValidation, assumptions: dict) -> None:
         _input(ws, r, 5, _num(row.get("percent_revenue"), 0), styles, fmt="0.0%")
         _input(ws, r, 6, _num(row.get("cost_per_fte"), 0), styles)
         _add_list_validation(ws, f"C{r}", "'Lists & Dates'!$K$2:$K$8", DataValidation)
-    ws["B15"] = "Total Opex excl Payroll"
-    ws["B16"] = "Total Opex incl Payroll"
+    ws.cell(OPEX_TOTAL_EXCL_PAYROLL_ROW, 2, "Total Opex excl Payroll")
+    ws.cell(OPEX_TOTAL_INCL_PAYROLL_ROW, 2, "Total Opex incl Payroll")
     for c in _period_cols():
         letter = _col(c)
-        for r in range(7, 13):
-            _formula(ws, r, c, f"=-($D{r}+('Revenue Drivers'!{letter}14*$E{r})+('Headcount'!{letter}15*$F{r}))", styles)
-        _formula(ws, 15, c, f"=SUM({letter}7:{letter}12)", styles, output=True)
-        _formula(ws, 16, c, f"={letter}15+'Headcount'!{letter}16", styles, output=True)
+        for r in range(7, 7 + MAX_COST_ITEMS):
+            _formula(ws, r, c, f"=-($D{r}+('Revenue Drivers'!{letter}{REVENUE_TOTAL_ROW}*$E{r})+('Headcount'!{letter}{HEADCOUNT_TOTAL_FTE_ROW}*$F{r}))", styles)
+        _formula(ws, OPEX_TOTAL_EXCL_PAYROLL_ROW, c, f"=SUM({letter}7:{letter}{6 + MAX_COST_ITEMS})", styles, output=True)
+        _formula(ws, OPEX_TOTAL_INCL_PAYROLL_ROW, c, f"={letter}{OPEX_TOTAL_EXCL_PAYROLL_ROW}+'Headcount'!{letter}{HEADCOUNT_PAYROLL_ROW}", styles, output=True)
 
 
 def _build_working_capital(ws, styles: dict, assumptions: dict) -> None:
@@ -557,9 +632,9 @@ def _build_working_capital(ws, styles: dict, assumptions: dict) -> None:
     for c in _period_cols():
         letter = _col(c)
         prev = _col(c - 1)
-        _formula(ws, 9, c, f"='Revenue Drivers'!{letter}14/365*$C$6", styles)
-        _formula(ws, 10, c, f"=ABS('Product Build'!{letter}14)/365*$C$7", styles)
-        _formula(ws, 11, c, f"=ABS('Product Build'!{letter}14+'Opex'!{letter}16)/365*$C$8", styles)
+        _formula(ws, 9, c, f"='Revenue Drivers'!{letter}{REVENUE_TOTAL_ROW}/365*$C$6", styles)
+        _formula(ws, 10, c, f"=ABS('Product Build'!{letter}{PRODUCT_COGS_ROW})/365*$C$7", styles)
+        _formula(ws, 11, c, f"=ABS('Product Build'!{letter}{PRODUCT_COGS_ROW}+'Opex'!{letter}{OPEX_TOTAL_INCL_PAYROLL_ROW})/365*$C$8", styles)
         _formula(ws, 12, c, f"={letter}9+{letter}10-{letter}11", styles, output=True)
         _formula(ws, 13, c, f"={letter}12" if c == FIRST_PERIOD_COL else f"={letter}12-{prev}12", styles, output=True)
 
@@ -583,7 +658,7 @@ def _build_capex(ws, styles: dict, assumptions: dict) -> None:
     for c in _period_cols():
         letter = _col(c)
         prev = _col(c - 1)
-        _formula(ws, 11, c, f"=-'Revenue Drivers'!{letter}14*$C$6", styles)
+        _formula(ws, 11, c, f"=-'Revenue Drivers'!{letter}{REVENUE_TOTAL_ROW}*$C$6", styles)
         _formula(ws, 12, c, f"=-$C$7", styles)
         _formula(ws, 13, c, f"={letter}11+{letter}12", styles, output=True)
         _formula(ws, 14, c, f"=-ABS({letter}13)/$C$8", styles)
@@ -722,6 +797,32 @@ def _build_debt_schedule(ws, styles: dict) -> None:
         _formula(ws, agg + 9, c, "=" + "+".join(f"{letter}{b+11}" for b in blocks), styles, output=True)
         _formula(ws, agg + 10, c, "=" + "+".join(f"{letter}{b+12}" for b in blocks), styles, output=True)
 
+    annual_start = agg + 14
+    ws.cell(annual_start, 2, "Annual Debt Summary")
+    ws.cell(annual_start, 2).font = styles["section_font"]
+    _table_header(ws, annual_start + 1, ["Metric", "FY2026", "FY2027", "FY2028", "FY2029", "FY2030"], styles)
+    annual_rows = [
+        ("Opening Debt", agg + 1, "balance_start"),
+        ("Drawdowns", agg + 2, "flow"),
+        ("Cash Interest", agg + 3, "flow"),
+        ("PIK Interest", agg + 4, "flow"),
+        ("Scheduled Amortization", agg + 5, "flow"),
+        ("Bullet Repayment", agg + 6, "flow"),
+        ("Cash Sweep", agg + 7, "flow"),
+        ("Closing Debt", agg + 8, "balance_end"),
+        ("Undrawn Commitments", agg + 9, "balance_end"),
+        ("Total Cash Cost", agg + 10, "flow"),
+    ]
+    for row_offset, (label, source_row, mode) in enumerate(annual_rows, start=annual_start + 2):
+        ws.cell(row_offset, 2, label)
+        for year_idx, year in enumerate(range(2026, 2031), start=3):
+            if mode == "balance_start":
+                _formula(ws, row_offset, year_idx, f"=XLOOKUP(DATE({year},1,31),$D$4:$BK$4,$D${source_row}:$BK${source_row},0)", styles, output=True)
+            elif mode == "balance_end":
+                _formula(ws, row_offset, year_idx, f"=XLOOKUP(DATE({year},12,31),$D$4:$BK$4,$D${source_row}:$BK${source_row},0)", styles, output=True)
+            else:
+                _formula(ws, row_offset, year_idx, f'=SUMIFS($D${source_row}:$BK${source_row},$D$4:$BK$4,">="&DATE({year},1,1),$D$4:$BK$4,"<="&DATE({year},12,31))', styles, output=True)
+
 
 def _build_financial_statements(ws, styles: dict) -> None:
     ws["B2"] = "Financial Statements"
@@ -779,11 +880,11 @@ def _build_financial_statements(ws, styles: dict) -> None:
         out_col = FINANCIAL_MONTHLY_COL + c - FIRST_PERIOD_COL
         letter = _col(out_col)
         prev = _col(out_col - 1)
-        _formula(ws, 6, out_col, f"='Revenue Drivers'!{source_letter}14", styles)
-        _formula(ws, 7, out_col, f"='Product Build'!{source_letter}14", styles)
+        _formula(ws, 6, out_col, f"='Revenue Drivers'!{source_letter}{REVENUE_TOTAL_ROW}", styles)
+        _formula(ws, 7, out_col, f"='Product Build'!{source_letter}{PRODUCT_COGS_ROW}", styles)
         _formula(ws, 8, out_col, f"={letter}6+{letter}7", styles, output=True)
-        _formula(ws, 9, out_col, f"='Headcount'!{source_letter}16", styles)
-        _formula(ws, 10, out_col, f"='Opex'!{source_letter}15", styles)
+        _formula(ws, 9, out_col, f"='Headcount'!{source_letter}{HEADCOUNT_PAYROLL_ROW}", styles)
+        _formula(ws, 10, out_col, f"='Opex'!{source_letter}{OPEX_TOTAL_EXCL_PAYROLL_ROW}", styles)
         _formula(ws, 11, out_col, f"=SUM({letter}8:{letter}10)", styles, output=True)
         _formula(ws, 12, out_col, f"='Capex D&A'!{source_letter}14", styles)
         _formula(ws, 13, out_col, f"={letter}11+{letter}12", styles)
@@ -802,17 +903,56 @@ def _build_financial_statements(ws, styles: dict) -> None:
     ws.sheet_properties.outlinePr.summaryRight = False
 
 
+def _build_3fs_detail_output(ws, styles: dict) -> None:
+    ws["B2"] = "3FS Detail Output"
+    ws["B2"].font = styles["section_font"]
+    ws["B3"] = "Granular historical lines projected from the selected mapping. Annual summary sits left; collapsible monthly detail sits right."
+    years = [2026, 2027, 2028, 2029, 2030]
+    _table_header(ws, 5, ["Line ID", "Statement", "Category", "Model Line", "Detail Line"] + [f"FY{year}" for year in years], styles)
+    monthly_start = 13
+    ws.cell(5, monthly_start - 1, "Monthly Detail")
+    ws.cell(5, monthly_start - 1).fill = styles["section_fill"]
+    ws.cell(5, monthly_start - 1).font = styles["bold_font"]
+    for idx, c in enumerate(_period_cols(), start=2):
+        out_col = monthly_start + c - FIRST_PERIOD_COL
+        cell = ws.cell(5, out_col)
+        cell.value = f"='Lists & Dates'!V{idx}"
+        cell.number_format = "mmm-yy"
+        cell.fill = styles["header_fill"]
+        cell.font = styles["header_font"]
+        ws.column_dimensions[_col(out_col)].outlineLevel = 1
+        ws.column_dimensions[_col(out_col)].hidden = True
+
+    templates = _historical_line_templates()
+    for idx, (statement, category, _subcategory, model_line, detail_line, _sign) in enumerate(templates, start=6):
+        ws.cell(idx, 2, f"='Historical Detail Input'!B{idx}")
+        ws.cell(idx, 3, statement)
+        ws.cell(idx, 4, category)
+        ws.cell(idx, 5, model_line)
+        ws.cell(idx, 6, detail_line)
+        for year_idx, year in enumerate(years, start=7):
+            if model_line in ["Cash", "Closing Debt", "Net Debt", "Receivables", "Inventory", "Payables", "Net PPE", "Equity"]:
+                _formula(ws, idx, year_idx, f"=XLOOKUP(DATE({year},12,31),$M$5:$BT$5,$M{idx}:$BT{idx},0)", styles, output=True)
+            else:
+                _formula(ws, idx, year_idx, f'=SUMIFS($M{idx}:$BT{idx},$M$5:$BT$5,">="&DATE({year},1,1),$M$5:$BT$5,"<="&DATE({year},12,31))', styles, output=True)
+        for c in _period_cols():
+            out_col = monthly_start + c - FIRST_PERIOD_COL
+            fs_col = _financial_monthly_col(c)
+            _formula(ws, idx, out_col, _detail_projection_formula(idx, model_line, fs_col), styles, output=True)
+    ws.sheet_properties.outlinePr.summaryRight = False
+
+
 def _build_detail_forecast_lines(ws, styles: dict) -> None:
     ws["B2"] = "Detailed Forecast Lines"
     ws["B2"].font = styles["section_font"]
     _write_period_headers(ws, 4, styles)
     _table_header(ws, 6, ["Line ID", "Section", "Line Item", "Driver", "Source"], styles)
     sections = [
-        ("Revenue", "Revenue Drivers", "='Revenue Drivers'!{col}14", "Product/service build"),
-        ("COGS", "Product Build", "='Product Build'!{col}14", "COGS assumptions"),
-        ("Gross Profit", "Product Build", "='Product Build'!{col}15", "Formula"),
-        ("Payroll", "Headcount", "='Headcount'!{col}16", "FTE plan"),
-        ("Opex", "Opex", "='Opex'!{col}15", "Detailed opex items"),
+        ("Revenue", "Revenue Drivers", f"='Revenue Drivers'!{{col}}{REVENUE_TOTAL_ROW}", "Product/service build"),
+        ("COGS", "Product Build", f"='Product Build'!{{col}}{PRODUCT_COGS_ROW}", "COGS assumptions"),
+        ("Gross Profit", "Product Build", f"='Product Build'!{{col}}{PRODUCT_GP_ROW}", "Formula"),
+        ("Payroll", "Headcount", f"='Headcount'!{{col}}{HEADCOUNT_PAYROLL_ROW}", "FTE plan"),
+        ("Opex", "Opex", f"='Opex'!{{col}}{OPEX_TOTAL_EXCL_PAYROLL_ROW}", "Detailed opex items"),
         ("EBITDA", "Financial Statements", "='Financial Statements'!{col}11", "Formula"),
         ("D&A", "Capex D&A", "='Capex D&A'!{col}14", "Depreciation"),
         ("Cash Interest", "Debt Schedule", "='Financial Statements'!{col}14", "Debt engine"),
@@ -902,6 +1042,42 @@ def _build_outputs(ws, styles: dict) -> None:
         _formula(ws, 11, c, f"='Financial Statements'!{fs_col}24", styles, output=True)
         _formula(ws, 12, c, f"='Covenants'!{letter}11", styles, output=True, fmt="0.0x")
         _formula(ws, 13, c, f"='Covenants'!{letter}17", styles, output=True)
+
+    ws["B17"] = "Annual Output Summary"
+    ws["B17"].font = styles["section_font"]
+    _table_header(ws, 19, ["Metric", "FY2026", "FY2027", "FY2028", "FY2029", "FY2030"], styles)
+    annual_rows = [
+        ("Revenue", 6, None),
+        ("Gross Profit", 8, None),
+        ("Gross Margin", 8, "margin_revenue"),
+        ("EBITDA", 11, None),
+        ("EBITDA Margin", 11, "margin_revenue"),
+        ("Cash Flow Before Debt", 20, None),
+        ("Free Cash Flow", 22, None),
+        ("Closing Cash", 23, None),
+        ("Closing Debt", 24, None),
+        ("Net Debt", 25, None),
+    ]
+    for row_idx, (label, source_row, mode) in enumerate(annual_rows, start=20):
+        ws.cell(row_idx, 2, label)
+        for col_idx, year_col in enumerate(range(3, 8), start=3):
+            source_letter = _col(year_col)
+            if mode == "margin_revenue":
+                _formula(ws, row_idx, col_idx, f"=IFERROR('Financial Statements'!{source_letter}{source_row}/'Financial Statements'!{source_letter}6,0)", styles, output=True, fmt="0.0%")
+            else:
+                _formula(ws, row_idx, col_idx, f"='Financial Statements'!{source_letter}{source_row}", styles, output=True)
+
+    ws["B33"] = "Model Integrity Snapshot"
+    ws["B33"].font = styles["section_font"]
+    snapshot = [
+        ("Current month all checks", "='Checks'!D10"),
+        ("Current covenant status", "='Outputs'!D13"),
+        ("Historical mapping depth", "=COUNTA('Historical Detail Input'!$F$6:$F$185)"),
+        ("Formula rows generated", "=COUNTA('Detailed Forecast Lines'!$B$7:$B$231)"),
+    ]
+    for row_idx, (label, formula) in enumerate(snapshot, start=35):
+        ws.cell(row_idx, 2, label)
+        _formula(ws, row_idx, 3, formula, styles, output=True)
 
 
 def _build_packaged_output(ws, project: dict, styles: dict) -> None:
@@ -1065,18 +1241,40 @@ def _build_checks(ws, styles: dict) -> None:
     ws["B2"] = "Checks"
     ws["B2"].font = styles["section_font"]
     _write_period_headers(ws, 4, styles)
-    rows = ["No Negative Cash", "Debt Roll Forward", "Revenue Positive", "Covenants Populated", "All Checks OK"]
+    rows = [
+        "No Negative Cash",
+        "Debt Roll Forward",
+        "Revenue Positive",
+        "Covenants Populated",
+        "All Checks OK",
+        "Cash Flow Roll Forward",
+        "Net Debt Recalculation",
+        "3FS Revenue Tie",
+        "3FS EBITDA Tie",
+        "3FS Debt Tie",
+        "Historical Mapping Populated",
+        "Balance Sheet Signal",
+    ]
     for r, label in enumerate(rows, start=6):
         ws.cell(r, 2, label)
     debt_agg = 6 + MAX_DEBT_TRANCHES * 16 + 2
     for c in _period_cols():
         letter = _col(c)
         fs_col = _financial_monthly_col(c)
+        previous_cash = "'Control Panel'!$C$11" if c == FIRST_PERIOD_COL else f"'Financial Statements'!{_financial_monthly_col(c - 1)}23"
+        detail_col = _col(13 + c - FIRST_PERIOD_COL)
         _formula(ws, 6, c, f'=IF(\'Financial Statements\'!{fs_col}23>=0,"OK","ERROR")', styles, output=True)
-        _formula(ws, 7, c, f'=IF(\'Debt Schedule\'!{letter}{debt_agg+8}>=0,"OK","ERROR")', styles, output=True)
+        _formula(ws, 7, c, f'=IF(ABS(\'Debt Schedule\'!{letter}{debt_agg+8}-(\'Debt Schedule\'!{letter}{debt_agg+1}+\'Debt Schedule\'!{letter}{debt_agg+2}+\'Debt Schedule\'!{letter}{debt_agg+4}-\'Debt Schedule\'!{letter}{debt_agg+5}-\'Debt Schedule\'!{letter}{debt_agg+6}-\'Debt Schedule\'!{letter}{debt_agg+7}))<1,"OK","ERROR")', styles, output=True)
         _formula(ws, 8, c, f'=IF(\'Financial Statements\'!{fs_col}6>0,"OK","ERROR")', styles, output=True)
         _formula(ws, 9, c, f'=IF(\'Covenants\'!{letter}17<>"","OK","ERROR")', styles, output=True)
-        _formula(ws, 10, c, f'=IF(AND({letter}6="OK",{letter}7="OK",{letter}8="OK",{letter}9="OK"),"OK","ERROR")', styles, output=True)
+        _formula(ws, 10, c, f'=IF(AND({letter}6="OK",{letter}7="OK",{letter}8="OK",{letter}9="OK",{letter}11="OK",{letter}12="OK",{letter}13="OK",{letter}14="OK",{letter}15="OK",{letter}16="OK",{letter}17="OK"),"OK","ERROR")', styles, output=True)
+        _formula(ws, 11, c, f'=IF(ABS(\'Financial Statements\'!{fs_col}23-({previous_cash}+\'Financial Statements\'!{fs_col}22))<1,"OK","ERROR")', styles, output=True)
+        _formula(ws, 12, c, f'=IF(ABS(\'Financial Statements\'!{fs_col}25-(\'Financial Statements\'!{fs_col}24-\'Financial Statements\'!{fs_col}23))<1,"OK","ERROR")', styles, output=True)
+        _formula(ws, 13, c, f'=IF(SUMIFS(\'Historical Detail Input\'!$P:$P,\'Historical Detail Input\'!$F:$F,"Revenue")=0,"OK",IF(ABS(SUMIF(\'3FS Detail Output\'!$E$6:$E$185,"Revenue",\'3FS Detail Output\'!${detail_col}$6:${detail_col}$185)-\'Financial Statements\'!{fs_col}6)<1,"OK","ERROR"))', styles, output=True)
+        _formula(ws, 14, c, f'=IF(SUMIFS(\'Historical Detail Input\'!$P:$P,\'Historical Detail Input\'!$F:$F,"EBITDA")=0,"OK",IF(ABS(SUMIF(\'3FS Detail Output\'!$E$6:$E$185,"EBITDA",\'3FS Detail Output\'!${detail_col}$6:${detail_col}$185)-\'Financial Statements\'!{fs_col}11)<1,"OK","ERROR"))', styles, output=True)
+        _formula(ws, 15, c, f'=IF(SUMIFS(\'Historical Detail Input\'!$P:$P,\'Historical Detail Input\'!$F:$F,"Closing Debt")=0,"OK",IF(ABS(SUMIF(\'3FS Detail Output\'!$E$6:$E$185,"Closing Debt",\'3FS Detail Output\'!${detail_col}$6:${detail_col}$185)-\'Financial Statements\'!{fs_col}24)<1,"OK","ERROR"))', styles, output=True)
+        _formula(ws, 16, c, '=IF(COUNTA(\'Historical Detail Input\'!$F$6:$F$185)>=150,"OK","ERROR")', styles, output=True)
+        _formula(ws, 17, c, f'=IF(\'Financial Statements\'!{fs_col}23+MAX(\'Financial Statements\'!{fs_col}24,0)>=0,"OK","ERROR")', styles, output=True)
 
 
 def _build_lookup(ws, styles: dict) -> None:
@@ -1103,13 +1301,16 @@ def _build_mapping(ws, styles: dict) -> None:
     ws["B2"].font = styles["section_font"]
     _table_header(ws, 4, ["Output Line", "Source Sheet", "Source Row", "Formula Pattern", "Status"], styles)
     rows = [
-        ("Revenue", "Revenue Drivers", "14", "Linked by monthly period", "Active"),
-        ("COGS", "Product Build", "14", "Linked by monthly period", "Active"),
-        ("Payroll", "Headcount", "16", "Linked by monthly period", "Active"),
-        ("Opex", "Opex", "15", "Linked by monthly period", "Active"),
+        ("Revenue", "Revenue Drivers", str(REVENUE_TOTAL_ROW), "Linked by monthly period", "Active"),
+        ("COGS", "Product Build", str(PRODUCT_COGS_ROW), "Linked by monthly period", "Active"),
+        ("Payroll", "Headcount", str(HEADCOUNT_PAYROLL_ROW), "Linked by monthly period", "Active"),
+        ("Opex", "Opex", str(OPEX_TOTAL_EXCL_PAYROLL_ROW), "Linked by monthly period", "Active"),
         ("Debt Interest", "Debt Schedule", "Aggregate cash interest", "Linked by monthly period", "Active"),
         ("Closing Debt", "Debt Schedule", "Aggregate closing debt", "Linked by monthly period", "Active"),
+        ("Historical Granularity", "Historical Detail Input", f"{HISTORICAL_DETAIL_LINES} lines", "Claude/manual actuals bridge", "Active"),
+        ("3FS Granularity", "3FS Detail Output", f"{HISTORICAL_DETAIL_LINES} projected lines", "Annual left + monthly grouped detail", "Active"),
         ("Covenants", "Covenants", "11:17", "Linked to FS and Debt Schedule", "Active"),
+        ("Checks", "Checks", "6:17", "Cash, debt, 3FS, covenant and historical controls", "Active"),
     ]
     for row, values in enumerate(rows, start=5):
         for col, value in enumerate(values, start=2):
@@ -1127,6 +1328,20 @@ def _build_lists(ws, project: dict, styles: dict) -> None:
     bools = ["TRUE", "FALSE"]
     interest_types = ["Cash", "PIK", "Cash / PIK Toggle"]
     payment_frequencies = ["Monthly", "Quarterly", "Annual"]
+    historical_sources = ["Claude extraction", "Manual input", "Hybrid review"]
+    historical_statements = ["Income Statement", "Balance Sheet", "Cash Flow", "Debt Schedule"]
+    historical_categories = [
+        "Revenue", "COGS", "Gross Profit", "Payroll", "Opex", "EBITDA Adjustments", "D&A", "Interest", "Tax",
+        "Current Assets", "Fixed Assets", "Other Assets", "Debt", "Current Liabilities", "Other Liabilities",
+        "Equity", "Working Capital", "Operating Cash Flow", "Investing Cash Flow", "Financing Cash Flow",
+    ]
+    historical_model_lines = [
+        "Revenue", "COGS", "Gross Profit", "Payroll", "Opex", "EBITDA", "D&A", "EBIT", "Cash Interest",
+        "PBT", "Tax", "Net Income", "Cash", "Receivables", "Inventory", "Other Current Assets", "Net PPE",
+        "Intangibles", "Other Non Current Assets", "Payables", "Accruals", "Tax Payable", "Closing Debt",
+        "Net Debt", "Equity", "Change in NWC", "Capex", "Free Cash Flow", "Debt Amortization / Sweep",
+    ]
+    historical_source_modes = ["Claude extraction", "Manual input", "Hybrid review", "Imported Excel"]
     lists = [
         (1, "Currencies", currencies),
         (4, "Scenarios", scenarios),
@@ -1137,6 +1352,11 @@ def _build_lists(ws, project: dict, styles: dict) -> None:
         (19, "Boolean", bools),
         (23, "Interest Type", interest_types),
         (25, "Payment Frequency", payment_frequencies),
+        (28, "Historical Source", historical_sources),
+        (31, "Historical Statements", historical_statements),
+        (34, "Historical Categories", historical_categories),
+        (37, "Historical Model Lines", historical_model_lines),
+        (40, "Historical Source Modes", historical_source_modes),
     ]
     for col, header, values in lists:
         ws.cell(1, col, header)
@@ -1266,6 +1486,147 @@ def _debt_values(tranche: dict) -> tuple:
         tranche.get("interest_type", "PIK" if tranche.get("pik") else "Cash"),
         tranche.get("cash_pay_frequency", "Monthly"),
         _num(tranche.get("cash_pay_percent"), 0.0 if tranche.get("pik") else 1.0),
+    )
+
+
+def _financial_lookup(financials: dict) -> dict:
+    lookup = {}
+    for section in ["income_statement", "balance_sheet", "cash_flow", "debt"]:
+        for line in financials.get(section, []) or []:
+            name = str(line.get("name", "")).strip().lower()
+            if name:
+                lookup[name] = line.get("values", {}) or {}
+    for line in financials.get("historical_detail", []) or []:
+        name = str(line.get("detail_line") or line.get("model_line") or "").strip().lower()
+        if name:
+            lookup[name] = line.get("values", {}) or {}
+    return lookup
+
+
+def _manual_historical_lookup(assumptions: dict) -> dict:
+    lookup = {}
+    for line in assumptions.get("historical_actuals", []) or []:
+        model_line = str(line.get("model_line", "")).strip().lower()
+        detail_line = str(line.get("detail_line", "")).strip().lower()
+        values = {
+            "FY2022": _num(line.get("fy2022"), 0),
+            "FY2023": _num(line.get("fy2023"), 0),
+            "FY2024": _num(line.get("fy2024"), 0),
+            "FY2025": _num(line.get("fy2025"), 0),
+            "latest_actual": _num(line.get("latest_actual"), 0),
+        }
+        if detail_line:
+            lookup[detail_line] = values
+        if model_line:
+            lookup[model_line] = values
+    return lookup
+
+
+def _historical_line_templates() -> list[tuple[str, str, str, str, str, str]]:
+    lines = []
+    revenue = [
+        "Product revenue", "Service revenue", "Recurring revenue", "Project revenue", "License revenue", "Maintenance revenue",
+        "Consulting revenue", "Geography A revenue", "Geography B revenue", "Customer segment A revenue", "Customer segment B revenue",
+        "Discounts and rebates", "Returns and credits", "Other revenue", "Revenue IFRS adjustment",
+    ]
+    cogs = [
+        "Materials", "Direct labour", "Fulfilment", "Hosting / delivery", "Subcontractors", "Freight", "Warranty",
+        "Merchant fees", "Inventory write-off", "Other direct costs",
+    ]
+    opex = [
+        "Management payroll", "Sales payroll", "Operations payroll", "Finance payroll", "IT payroll", "Admin payroll",
+        "Rent", "Marketing", "Travel", "IT and software", "Professional fees", "Insurance", "Recruitment", "Training",
+        "Utilities", "Bad debt expense", "Bank charges", "Other SG&A", "One-off restructuring cost", "QoE adjustment",
+    ]
+    income_other = [
+        ("D&A", "Depreciation", "D&A"), ("D&A", "Amortization", "D&A"), ("Interest", "Cash interest", "Cash Interest"),
+        ("Interest", "PIK interest", "Cash Interest"), ("Tax", "Current tax", "Tax"), ("Tax", "Deferred tax", "Tax"),
+        ("EBITDA Adjustments", "Non-recurring income", "EBITDA"), ("EBITDA Adjustments", "Non-recurring costs", "EBITDA"),
+    ]
+    for item in revenue:
+        lines.append(("Income Statement", "Revenue", "Revenue streams", "Revenue", item, "+"))
+    for item in cogs:
+        lines.append(("Income Statement", "COGS", "Direct costs", "COGS", item, "-"))
+    for item in opex:
+        model_line = "Payroll" if "payroll" in item.lower() else "Opex"
+        lines.append(("Income Statement", "Opex", "Operating costs", model_line, item, "-"))
+    for category, item, model_line in income_other:
+        lines.append(("Income Statement", category, "Below EBITDA / QoE", model_line, item, "-" if category in ["D&A", "Interest", "Tax"] else "+/-"))
+
+    assets = [
+        ("Cash", "Cash at bank"), ("Cash", "Restricted cash"), ("Receivables", "Trade receivables"), ("Receivables", "Unbilled revenue"),
+        ("Receivables", "Related-party receivables"), ("Inventory", "Raw materials"), ("Inventory", "Finished goods"),
+        ("Other Current Assets", "Prepayments"), ("Other Current Assets", "VAT receivable"), ("Other Current Assets", "Other current assets"),
+        ("Net PPE", "Land and buildings"), ("Net PPE", "Plant and machinery"), ("Net PPE", "IT equipment"), ("Net PPE", "Right-of-use assets"),
+        ("Intangibles", "Goodwill"), ("Intangibles", "Capitalised software"), ("Intangibles", "Customer relationships"),
+        ("Other Non Current Assets", "Deferred tax asset"), ("Other Non Current Assets", "Deposits"), ("Other Non Current Assets", "Investments"),
+    ]
+    liabilities = [
+        ("Payables", "Trade payables"), ("Payables", "Supplier accruals"), ("Accruals", "Payroll accruals"), ("Accruals", "Bonus accruals"),
+        ("Accruals", "Other accruals"), ("Tax Payable", "VAT payable"), ("Tax Payable", "Corporate tax payable"),
+        ("Closing Debt", "Super senior RCF"), ("Closing Debt", "Senior term loan A"), ("Closing Debt", "Senior term loan B"),
+        ("Closing Debt", "Unitranche"), ("Closing Debt", "Second lien"), ("Closing Debt", "Mezzanine cash pay"),
+        ("Closing Debt", "Mezzanine PIK"), ("Closing Debt", "HoldCo PIK"), ("Closing Debt", "Seller note"),
+        ("Closing Debt", "Vendor loan"), ("Closing Debt", "Finance leases"), ("Closing Debt", "Tax debt plan"),
+        ("Closing Debt", "Supplier payment plan"), ("Equity", "Share capital"), ("Equity", "Retained earnings"), ("Equity", "Other reserves"),
+    ]
+    for model_line, item in assets:
+        category = "Current Assets" if model_line in ["Cash", "Receivables", "Inventory", "Other Current Assets"] else "Fixed Assets"
+        lines.append(("Balance Sheet", category, model_line, model_line, item, "+"))
+    for model_line, item in liabilities:
+        category = "Debt" if model_line == "Closing Debt" else "Current Liabilities" if model_line in ["Payables", "Accruals", "Tax Payable"] else "Equity"
+        lines.append(("Balance Sheet", category, model_line, model_line, item, "-"))
+
+    cash_flow = [
+        ("Operating Cash Flow", "EBITDA bridge", "EBITDA"), ("Operating Cash Flow", "Change in trade receivables", "Change in NWC"),
+        ("Operating Cash Flow", "Change in inventory", "Change in NWC"), ("Operating Cash Flow", "Change in trade payables", "Change in NWC"),
+        ("Operating Cash Flow", "Change in other working capital", "Change in NWC"), ("Investing Cash Flow", "Maintenance capex", "Capex"),
+        ("Investing Cash Flow", "Growth capex", "Capex"), ("Investing Cash Flow", "Disposal proceeds", "Capex"),
+        ("Financing Cash Flow", "Debt drawdown", "Closing Debt"), ("Financing Cash Flow", "Scheduled amortization", "Debt Amortization / Sweep"),
+        ("Financing Cash Flow", "Bullet repayment", "Debt Amortization / Sweep"), ("Financing Cash Flow", "Cash sweep", "Debt Amortization / Sweep"),
+        ("Financing Cash Flow", "Equity injection", "Equity"), ("Financing Cash Flow", "Dividend", "Equity"),
+    ]
+    for category, item, model_line in cash_flow:
+        lines.append(("Cash Flow", category, "Cash-flow detail", model_line, item, "+/-"))
+
+    while len(lines) < HISTORICAL_DETAIL_LINES:
+        idx = len(lines) + 1
+        lines.append(("Income Statement", "Opex", "Custom line", "Opex", f"Custom historical line {idx}", "+/-"))
+    return lines[:HISTORICAL_DETAIL_LINES]
+
+
+def _detail_projection_formula(row: int, model_line: str, fs_col: str) -> str:
+    fs_rows = {
+        "Revenue": 6,
+        "COGS": 7,
+        "Gross Profit": 8,
+        "Payroll": 9,
+        "Opex": 10,
+        "EBITDA": 11,
+        "D&A": 12,
+        "EBIT": 13,
+        "Cash Interest": 14,
+        "PBT": 15,
+        "Tax": 16,
+        "Net Income": 17,
+        "Change in NWC": 18,
+        "Capex": 19,
+        "Free Cash Flow": 22,
+        "Cash": 23,
+        "Closing Debt": 24,
+        "Net Debt": 25,
+        "Receivables": 23,
+        "Inventory": 23,
+        "Payables": 24,
+        "Net PPE": 23,
+        "Equity": 25,
+        "Debt Amortization / Sweep": 21,
+    }
+    source_row = fs_rows.get(model_line, 10)
+    return (
+        f'=IFERROR(\'Financial Statements\'!{fs_col}{source_row}'
+        f"*'Historical Detail Input'!$P{row}"
+        f"/SUMIFS('Historical Detail Input'!$P:$P,'Historical Detail Input'!$F:$F,$E{row}),0)"
     )
 
 

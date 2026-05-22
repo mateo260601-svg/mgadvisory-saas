@@ -1,4 +1,5 @@
 import base64
+import base64
 import hashlib
 import hmac
 import json
@@ -69,6 +70,7 @@ def google_login_url():
 
 
 @router.get("/auth/callback")
+@router.get("/auth/google/callback")
 def google_callback(request: Request):
     _require_google_config()
     error = request.query_params.get("error")
