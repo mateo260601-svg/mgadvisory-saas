@@ -1152,15 +1152,28 @@ h3 {
   margin: 2px 0 0;
 }
 
+.claude-head-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.claude-head-actions .ghost-button {
+  color: var(--muted);
+  min-width: auto;
+  width: auto;
+}
+
 .claude-messages {
-  background: #f7faf8;
+  background: linear-gradient(180deg, #f7faf8 0%, #fbfcfb 100%);
   border: 1px solid var(--line);
   border-radius: 6px;
   display: grid;
-  gap: 8px;
-  max-height: 260px;
+  gap: 12px;
+  max-height: 360px;
   overflow-y: auto;
-  padding: 10px;
+  padding: 12px;
+  scroll-behavior: smooth;
 }
 
 .claude-upload {
@@ -1192,23 +1205,131 @@ h3 {
 }
 
 .claude-message {
-  border-radius: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   font-size: 13px;
   line-height: 1.45;
-  padding: 9px 10px;
-  white-space: pre-wrap;
+  padding: 12px;
+  position: relative;
+  white-space: normal;
+  animation: messageIn 0.18s ease-out;
 }
 
 .claude-message.assistant {
-  background: #eef6f0;
+  background: #fff;
+  border-color: #dce6df;
   color: var(--ink);
+  box-shadow: 0 8px 22px rgba(24, 38, 32, 0.06);
 }
 
 .claude-message.user {
   background: #1f3528;
+  border-color: #1f3528;
   color: #fff;
   justify-self: end;
   max-width: 92%;
+}
+
+.claude-message.error {
+  border-color: #e0b7b7;
+  background: #fff7f7;
+}
+
+.claude-message-meta {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 11px;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.claude-message.user .claude-message-meta {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.claude-message-body h4 {
+  font-size: 14px;
+  margin: 10px 0 6px;
+}
+
+.claude-message-body ul {
+  margin: 6px 0 6px 18px;
+  padding: 0;
+}
+
+.claude-message-body code {
+  background: rgba(37, 43, 42, 0.08);
+  border-radius: 4px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
+.claude-message-body pre {
+  background: #18211d;
+  border-radius: 6px;
+  color: #e8f2ed;
+  overflow-x: auto;
+  padding: 12px;
+}
+
+.claude-message-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.claude-message:hover .claude-message-actions {
+  opacity: 1;
+}
+
+.claude-message-actions button {
+  background: transparent;
+  border: 1px solid #cbd6d0;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 5px 7px;
+}
+
+.claude-message.user .claude-message-actions button {
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.thinking-indicator {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.thinking-indicator span {
+  animation: pulse 1s ease-in-out infinite;
+  background: var(--amber);
+  border-radius: 50%;
+  height: 5px;
+  width: 5px;
+}
+
+.thinking-indicator span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.thinking-indicator span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 #claudeInput {

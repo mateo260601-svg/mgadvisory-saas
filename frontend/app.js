@@ -11,6 +11,11 @@ const state = {
   googleConfigured: false,
   bpStep: 0,
   claudeHistory: [],
+  chat: {
+    threadId: "main",
+    messages: [],
+    streaming: false,
+  },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -204,6 +209,7 @@ async function enterWorkspace(statusLabel) {
   hideOverlay();
   renderUserBadge();
   await refreshWorkspace();
+  await loadClaudeThread();
   showView("dashboardView");
 }
 
@@ -334,17 +340,136 @@ function toggleClaudePanel(forceOpen) {
   const shouldOpen = forceOpen ?? panel.classList.contains("hidden");
   panel.classList.toggle("hidden", !shouldOpen);
   if ($("claudeNavButton")) $("claudeNavButton").classList.toggle("active", shouldOpen);
+  if (shouldOpen) loadClaudeThread();
 }
 
-function addClaudeMessage(role, text) {
+function addClaudeMessage(role, text, status = "complete") {
+  const message = {
+    id: `local_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    role,
+    content: text,
+    status,
+    created_at: new Date().toISOString(),
+    source: "local",
+  };
+  state.chat.messages.push(message);
+  renderClaudeMessages();
+  return message;
+}
+
+function updateClaudeMessage(messageId, patch) {
+  const message = state.chat.messages.find((item) => item.id === messageId);
+  if (!message) return;
+  Object.assign(message, patch, { updated_at: new Date().toISOString() });
+  renderClaudeMessages();
+}
+
+async function loadClaudeThread() {
+  if (!state.unlocked) return;
+  const project = activeProject();
+  if (!project) return;
+  try {
+    const payload = await api(`/api/ai/projects/${project.id}/chat/thread?thread_id=${encodeURIComponent(state.chat.threadId)}`);
+    state.chat.messages = payload.thread?.messages || [];
+  } catch (error) {
+    state.chat.messages = [{
+      id: "chat_load_error",
+      role: "assistant",
+      content: `Chat history could not be loaded: ${error.message}`,
+      status: "error",
+      created_at: new Date().toISOString(),
+    }];
+  }
+  renderClaudeMessages();
+}
+
+function renderClaudeMessages() {
   const target = $("claudeMessages");
-  if (!target) return null;
-  const div = document.createElement("div");
-  div.className = `claude-message ${role}`;
-  div.textContent = text;
-  target.appendChild(div);
-  target.scrollTop = target.scrollHeight;
-  return div;
+  if (!target) return;
+  const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 80;
+  target.innerHTML = state.chat.messages.map(renderClaudeMessage).join("");
+  target.querySelectorAll("[data-copy-message]").forEach((button) => {
+    button.addEventListener("click", () => copyClaudeMessage(button.dataset.copyMessage));
+  });
+  target.querySelectorAll("[data-edit-message]").forEach((button) => {
+    button.addEventListener("click", () => editClaudeMessage(button.dataset.editMessage));
+  });
+  if (nearBottom) target.scrollTop = target.scrollHeight;
+}
+
+function renderClaudeMessage(message) {
+  const role = message.role === "user" ? "user" : "assistant";
+  const status = message.status || "complete";
+  const thinking = status === "pending" || status === "streaming"
+    ? '<span class="thinking-indicator"><span></span><span></span><span></span></span>'
+    : "";
+  return `
+    <article class="claude-message ${role} ${status}" data-message-id="${escapeHtml(message.id)}">
+      <div class="claude-message-meta">
+        <strong>${role === "user" ? "You" : "Claude"}</strong>
+        <span>${formatTime(message.created_at)}</span>
+        ${thinking}
+      </div>
+      <div class="claude-message-body">${renderMarkdownLite(message.content || "")}</div>
+      <div class="claude-message-actions">
+        <button type="button" data-copy-message="${escapeHtml(message.id)}">Copy</button>
+        ${role === "user" ? `<button type="button" data-edit-message="${escapeHtml(message.id)}">Edit</button>` : ""}
+      </div>
+    </article>`;
+}
+
+function renderMarkdownLite(markdown) {
+  const codeBlocks = [];
+  let html = escapeHtml(markdown).replace(/```([\s\S]*?)```/g, (_, code) => {
+    const token = `@@CODE_${codeBlocks.length}@@`;
+    codeBlocks.push(`<pre><code>${code.trim()}</code></pre>`);
+    return token;
+  });
+  html = html
+    .replace(/^### (.*)$/gm, "<h4>$1</h4>")
+    .replace(/^## (.*)$/gm, "<h4>$1</h4>")
+    .replace(/^# (.*)$/gm, "<h4>$1</h4>")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/^- (.*)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
+    .replace(/\n/g, "<br>");
+  codeBlocks.forEach((block, idx) => {
+    html = html.replace(`@@CODE_${idx}@@`, block);
+  });
+  return html || '<span class="muted">Empty message</span>';
+}
+
+function formatTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+async function copyClaudeMessage(messageId) {
+  const message = state.chat.messages.find((item) => item.id === messageId);
+  if (!message) return;
+  try {
+    await navigator.clipboard.writeText(message.content || "");
+    $("claudeResult").textContent = "Message copied.";
+  } catch (_) {
+    $("claudeResult").textContent = "Copy unavailable in this browser.";
+  }
+}
+
+async function editClaudeMessage(messageId) {
+  const project = await activeProjectForClaude();
+  const message = state.chat.messages.find((item) => item.id === messageId);
+  if (!message) return;
+  const edited = window.prompt("Edit message", message.content || "");
+  if (edited === null || edited.trim() === message.content) return;
+  await api(`/api/ai/projects/${project.id}/chat/messages/${messageId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: edited.trim(), thread_id: state.chat.threadId }),
+  });
+  await loadClaudeThread();
 }
 
 async function activeProjectForClaude() {
@@ -361,7 +486,7 @@ async function activeProjectForClaude() {
 }
 
 async function sendClaudeMessage() {
-  let pending = null;
+  let assistant = null;
   try {
     requireUnlocked();
     const project = await activeProjectForClaude();
@@ -369,25 +494,38 @@ async function sendClaudeMessage() {
     if (!message) throw new Error("Write a message for Claude.");
     $("claudeInput").value = "";
     addClaudeMessage("user", message);
-    pending = addClaudeMessage("assistant", "Claude is thinking...");
+    assistant = addClaudeMessage("assistant", "", "streaming");
     $("claudeResult").textContent = "Claude is thinking...";
     $("claudeSendButton").disabled = true;
-    const payload = await api(`/api/ai/projects/${project.id}/chat`, {
+    state.chat.streaming = true;
+    const response = await fetch(`/api/ai/projects/${project.id}/chat/stream`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history: state.claudeHistory }),
+      body: JSON.stringify({ message, history: [], thread_id: state.chat.threadId }),
     });
-    const reply = payload.reply || "No response.";
-    state.claudeHistory.push({ role: "user", content: message }, { role: "assistant", content: reply });
-    state.claudeHistory = state.claudeHistory.slice(-16);
-    if (pending) pending.textContent = reply;
-    $("claudeResult").textContent = payload.source === "claude" ? "Claude response ready." : "Fallback response ready.";
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Request failed (${response.status})`);
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let content = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      content += decoder.decode(value, { stream: true });
+      updateClaudeMessage(assistant.id, { content, status: "streaming" });
+    }
+    updateClaudeMessage(assistant.id, { content, status: "complete" });
+    $("claudeResult").textContent = "Claude response ready.";
+    await loadClaudeThread();
   } catch (error) {
     const errorMessage = `Claude could not answer yet: ${error.message}`;
-    if (pending) pending.textContent = errorMessage;
+    if (assistant) updateClaudeMessage(assistant.id, { content: errorMessage, status: "error" });
     else addClaudeMessage("assistant", errorMessage);
     $("claudeResult").textContent = error.message;
   } finally {
+    state.chat.streaming = false;
     $("claudeSendButton").disabled = false;
   }
 }
@@ -433,12 +571,12 @@ async function applyClaudeToBp() {
     const payload = await api(`/api/ai/projects/${project.id}/chat/apply`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history: state.claudeHistory }),
+      body: JSON.stringify({ message, history: [], thread_id: state.chat.threadId }),
     });
     populateBpBuilder(payload.assumptions || {});
     updateExtractionStatus(payload.extraction);
     const appliedMessage = "Applied to BP data. Historical actuals and normalized financials were updated; generate a new Excel BP to push this into the workbook.";
-    if (pending) pending.textContent = appliedMessage;
+    if (pending) updateClaudeMessage(pending.id, { content: appliedMessage, status: "complete" });
     setResult("bpBuilderResult", {
       status: "Claude chat applied to BP",
       periods: payload.normalized?.periods,
@@ -453,6 +591,26 @@ async function applyClaudeToBp() {
     $("claudeResult").textContent = error.message;
   } finally {
     $("claudeApplyButton").disabled = false;
+  }
+}
+
+async function regenerateClaudeResponse() {
+  try {
+    requireUnlocked();
+    const project = await activeProjectForClaude();
+    const pending = addClaudeMessage("assistant", "Regenerating response...", "pending");
+    $("claudeRegenerateButton").disabled = true;
+    const payload = await api(`/api/ai/projects/${project.id}/chat/regenerate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "", history: [], thread_id: state.chat.threadId }),
+    });
+    updateClaudeMessage(pending.id, { content: payload.reply || payload.message?.content || "Regenerated.", status: "complete" });
+    await loadClaudeThread();
+  } catch (error) {
+    addClaudeMessage("assistant", `Regenerate failed: ${error.message}`, "error");
+  } finally {
+    $("claudeRegenerateButton").disabled = false;
   }
 }
 
@@ -1110,6 +1268,7 @@ function renderProjectList(targetId, allowSearch, limit) {
       state.activeProjectId = row.dataset.projectId;
       localStorage.setItem(ACTIVE_PROJECT_STORAGE_KEY, state.activeProjectId);
       renderAll();
+      loadClaudeThread();
       showView("projectView");
     });
   });
@@ -1261,6 +1420,7 @@ $("claudeCloseButton").addEventListener("click", () => toggleClaudePanel(false))
 $("claudeUploadButton").addEventListener("click", uploadFileFromClaude);
 $("claudeSendButton").addEventListener("click", sendClaudeMessage);
 $("claudeApplyButton").addEventListener("click", applyClaudeToBp);
+$("claudeRegenerateButton").addEventListener("click", regenerateClaudeResponse);
 $("claudeInput").addEventListener("keydown", (event) => {
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();

@@ -5,9 +5,11 @@ import re
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from app.config import ANTHROPIC_MODEL
+
 
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
-DEFAULT_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-latest")
+DEFAULT_MODEL = ANTHROPIC_MODEL
 
 
 def claude_status() -> dict:
@@ -60,6 +62,23 @@ def chat_with_claude(project: dict, financials: dict, message: str, history: lis
             "error": str(exc),
             "reply": _fallback_chat_reply(project, message),
         }
+
+
+def stream_chat_with_claude(project: dict, financials: dict, message: str, history: list[dict] | None = None):
+    history = history or []
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        yield from _chunk_text(_fallback_chat_reply(project, message))
+        return
+    prompt = _chat_prompt(project, financials, message, history)
+    try:
+        yielded = False
+        for chunk in _stream_claude(prompt, max_tokens=2200):
+            yielded = True
+            yield chunk
+        if not yielded:
+            yield from _chunk_text(_fallback_chat_reply(project, message))
+    except Exception as exc:
+        yield from _chunk_text(f"{_fallback_chat_reply(project, message)}\n\nTechnical note: {exc}")
 
 
 def extract_financials_from_chat(project: dict, financials: dict, message: str, history: list[dict] | None = None) -> dict:
@@ -158,6 +177,47 @@ def _call_claude(prompt: str, max_tokens: int = 1400) -> str:
     content = data.get("content", [])
     text_parts = [part.get("text", "") for part in content if part.get("type") == "text"]
     return "\n".join(part for part in text_parts if part).strip()
+
+
+def _stream_claude(prompt: str, max_tokens: int = 1400):
+    payload = {
+        "model": DEFAULT_MODEL,
+        "max_tokens": max_tokens,
+        "temperature": 0.2,
+        "stream": True,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    request = Request(
+        ANTHROPIC_API_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "content-type": "application/json",
+            "x-api-key": os.getenv("ANTHROPIC_API_KEY", ""),
+            "anthropic-version": "2023-06-01",
+        },
+        method="POST",
+    )
+    with urlopen(request, timeout=35) as response:
+        for raw_line in response:
+            line = raw_line.decode("utf-8", errors="ignore").strip()
+            if not line.startswith("data: "):
+                continue
+            data = line[6:]
+            if data == "[DONE]":
+                break
+            try:
+                event = json.loads(data)
+            except json.JSONDecodeError:
+                continue
+            if event.get("type") == "content_block_delta":
+                delta = event.get("delta") or {}
+                if delta.get("type") == "text_delta" and delta.get("text"):
+                    yield delta["text"]
+
+
+def _chunk_text(text: str, size: int = 22):
+    for idx in range(0, len(text), size):
+        yield text[idx : idx + size]
 
 
 def _project_prompt(project: dict, financials: dict) -> str:
@@ -360,9 +420,14 @@ def _fallback_extraction(document_context: dict) -> dict:
 def _fallback_chat_reply(project: dict, message: str) -> str:
     company = project.get("company_name", "the active project")
     return (
-        f"Claude is not configured, but I can still structure the request for {company}. "
-        "Add ANTHROPIC_API_KEY in Railway to enable real chat extraction. "
-        "For automatic BP population, provide financial lines with period labels, e.g. Revenue FY2025 1200000, EBITDA FY2025 180000, Cash FY2025 90000."
+        f"I can help structure this for {company}. The live Anthropic connection is not active on this deployment yet, "
+        "so I am using a local finance fallback instead of a real Claude response.\n\n"
+        "To make this fully conversational with Claude, add `ANTHROPIC_API_KEY` in Railway variables. "
+        "For automatic BP population in fallback mode, write explicit lines with periods, for example:\n"
+        "- Revenue FY2025 1200000\n"
+        "- EBITDA FY2025 180000\n"
+        "- Cash FY2025 90000\n"
+        "- Debt FY2025 500000"
     )
 
 
