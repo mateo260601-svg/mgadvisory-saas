@@ -320,6 +320,77 @@ async function extractHistoricals() {
   }
 }
 
+// ── Claude mini assistant ────────────────────────────────────────────────────
+function toggleClaudePanel(forceOpen) {
+  const panel = $("claudePanel");
+  if (!panel) return;
+  const shouldOpen = forceOpen ?? panel.classList.contains("hidden");
+  panel.classList.toggle("hidden", !shouldOpen);
+}
+
+function addClaudeMessage(role, text) {
+  const target = $("claudeMessages");
+  if (!target) return;
+  const div = document.createElement("div");
+  div.className = `claude-message ${role}`;
+  div.textContent = text;
+  target.appendChild(div);
+  target.scrollTop = target.scrollHeight;
+}
+
+async function sendClaudeMessage() {
+  try {
+    requireUnlocked();
+    const project = activeProject();
+    if (!project) throw new Error("Select a project first.");
+    const message = $("claudeInput").value.trim();
+    if (!message) throw new Error("Write a message for Claude.");
+    $("claudeInput").value = "";
+    addClaudeMessage("user", message);
+    $("claudeResult").textContent = "Claude is thinking...";
+    const payload = await api(`/api/ai/projects/${project.id}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, history: state.claudeHistory }),
+    });
+    const reply = payload.reply || "No response.";
+    state.claudeHistory.push({ role: "user", content: message }, { role: "assistant", content: reply });
+    state.claudeHistory = state.claudeHistory.slice(-16);
+    addClaudeMessage("assistant", reply);
+    $("claudeResult").textContent = payload.source === "claude" ? "Claude response ready." : "Fallback response ready.";
+  } catch (error) {
+    $("claudeResult").textContent = error.message;
+  }
+}
+
+async function applyClaudeToBp() {
+  try {
+    requireUnlocked();
+    const project = activeProject();
+    if (!project) throw new Error("Select a project first.");
+    const message = $("claudeInput").value.trim() || "Extract all useful financial statements, debt and BP assumptions from this conversation and apply them to the BP model.";
+    addClaudeMessage("user", `[Apply to BP] ${message}`);
+    $("claudeResult").textContent = "Extracting and applying to BP data...";
+    const payload = await api(`/api/ai/projects/${project.id}/chat/apply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, history: state.claudeHistory }),
+    });
+    populateBpBuilder(payload.assumptions || {});
+    updateExtractionStatus(payload.extraction);
+    addClaudeMessage("assistant", "Applied to BP data. Historical actuals and normalized financials were updated; generate a new Excel BP to push this into the workbook.");
+    setResult("bpBuilderResult", {
+      status: "Claude chat applied to BP",
+      periods: payload.normalized?.periods,
+      extraction: payload.extraction,
+    });
+    $("claudeResult").textContent = "Applied to BP data.";
+    await refreshWorkspace();
+  } catch (error) {
+    $("claudeResult").textContent = error.message;
+  }
+}
+
 // ── Outputs ───────────────────────────────────────────────────────────────────
 async function generateBp() {
   try {
