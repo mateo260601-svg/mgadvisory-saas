@@ -1011,6 +1011,33 @@ def _build_financial_statements(ws, styles: dict) -> None:
         _formula(ws, 23, out_col, f"='Control Panel'!$C$11+{letter}22" if c == FIRST_PERIOD_COL else f"={prev}23+{letter}22", styles, output=True)
         _formula(ws, 24, out_col, f"='Debt Schedule'!{source_letter}{debt_agg+8}", styles, output=True)
         _formula(ws, 25, out_col, f"={letter}24-{letter}23", styles, output=True)
+
+    detail_start = 31
+    ws.cell(detail_start, 2, "Granular 3FS Detail")
+    ws.cell(detail_start, 2).font = styles["section_font"]
+    _table_header(ws, detail_start + 1, ["Detail Line"] + [f"FY{year}" for year in years], styles)
+    ws.cell(detail_start + 1, monthly_start - 1, "Monthly Detail")
+    ws.cell(detail_start + 1, monthly_start - 1).fill = styles["section_fill"]
+    ws.cell(detail_start + 1, monthly_start - 1).font = styles["bold_font"]
+    for idx, c in enumerate(_period_cols(), start=2):
+        out_col = monthly_start + c - FIRST_PERIOD_COL
+        cell = ws.cell(detail_start + 1, out_col)
+        cell.value = f"='Lists & Dates'!V{idx}"
+        cell.number_format = "mmm-yy"
+        cell.fill = styles["header_fill"]
+        cell.font = styles["header_font"]
+        ws.column_dimensions[_col(out_col)].outlineLevel = 1
+        ws.column_dimensions[_col(out_col)].hidden = True
+    for idx, (statement, category, _subcategory, model_line, detail_line, _sign) in enumerate(_historical_line_templates()[:150], start=0):
+        row = detail_start + 2 + idx
+        source_row = 6 + idx
+        ws.cell(row, 2, f"{statement} | {category} | {detail_line}")
+        for year_idx, _year in enumerate(years, start=3):
+            _formula(ws, row, year_idx, f"='3FS Detail Output'!{_col(year_idx + 4)}{source_row}", styles, output=True)
+        for c in _period_cols():
+            out_col = monthly_start + c - FIRST_PERIOD_COL
+            detail_col = _col(13 + c - FIRST_PERIOD_COL)
+            _formula(ws, row, out_col, f"='3FS Detail Output'!{detail_col}{source_row}", styles, output=True)
     ws.sheet_properties.outlinePr.summaryRight = False
 
 

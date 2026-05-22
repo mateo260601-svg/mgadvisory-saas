@@ -1008,3 +1008,85 @@ h3 {
   border-radius: 50%;
   display: block;
 }
+
+/* Claude mini assistant */
+.claude-assistant {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 80;
+}
+
+.claude-toggle {
+  border-radius: 999px;
+  box-shadow: 0 12px 28px rgba(24, 38, 32, 0.22);
+  padding: 12px 18px;
+}
+
+.claude-panel {
+  position: absolute;
+  right: 0;
+  bottom: 58px;
+  width: min(460px, calc(100vw - 32px));
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 20px 54px rgba(24, 38, 32, 0.24);
+  padding: 16px;
+}
+
+.claude-head {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.claude-head h3 {
+  margin: 2px 0 0;
+}
+
+.claude-messages {
+  background: #f7faf8;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.claude-message {
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 9px 10px;
+  white-space: pre-wrap;
+}
+
+.claude-message.assistant {
+  background: #eef6f0;
+  color: var(--ink);
+}
+
+.claude-message.user {
+  background: #1f3528;
+  color: #fff;
+  justify-self: end;
+  max-width: 92%;
+}
+
+#claudeInput {
+  margin-top: 10px;
+  min-height: 96px;
+  resize: vertical;
+}
+
+.claude-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
