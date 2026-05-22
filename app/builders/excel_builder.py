@@ -45,17 +45,27 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     wb.remove(wb.active)
     styles = _styles(Font, PatternFill, Border, Side, Alignment)
 
-    admin = wb.create_sheet("Admin")
-    group_assumptions = wb.create_sheet("Group Assumptions")
     cover = wb.create_sheet("Cover")
     model_guide = wb.create_sheet("Model Guide")
     macro_inputs = wb.create_sheet("Macro Inputs")
+    output_sep = wb.create_sheet("Output>>")
+    statements = wb.create_sheet("Financial Statements")
+    summary_quarter = wb.create_sheet("Summary Financials Quarter")
+    summary_annual = wb.create_sheet("Summary Financials Annual")
+    ebitda_bridges = wb.create_sheet("EBITDA Bridges")
+    outputs = wb.create_sheet("Outputs")
+    packaged = wb.create_sheet("Packaged Output")
+    ic_summary = wb.create_sheet("IC Summary")
+    assumptions_sep = wb.create_sheet("Assumptions>>")
+    admin = wb.create_sheet("Admin")
+    group_assumptions = wb.create_sheet("Group Assumptions")
     data_room = wb.create_sheet("Data Room")
     control = wb.create_sheet("Control Panel")
     assumption_map = wb.create_sheet("Assumption Input Map")
     historical_detail = wb.create_sheet("Historical Detail Input")
     historical = wb.create_sheet("Historical Inputs")
     historical_bridge = wb.create_sheet("Historical Bridge")
+    operating_sep = wb.create_sheet("Operating Build>>")
     entity_input_sheets = [wb.create_sheet(f"{entity} Data Input") for entity in ENTITIES]
     entity_output_sheets = [wb.create_sheet(f"Output_{entity}_Monthly") for entity in ENTITIES]
     entity_annual_sheets = [wb.create_sheet(f"Output_{entity}_Annual") for entity in ENTITIES]
@@ -65,27 +75,36 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     opex = wb.create_sheet("Opex")
     wc = wb.create_sheet("Working Capital")
     capex = wb.create_sheet("Capex D&A")
+    debt_sep = wb.create_sheet("Debt & Covenants>>")
     debt_config = wb.create_sheet("Debt Config")
     debt_schedule = wb.create_sheet("Debt Schedule")
-    statements = wb.create_sheet("Financial Statements")
+    covenants = wb.create_sheet("Covenants")
+    debt_capacity = wb.create_sheet("Debt Capacity")
+    restructuring_sep = wb.create_sheet("Restructuring & Sensitivities>>")
+    restructuring = wb.create_sheet("Restructuring Options")
+    sensitivities = wb.create_sheet("Sensitivity Matrix")
+    calculations_sep = wb.create_sheet("Calculations>>")
     detail_3fs = wb.create_sheet("3FS Detail Output")
     detail_lines = wb.create_sheet("Detailed Forecast Lines")
-    covenants = wb.create_sheet("Covenants")
-    outputs = wb.create_sheet("Outputs")
-    summary_quarter = wb.create_sheet("Summary Financials Quarter")
-    summary_annual = wb.create_sheet("Summary Financials Annual")
-    ebitda_bridges = wb.create_sheet("EBITDA Bridges")
-    packaged = wb.create_sheet("Packaged Output")
-    ic_summary = wb.create_sheet("IC Summary")
-    restructuring = wb.create_sheet("Restructuring Options")
-    debt_capacity = wb.create_sheet("Debt Capacity")
-    sensitivities = wb.create_sheet("Sensitivity Matrix")
+    checks_sep = wb.create_sheet("Checks & Mapping>>")
     checks = wb.create_sheet("Checks")
     lookup = wb.create_sheet("Lookup")
     mapping = wb.create_sheet("Mapping")
+    supporting_sep = wb.create_sheet("Supporting Information>>")
     lists = wb.create_sheet("Lists & Dates")
 
     _build_lists(lists, project, styles)
+    for sheet, title, subtitle in [
+        (output_sep, "Output", "Review the 3-statement outputs, quarterly/annual summaries and investment committee pages first."),
+        (assumptions_sep, "Assumptions", "Core inputs, historical actuals and operating drivers controlled from the SaaS BP Builder."),
+        (operating_sep, "Operating Build", "Revenue, COGS, headcount, opex, working capital and capex build-up."),
+        (debt_sep, "Debt & Covenants", "Debt instruments, cash/PIK interest, amortisation, liquidity and covenant tests."),
+        (restructuring_sep, "Restructuring & Sensitivities", "Debt capacity, restructuring alternatives and downside sensitivities."),
+        (calculations_sep, "Calculations", "Detailed formula-driven forecast lines and granular 3FS projection engine."),
+        (checks_sep, "Checks & Mapping", "Workbook integrity checks, mapping tables and lookup support."),
+        (supporting_sep, "Supporting Information", "Fixed lists, date tables and technical support sheets."),
+    ]:
+        _build_separator(sheet, title, subtitle, styles)
     _build_admin(admin, project, styles)
     _build_group_assumptions(group_assumptions, project, styles, DataValidation)
     _build_cover(cover, project, styles)
@@ -223,6 +242,18 @@ def _build_cover(ws, project: dict, styles: dict) -> None:
         ws.cell(row, 3, value)
     ws["B22"] = "Operating Rule"
     ws["C22"] = "Inputs live in blue cells. Calculations and outputs are formula-driven."
+
+
+def _build_separator(ws, title: str, subtitle: str, styles: dict) -> None:
+    ws["B2"] = title
+    ws["B2"].font = styles["title_font"]
+    ws["B4"] = subtitle
+    ws["B4"].font = styles["subtitle_font"]
+    ws["B7"] = "Section Navigation"
+    ws["B7"].font = styles["section_font"]
+    ws["B9"] = "This tab is a separator to make the workbook readable for external review."
+    ws["B10"] = "All operating tabs after this separator remain formula-linked unless cells are explicitly blue inputs."
+    ws.sheet_properties.tabColor = HEADER_FILL
 
 
 def _build_model_guide(ws, styles: dict) -> None:
@@ -1803,9 +1834,10 @@ def _detail_projection_formula(row: int, model_line: str, fs_col: str) -> str:
     }
     source_row = fs_rows.get(model_line, 10)
     return (
-        f'=IFERROR(\'Financial Statements\'!{fs_col}{source_row}'
-        f"*'Historical Detail Input'!$P{row}"
-        f"/SUMIFS('Historical Detail Input'!$P:$P,'Historical Detail Input'!$F:$F,$E{row}),0)"
+        f'=IFERROR(\'Financial Statements\'!{fs_col}{source_row}*'
+        f"IF(SUMIFS('Historical Detail Input'!$P$6:$P$185,'Historical Detail Input'!$F$6:$F$185,$E{row})<>0,"
+        f"'Historical Detail Input'!$P{row}/SUMIFS('Historical Detail Input'!$P$6:$P$185,'Historical Detail Input'!$F$6:$F$185,$E{row}),"
+        f"1/COUNTIF($E$6:$E$185,$E{row})),0)"
     )
 
 
