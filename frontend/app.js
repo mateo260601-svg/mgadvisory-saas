@@ -677,6 +677,35 @@ async function saveBpAssumptions() {
   }
 }
 
+function updateBpReadiness() {
+  if (!$("bpReadinessScore")) return;
+  const assumptions = collectBpBuilder();
+  const issues = [];
+  let score = 0;
+  const revenueRows = assumptions.revenue_streams.filter((row) => row.name && row.volume > 0 && row.price > 0);
+  const historicalRows = assumptions.historical_actuals.filter((row) => row.detail_line && (row.latest_actual || row.fy2025 || row.fy2024));
+  const debtRows = assumptions.debt_tranches.filter((row) => row.name && (row.opening_balance || row.commitment));
+  const costRows = assumptions.cost_items.filter((row) => row.name && (row.monthly_fixed || row.percent_revenue || row.cost_per_fte));
+  const headcountRows = assumptions.headcount.filter((row) => row.department && row.opening_fte >= 0 && row.avg_salary_month >= 0);
+
+  if (assumptions.model.model_start_date) score += 10; else issues.push("Set forecast start date.");
+  if (assumptions.model.actuals_end_date) score += 10; else issues.push("Set last actuals date.");
+  if (historicalRows.length >= 3 || assumptions.model.historical_source === "Claude extraction") score += 18; else issues.push("Add or extract historical actuals.");
+  if (revenueRows.length >= 1) score += 18; else issues.push("Add at least one revenue stream with volume and price.");
+  if (costRows.length >= 3) score += 12; else issues.push("Add key cost lines.");
+  if (headcountRows.length >= 1) score += 8; else issues.push("Add headcount or payroll assumptions.");
+  if (assumptions.working_capital.dso || assumptions.working_capital.dpo) score += 8; else issues.push("Set working capital days.");
+  if (debtRows.length >= 1 || assumptions.model.opening_debt === 0) score += 10; else issues.push("Add debt layers or set opening debt to zero.");
+  if (assumptions.covenants.max_net_debt_ebitda && assumptions.covenants.min_liquidity) score += 6; else issues.push("Set covenant thresholds.");
+
+  const readiness = Math.min(100, score);
+  $("bpReadinessScore").textContent = `${readiness}%`;
+  $("bpReadinessBar").style.width = `${readiness}%`;
+  $("bpOperatingStatus").textContent = revenueRows.length ? `${revenueRows.length} revenue line${revenueRows.length > 1 ? "s" : ""}` : "Needs revenue";
+  $("bpDebtStatus").textContent = debtRows.length ? `${debtRows.length} debt layer${debtRows.length > 1 ? "s" : ""}` : "No debt layer";
+  $("bpReadinessIssues").innerHTML = issues.slice(0, 4).map((issue) => `<span>${escapeHtml(issue)}</span>`).join("") || "<span>Ready to generate and review Excel outputs.</span>";
+}
+
 async function generateBpFromBuilder() {
   try {
     await saveBpAssumptions();
@@ -733,6 +762,7 @@ function populateBpBuilder(assumptions) {
   setValue("bpMaxLeverage", covenants.max_net_debt_ebitda ?? 3.5);
   setValue("bpMinIcr", covenants.min_interest_cover ?? 2.0);
   setValue("bpMinLiquidity", covenants.min_liquidity ?? 50000);
+  updateBpReadiness();
 }
 
 function collectBpBuilder() {
@@ -1346,6 +1376,7 @@ function showBpStep(step) {
   });
   if ($("bpWizardPrevButton")) $("bpWizardPrevButton").disabled = state.bpStep === 0;
   if ($("bpWizardNextButton")) $("bpWizardNextButton").textContent = state.bpStep === maxStep ? "Generate" : "Next";
+  updateBpReadiness();
 }
 
 function nextBpStep() {
@@ -1456,6 +1487,8 @@ $("addHistoricalLineButton").addEventListener("click", addHistoricalLineRow);
 $("addCostItemButton").addEventListener("click", addCostItemRow);
 $("addHeadcountLineButton").addEventListener("click", addHeadcountLine);
 $("addDebtTrancheButton").addEventListener("click", addDebtTrancheRow);
+$("bpBuilderWorkspace").addEventListener("input", updateBpReadiness);
+$("bpBuilderWorkspace").addEventListener("change", updateBpReadiness);
 
 document.querySelectorAll("[data-view], [data-view-button]").forEach((el) => {
   el.addEventListener("click", () => showView(el.dataset.view || el.dataset.viewButton));

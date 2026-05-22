@@ -744,6 +744,38 @@ h3 {
   color: var(--green);
 }
 
+.module-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.module-stack div {
+  background: #f8faf8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.module-stack strong {
+  color: var(--ink);
+}
+
+.module-stack span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.module-stack em {
+  color: var(--brand);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .output-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(160px, 1fr));
@@ -813,6 +845,82 @@ h3 {
   border-radius: 8px;
   margin-bottom: 18px;
   padding: 12px;
+}
+
+.builder-command-center {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(3, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.readiness-card {
+  background: #f8faf8;
+  border: 1px solid #dbe5de;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.readiness-card span,
+.step-impact span {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.readiness-card strong {
+  color: var(--ink);
+  display: block;
+  font-size: 16px;
+}
+
+.readiness-bar {
+  background: #e4ece6;
+  border-radius: 999px;
+  height: 7px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.readiness-bar i {
+  background: linear-gradient(90deg, var(--brand), var(--accent-bright));
+  display: block;
+  height: 100%;
+  transition: width 0.2s ease;
+  width: 0;
+}
+
+.readiness-issues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.readiness-issues span {
+  background: #fff8ef;
+  border: 1px solid #efc5b5;
+  border-radius: 999px;
+  color: #7d3f2d;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 9px;
+}
+
+.step-impact {
+  background: #f7faf8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: -4px 0 14px;
+  padding: 12px 14px;
+}
+
+.step-impact strong {
+  color: var(--brand-dark);
+  font-size: 13px;
 }
 
 .wizard-steps {
@@ -1007,7 +1115,8 @@ h3 {
 
   .compact-grid,
   .debt-grid,
-  .wizard-steps {
+  .wizard-steps,
+  .builder-command-center {
     grid-template-columns: 1fr;
   }
 }

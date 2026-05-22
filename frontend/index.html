@@ -298,6 +298,26 @@
             </section>
 
             <section class="bp-wizard">
+              <div class="builder-command-center">
+                <div class="readiness-card">
+                  <span>Model readiness</span>
+                  <strong id="bpReadinessScore">0%</strong>
+                  <div class="readiness-bar"><i id="bpReadinessBar"></i></div>
+                </div>
+                <div class="readiness-card">
+                  <span>Operating build</span>
+                  <strong id="bpOperatingStatus">Needs setup</strong>
+                </div>
+                <div class="readiness-card">
+                  <span>Capital structure</span>
+                  <strong id="bpDebtStatus">Needs debt inputs</strong>
+                </div>
+                <div class="readiness-card">
+                  <span>Excel output</span>
+                  <strong>53 tabs / 59k formulas</strong>
+                </div>
+              </div>
+              <div id="bpReadinessIssues" class="readiness-issues"></div>
               <div class="wizard-steps">
                 <button class="wizard-step active" data-bp-step-target="0">1. Setup</button>
                 <button class="wizard-step" data-bp-step-target="1">2. Historicals</button>
@@ -315,6 +335,10 @@
               <div class="panel builder-panel bp-step-panel active-step" data-bp-step="0">
                 <p class="eyebrow">Control</p>
                 <h3>Model setup</h3>
+                <div class="step-impact">
+                  <span>Excel impact</span>
+                  <strong>Control Panel, Macro Inputs, Lists & Dates, all monthly output headers</strong>
+                </div>
                 <div class="assumption-guide">
                   <strong>Purpose</strong>
                   <span>Set the modelling perimeter used by every downstream sheet: dates, currency, scenario, tax, opening liquidity and opening leverage.</span>
@@ -336,6 +360,10 @@
               <div class="panel builder-panel wide-builder bp-step-panel" data-bp-step="2">
                 <p class="eyebrow">Commercial engine</p>
                 <h3>Revenue streams</h3>
+                <div class="step-impact">
+                  <span>Excel impact</span>
+                  <strong>Revenue Drivers, Product Build, Financial Statements, annual/monthly summaries</strong>
+                </div>
                 <div class="assumption-guide">
                   <strong>How to fill</strong>
                   <span>Enter one row per product/service. Volume x price creates opening monthly revenue; monthly growth rates then drive the forecast by product line.</span>
@@ -353,6 +381,10 @@
               <div class="panel builder-panel bp-step-panel" data-bp-step="3">
                 <p class="eyebrow">Costs</p>
                 <h3>Cost base</h3>
+                <div class="step-impact">
+                  <span>Excel impact</span>
+                  <strong>Product Build, Opex, EBITDA bridge, cash-flow forecast</strong>
+                </div>
                 <div class="assumption-guide">
                   <strong>Purpose</strong>
                   <span>These assumptions drive gross margin and the broad SG&A envelope. Detailed opex items below provide the line-by-line build.</span>
@@ -422,6 +454,10 @@
               <div class="panel builder-panel wide-builder bp-step-panel" data-bp-step="6">
                 <p class="eyebrow">Debt engine</p>
                 <h3>Debt instruments</h3>
+                <div class="step-impact">
+                  <span>Excel impact</span>
+                  <strong>Debt Config, Debt Schedule, Covenants, Debt Capacity, lender outputs</strong>
+                </div>
                 <div class="assumption-guide">
                   <strong>Debt modelling</strong>
                   <span>Enter each tranche separately. Interest type controls cash interest vs PIK; frequency controls when cash interest is paid; amortisation controls principal repayment.</span>
@@ -453,6 +489,10 @@
               <div class="panel builder-panel wide-builder bp-step-panel" data-bp-step="1">
                 <p class="eyebrow">Historical data</p>
                 <h3>AI extraction workflow</h3>
+                <div class="step-impact">
+                  <span>Recommended workflow</span>
+                  <strong>Upload files, ask Claude to map actuals, review manual override rows, then generate Excel</strong>
+                </div>
                 <div class="output-grid">
                   <button id="extractHistoricalsBuilderButton" class="secondary-button">Run Claude extraction</button>
                   <button id="downloadBpBuilderButton" class="secondary-button">Download BP</button>
@@ -520,15 +560,14 @@
             </div>
 
             <div class="panel">
-              <p class="eyebrow">Templates</p>
-              <h3>Available references</h3>
-              <div class="module-list">
-                <div><span>Excel BP engine</span><strong>53 tabs</strong></div>
-                <div><span>Debt library</span><strong>75 instruments</strong></div>
-                <div><span>QoE engine</span><strong>8 adj. types</strong></div>
-                <div><span>Restructuring</span><strong>10 options</strong></div>
-                <div><span>Lender PPTX</span><strong>10 slides</strong></div>
-                <div><span>Claude AI layer</span><strong id="aiTemplateStatus">Checking</strong></div>
+              <p class="eyebrow">Module map</p>
+              <h3>What each module does</h3>
+              <div class="module-stack">
+                <div><strong>BP engine</strong><span>Builds monthly 3FS, assumptions, checks and outputs.</span><em>53 tabs</em></div>
+                <div><strong>Claude layer</strong><span>Extracts historicals, proposes mappings and deck logic.</span><em id="aiTemplateStatus">Checking</em></div>
+                <div><strong>Debt engine</strong><span>Models tranches, PIK/cash interest, maturities and covenants.</span><em>75 instruments</em></div>
+                <div><strong>Deck builder</strong><span>Creates lender and IM packs from model outputs.</span><em>PPTX</em></div>
+                <div><strong>QoE / restructuring</strong><span>Turns financials into adjustments and options papers.</span><em>Analysis</em></div>
               </div>
             </div>
           </section>

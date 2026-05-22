@@ -287,6 +287,22 @@ def _build_model_guide(ws, styles: dict) -> None:
         ws.cell(row_idx, 2, row_idx - 18)
         ws.cell(row_idx, 3, rule)
 
+    ws["B25"] = "SaaS BP Builder To Excel Map"
+    ws["B25"].font = styles["section_font"]
+    _table_header(ws, 27, ["SaaS Step", "Excel Tabs Updated", "Reviewer Focus", "Output Dependency"], styles)
+    flow = [
+        ("Setup", "Control Panel, Macro Inputs, Lists & Dates", "Dates, scenario, currency, opening cash/debt", "All timeline and model headers"),
+        ("Historicals", "Historical Detail Input, Historical Inputs, Historical Bridge", "Claude extraction reviewed against source files", "Forecast base period and bridges"),
+        ("Revenue", "Revenue Drivers, Product Build", "Product/service split, volume, price, growth", "Revenue, gross profit, working capital"),
+        ("Costs / People", "Opex, Headcount, Financial Statements", "Fixed vs variable costs, FTE and salary build", "EBITDA and cash burn"),
+        ("Cash Flow", "Working Capital, Capex D&A", "DSO/DIO/DPO, maintenance vs growth capex", "FCF, cash and balance sheet"),
+        ("Debt", "Debt Config, Debt Schedule, Covenants", "Cash/PIK interest, maturity, amortisation, sweeps", "Leverage, liquidity, covenant headroom"),
+        ("Generate", "Outputs, Packaged Output, IC Summary, Checks", "Checks clear and outputs tie to 3FS", "Banker-facing workbook pack"),
+    ]
+    for row_idx, values in enumerate(flow, start=28):
+        for col_idx, value in enumerate(values, start=2):
+            ws.cell(row_idx, col_idx, value)
+
 
 def _build_macro_inputs(ws, styles: dict) -> None:
     ws["B2"] = "Macro Inputs"
@@ -322,7 +338,7 @@ def _build_macro_inputs(ws, styles: dict) -> None:
         _formula(ws, row, 3, f"='Lists & Dates'!V{idx + 2}", styles, output=True, fmt="mmm-yy")
         _formula(ws, row, 4, f"=YEAR(C{row})", styles, output=True)
         _formula(ws, row, 5, f'="Q"&ROUNDUP(MONTH(C{row})/3,0)', styles, output=True)
-        _formula(ws, row, 6, f'=IF(C{row}<=$C$11,"Actual","Forecast")', styles, output=True)
+        _formula(ws, row, 6, f'=IF(C{row}<=\'Control Panel\'!$C$9,"Actual","Forecast")', styles, output=True)
 
 
 def _build_data_room(ws, project: dict, financials: dict, styles: dict) -> None:
@@ -382,8 +398,23 @@ def _build_control(ws, project: dict, styles: dict, DataValidation, assumptions:
 def _build_assumption_input_map(ws, assumptions: dict, styles: dict) -> None:
     ws["B2"] = "Assumption Input Map"
     ws["B2"].font = styles["section_font"]
-    ws["B3"] = "All BP Builder parameters saved from the SaaS are mirrored here before flowing into operating tabs."
-    _table_header(ws, 5, ["Category", "Parameter", "Value", "Input Type", "Model Destination"], styles)
+    ws["B3"] = "All BP Builder parameters saved from the SaaS are mirrored here before flowing into operating tabs. Use this as the model audit trail."
+    _table_header(
+        ws,
+        5,
+        [
+            "SaaS Step",
+            "Category",
+            "Parameter",
+            "Value",
+            "Input Type",
+            "Required?",
+            "Review Priority",
+            "Model Destination",
+            "Validation Note",
+        ],
+        styles,
+    )
     destination_map = {
         "model": "Control Panel",
         "historical_actuals": "Historical Detail Input / Historical Bridge",
@@ -397,11 +428,16 @@ def _build_assumption_input_map(ws, assumptions: dict, styles: dict) -> None:
         "covenants": "Covenants",
     }
     for row, (category, key, value) in enumerate(_flatten_assumptions(assumptions), start=6):
-        ws.cell(row, 2, category)
-        ws.cell(row, 3, key)
-        _input(ws, row, 4, value, styles)
-        ws.cell(row, 5, _assumption_type(value))
-        ws.cell(row, 6, destination_map.get(category.split("[")[0], "Model workbook"))
+        base_category = category.split("[")[0]
+        ws.cell(row, 2, _assumption_step(base_category))
+        ws.cell(row, 3, category)
+        ws.cell(row, 4, key)
+        _input(ws, row, 5, value, styles)
+        ws.cell(row, 6, _assumption_type(value))
+        ws.cell(row, 7, "Yes" if _assumption_required(base_category, key) else "No")
+        ws.cell(row, 8, _assumption_priority(base_category, key, value))
+        ws.cell(row, 9, destination_map.get(base_category, "Model workbook"))
+        ws.cell(row, 10, _assumption_validation_note(base_category, key, value))
 
 
 def _build_historical_detail_input(ws, financials: dict, styles: dict, DataValidation, assumptions: dict) -> None:
@@ -1931,6 +1967,64 @@ def _assumption_type(value) -> str:
     if isinstance(value, str) and len(value) >= 10 and value[4:5] == "-" and value[7:8] == "-":
         return "Date"
     return "Text"
+
+
+def _assumption_step(category: str) -> str:
+    steps = {
+        "model": "1. Model setup",
+        "historical_actuals": "2. Historical actuals",
+        "revenue_streams": "3. Revenue build",
+        "cost_base": "4. Direct cost setup",
+        "cost_items": "5. Opex structure",
+        "headcount": "6. Headcount",
+        "working_capital": "7. Working capital",
+        "capex": "8. Capex / D&A",
+        "debt_tranches": "9. Debt structure",
+        "covenants": "10. Covenants",
+    }
+    return steps.get(category, "Other model input")
+
+
+def _assumption_required(category: str, key: str) -> bool:
+    key_lower = key.lower()
+    required_keys = {
+        "model": {"company_name", "currency", "scenario", "model_start_date", "actuals_end_date", "forecast_months"},
+        "revenue_streams": {"name", "type", "volume", "price"},
+        "cost_items": {"name", "driver"},
+        "working_capital": {"dso", "dpo", "dio"},
+        "debt_tranches": {"name", "debt_type", "start_date", "opening_balance", "term_months", "margin", "base_rate"},
+        "covenants": {"max_net_debt_ebitda", "min_interest_cover", "min_liquidity"},
+    }
+    if key_lower in required_keys.get(category, set()):
+        return True
+    return category in {"historical_actuals"} and key_lower in {"statement", "model_line", "detail_line", "latest_actual"}
+
+
+def _assumption_priority(category: str, key: str, value) -> str:
+    if _assumption_required(category, key) and value in ("", None):
+        return "Critical - missing"
+    if category in {"model", "historical_actuals", "debt_tranches"}:
+        return "High"
+    if category in {"revenue_streams", "working_capital", "covenants"}:
+        return "Medium"
+    return "Standard"
+
+
+def _assumption_validation_note(category: str, key: str, value) -> str:
+    key_lower = key.lower()
+    if _assumption_required(category, key) and value in ("", None):
+        return "Complete this input before generating an investment-grade model."
+    if key_lower.endswith("date"):
+        return "Must align with the model monthly timeline."
+    if key_lower in {"margin", "base_rate", "tax_rate", "leverage_limit", "minimum_liquidity"}:
+        return "Review against debt term sheet, management case or lender covenant package."
+    if category == "historical_actuals":
+        return "Should be reviewed after Claude extraction before feeding the forecast bridge."
+    if category == "revenue_streams":
+        return "Flows into product revenue build and annual/monthly financial statements."
+    if category == "debt_tranches":
+        return "Flows into cash interest, PIK accrual, amortization, maturity and covenant checks."
+    return "Linked to the model output tabs through formulas."
 
 
 def _styles(Font, PatternFill, Border, Side, Alignment) -> dict:
