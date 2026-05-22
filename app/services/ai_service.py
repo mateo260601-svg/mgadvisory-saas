@@ -1,5 +1,7 @@
 import json
+import json
 import os
+import re
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -34,6 +36,49 @@ def generate_project_brief(project: dict, financials: dict) -> dict:
             "brief": _fallback_brief(project, financials),
             "source": "local_fallback_after_error",
             "error": str(exc),
+        }
+
+
+def chat_with_claude(project: dict, financials: dict, message: str, history: list[dict] | None = None) -> dict:
+    history = history or []
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        return {
+            "configured": False,
+            "source": "local_fallback",
+            "reply": _fallback_chat_reply(project, message),
+        }
+    prompt = _chat_prompt(project, financials, message, history)
+    try:
+        reply = _call_claude(prompt, max_tokens=2200)
+        return {"configured": True, "source": "claude", "reply": reply}
+    except Exception as exc:
+        return {
+            "configured": True,
+            "source": "local_fallback_after_error",
+            "error": str(exc),
+            "reply": _fallback_chat_reply(project, message),
+        }
+
+
+def extract_financials_from_chat(project: dict, financials: dict, message: str, history: list[dict] | None = None) -> dict:
+    history = history or []
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        return {
+            "configured": False,
+            "source": "local_fallback",
+            "extraction": _fallback_chat_extraction(message),
+        }
+    prompt = _chat_extraction_prompt(project, financials, message, history)
+    try:
+        text = _call_claude(prompt, max_tokens=4200)
+        extraction = _parse_json_object(text)
+        return {"configured": True, "source": "claude_chat", "extraction": extraction}
+    except Exception as exc:
+        return {
+            "configured": True,
+            "source": "local_fallback_after_error",
+            "error": str(exc),
+            "extraction": _fallback_chat_extraction(message),
         }
 
 
@@ -121,6 +166,52 @@ def _project_prompt(project: dict, financials: dict) -> str:
         "4) key diligence questions, 5) recommended next analyses. Do not invent facts beyond the data.\n\n"
         f"Project:\n{json.dumps(project, indent=2)}\n\n"
         f"Normalized financials:\n{json.dumps(financials, indent=2)}"
+    )
+
+
+def _chat_prompt(project: dict, financials: dict, message: str, history: list[dict]) -> str:
+    return (
+        "You are Claude inside MG Advisory Finance OS, acting as a senior investment banking / restructuring "
+        "financial modeller. Help the user convert uploaded documents, notes and questions into a rigorous BP model. "
+        "Be concise, technical and action-oriented. If the user asks for extraction, explain what you can map into "
+        "P&L, balance sheet, cash flow, debt and BP assumptions. Do not invent numbers.\n\n"
+        f"Project:\n{json.dumps(project, indent=2)}\n\n"
+        f"Current normalized financials:\n{json.dumps(financials, indent=2)[:22000]}\n\n"
+        f"Recent chat history:\n{json.dumps(history[-10:], indent=2)[:12000]}\n\n"
+        f"User message:\n{message}"
+    )
+
+
+def _chat_extraction_prompt(project: dict, financials: dict, message: str, history: list[dict]) -> str:
+    return (
+        "You are an institutional financial modelling extraction engine. Convert the chat conversation into "
+        "normalized financial data that can feed an Excel BP. Return ONLY valid JSON, no markdown. "
+        "Extract only values explicitly provided or strongly evidenced in the conversation/current financials. "
+        "Do not invent missing values; use null or omit unknown lines.\n\n"
+        "Required JSON schema:\n"
+        "{\n"
+        '  "periods": ["FY2023", "FY2024", "FY2025"],\n'
+        '  "currency": "EUR",\n'
+        '  "unit": "actual|thousands|millions|unknown",\n'
+        '  "income_statement": [{"name": "Revenue", "values": {"FY2025": 0}}],\n'
+        '  "balance_sheet": [{"name": "Cash", "values": {"FY2025": 0}}],\n'
+        '  "cash_flow": [{"name": "Free Cash Flow", "values": {"FY2025": 0}}],\n'
+        '  "historical_detail": [\n'
+        '    {"statement": "Income Statement", "category": "Revenue", "subcategory": "Revenue streams", "model_line": "Revenue", "detail_line": "Product revenue", "values": {"FY2025": 0}, "source_file": "Claude chat", "confidence": "medium"}\n'
+        "  ],\n"
+        '  "debt": [{"lender": null, "facility": null, "amount": null, "maturity": null, "margin": null}],\n'
+        '  "working_capital": [{"name": "Receivables", "values": {"FY2025": 0}}],\n'
+        '  "bp_assumptions": {"revenue_streams": [], "cost_items": [], "debt_tranches": []},\n'
+        '  "confidence": "high|medium|low",\n'
+        '  "issues": ["short issue list"],\n'
+        '  "source_files": ["Claude chat"]\n'
+        "}\n\n"
+        "Map lines to one of these BP model_line values where possible: Revenue, COGS, Payroll, Opex, EBITDA, D&A, "
+        "Cash Interest, Tax, Cash, Receivables, Inventory, Payables, Closing Debt, Capex, Change in NWC, Free Cash Flow, Equity.\n\n"
+        f"Project:\n{json.dumps(project, indent=2)}\n\n"
+        f"Current normalized financials:\n{json.dumps(financials, indent=2)[:20000]}\n\n"
+        f"Recent chat history:\n{json.dumps(history[-12:], indent=2)[:16000]}\n\n"
+        f"Latest user instruction:\n{message}"
     )
 
 
@@ -262,6 +353,86 @@ def _fallback_extraction(document_context: dict) -> dict:
         ],
         "source_files": document_context.get("source_files", []),
     }
+
+
+def _fallback_chat_reply(project: dict, message: str) -> str:
+    company = project.get("company_name", "the active project")
+    return (
+        f"Claude is not configured, but I can still structure the request for {company}. "
+        "Add ANTHROPIC_API_KEY in Railway to enable real chat extraction. "
+        "For automatic BP population, provide financial lines with period labels, e.g. Revenue FY2025 1200000, EBITDA FY2025 180000, Cash FY2025 90000."
+    )
+
+
+def _fallback_chat_extraction(message: str) -> dict:
+    periods = sorted(set(re.findall(r"FY20\d{2}|20\d{2}", message, flags=re.IGNORECASE)))
+    periods = [period.upper() if period.upper().startswith("FY") else f"FY{period}" for period in periods] or ["FY2025"]
+    lines = []
+    aliases = {
+        "revenue": "Revenue",
+        "sales": "Revenue",
+        "turnover": "Revenue",
+        "ebitda": "EBITDA",
+        "cash": "Cash",
+        "debt": "Closing Debt",
+        "cogs": "COGS",
+        "opex": "Opex",
+        "capex": "Capex",
+    }
+    for raw_line in message.splitlines():
+        lower = raw_line.lower()
+        model_line = next((target for key, target in aliases.items() if key in lower), None)
+        if not model_line:
+            continue
+        values = {}
+        for period in periods:
+            year = period.replace("FY", "")
+            match = re.search(rf"(?:FY)?{year}[^0-9\-()]*([-()]?[0-9][0-9,.\s]*\)?)", raw_line, flags=re.IGNORECASE)
+            if match:
+                number = _coerce_chat_number(match.group(1))
+                if number is not None:
+                    values[period] = number
+        if values:
+            lines.append({
+                "statement": "Income Statement" if model_line in ["Revenue", "EBITDA", "COGS", "Opex"] else "Balance Sheet",
+                "category": model_line,
+                "subcategory": "Claude chat fallback",
+                "model_line": model_line,
+                "detail_line": model_line,
+                "values": values,
+                "source_file": "Claude chat",
+                "confidence": "low",
+            })
+    return {
+        "periods": periods,
+        "currency": "unknown",
+        "unit": "unknown",
+        "income_statement": [
+            {"name": item["model_line"], "values": item["values"]}
+            for item in lines
+            if item["statement"] == "Income Statement"
+        ],
+        "balance_sheet": [
+            {"name": item["model_line"], "values": item["values"]}
+            for item in lines
+            if item["statement"] == "Balance Sheet"
+        ],
+        "cash_flow": [],
+        "historical_detail": lines,
+        "debt": [],
+        "working_capital": [],
+        "confidence": "low",
+        "issues": ["Local fallback parsed only explicit line-level values from the chat. Configure Claude for institutional extraction."],
+        "source_files": ["Claude chat"],
+    }
+
+
+def _coerce_chat_number(value: str) -> float | None:
+    text = value.strip().replace(",", "").replace(" ", "").replace("(", "-").replace(")", "")
+    try:
+        return float(text)
+    except ValueError:
+        return None
 
 
 def _fallback_brief(project: dict, financials: dict) -> str:

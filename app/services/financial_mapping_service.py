@@ -1,4 +1,5 @@
 import csv
+import csv
 import json
 from pathlib import Path
 from datetime import date, datetime
@@ -53,6 +54,17 @@ def load_normalized_financials(project_id: str) -> dict:
         return json.loads(output_path.read_text(encoding="utf-8"))
     except Exception:
         return normalize_project_financials(project_id)
+
+
+def save_normalized_financials(project_id: str, financials: dict) -> dict:
+    output_path = project_dir(project_id) / "normalized" / "financials.json"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(financials, indent=2), encoding="utf-8")
+    return financials
+
+
+def merge_ai_extraction_into_financials(normalized: dict, ai_result: dict) -> dict:
+    return _merge_ai_extraction(normalized, ai_result)
 
 
 def _read_csv_rows(path: Path) -> list[dict]:

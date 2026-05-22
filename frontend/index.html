@@ -524,6 +524,28 @@
       </section>
     </main>
 
+    <section id="claudeAssistant" class="claude-assistant hidden">
+      <button id="claudeToggleButton" class="claude-toggle" type="button">Claude</button>
+      <div id="claudePanel" class="claude-panel hidden">
+        <div class="claude-head">
+          <div>
+            <p class="eyebrow">Model copilot</p>
+            <h3>Claude BP Assistant</h3>
+          </div>
+          <button id="claudeCloseButton" class="ghost-button" type="button">Close</button>
+        </div>
+        <div id="claudeMessages" class="claude-messages">
+          <div class="claude-message assistant">Ask Claude to analyse uploaded files, map historicals, propose assumptions, or extract financial statements into the BP format.</div>
+        </div>
+        <textarea id="claudeInput" rows="4" placeholder="Example: Extract FY2023-FY2025 revenue, EBITDA, cash, debt and working capital from my notes/files and prepare them for the BP."></textarea>
+        <div class="claude-actions">
+          <button id="claudeSendButton" type="button">Ask Claude</button>
+          <button id="claudeApplyButton" class="secondary-button" type="button">Apply to BP data</button>
+        </div>
+        <div id="claudeResult" class="message"></div>
+      </div>
+    </section>
+
     <script src="/frontend/app.js"></script>
   </body>
 </html>

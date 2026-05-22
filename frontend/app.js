@@ -10,6 +10,7 @@ const state = {
   user: null,
   googleConfigured: false,
   bpStep: 0,
+  claudeHistory: [],
 };
 
 const $ = (id) => document.getElementById(id);
@@ -120,6 +121,8 @@ async function logout() {
   renderUserBadge();
   $("appView").classList.add("hidden");
   $("loginView").classList.remove("hidden");
+  if ($("claudeAssistant")) $("claudeAssistant").classList.add("hidden");
+  if ($("claudePanel")) $("claudePanel").classList.add("hidden");
   hideOverlay();
 }
 
@@ -189,6 +192,7 @@ async function loadGoogleStatus() {
 async function enterWorkspace(statusLabel) {
   $("loginView").classList.add("hidden");
   $("appView").classList.remove("hidden");
+  if ($("claudeAssistant")) $("claudeAssistant").classList.remove("hidden");
   $("licenseStatus").textContent = statusLabel;
   hideOverlay();
   renderUserBadge();
