@@ -556,8 +556,20 @@
                   <span>Recommended workflow</span>
                   <strong>Upload files, ask Claude to map actuals, review manual override rows, then generate Excel</strong>
                 </div>
+                <div class="claude-bridge-card">
+                  <div>
+                    <span>Claude -> BP bridge</span>
+                    <strong id="claudeBpBridgeStatus">Waiting for Claude extraction</strong>
+                  </div>
+                  <div class="bridge-metrics">
+                    <span><strong id="claudeBpBridgeLines">-</strong> historical lines</span>
+                    <span><strong id="claudeBpBridgeRevenue">-</strong> revenues</span>
+                    <span><strong id="claudeBpBridgeCosts">-</strong> costs</span>
+                    <span><strong id="claudeBpBridgeDebt">-</strong> debt layers</span>
+                  </div>
+                </div>
                 <div class="output-grid">
-                  <button id="extractHistoricalsBuilderButton" class="secondary-button">Run Claude extraction</button>
+                  <button id="extractHistoricalsBuilderButton" class="secondary-button">Extract + apply to BP</button>
                   <button id="downloadBpBuilderButton" class="secondary-button hidden">Download BP</button>
                 </div>
                 <div class="model-note">Uploaded PDF/XLSX/CSV files are normalized by the extraction layer and written into the Historical Inputs sheet. Manual lines below override the matching detailed historical line in Excel, then flow into Historical Detail Input, Historical Bridge and the 3FS Detail Output.</div>
@@ -667,7 +679,7 @@
           </div>
         </div>
         <div id="claudeMessages" class="claude-messages">
-          <div class="claude-message assistant">Chat with Claude, upload financial files for the active project, then apply extracted historicals and assumptions directly to the BP builder.</div>
+          <div class="claude-message assistant">Chat with Claude, upload financial files for the active project, then apply extracted historicals, revenue lines, cost lines and debt layers directly to the BP builder.</div>
         </div>
         <div class="claude-upload">
           <label for="claudeFileInput">Attach PDF/XLSX/CSV to active project</label>
@@ -679,7 +691,7 @@
         <textarea id="claudeInput" rows="4" placeholder="Example: Extract FY2023-FY2025 revenue, EBITDA, cash, debt and working capital from my notes/files and prepare them for the BP."></textarea>
         <div class="claude-actions">
           <button id="claudeSendButton" type="button">Ask Claude</button>
-          <button id="claudeApplyButton" class="secondary-button" type="button">Apply to BP data</button>
+          <button id="claudeApplyButton" class="secondary-button" type="button">Apply to BP</button>
         </div>
         <div id="claudeResult" class="message"></div>
       </div>

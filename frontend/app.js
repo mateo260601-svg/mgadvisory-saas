@@ -314,12 +314,14 @@ async function extractHistoricals() {
     requireUnlocked();
     const project = activeProject();
     if (!project) throw new Error("Select a project first.");
-    setResult("uploadResult", "Running Claude historical extraction…");
-    setResult("bpBuilderResult", "Running Claude historical extraction...");
+    setResult("uploadResult", "Running Claude extraction and BP sync...");
+    setResult("bpBuilderResult", "Claude is extracting historicals, mapping assumptions and syncing the BP builder...");
     const payload = await api(`/api/ai/projects/${project.id}/extract-historicals`, {
       method: "POST",
     });
+    if (payload.assumptions) populateBpBuilder(payload.assumptions);
     updateExtractionStatus(payload.extraction);
+    renderClaudeBpBridge(payload.bridge);
     setResult("uploadResult", {
       periods: payload.normalized?.periods,
       currency: payload.normalized?.currency,
@@ -330,8 +332,9 @@ async function extractHistoricals() {
       debt: payload.normalized?.debt,
     });
     setResult("bpBuilderResult", {
-      status: "Historical data normalized for Excel Historical Inputs",
+      status: "Claude extraction synced to BP assumptions",
       periods: payload.normalized?.periods,
+      bridge: payload.bridge,
       extraction: payload.extraction,
     });
   } catch (error) {
@@ -582,18 +585,21 @@ async function applyClaudeToBp() {
     });
     populateBpBuilder(payload.assumptions || {});
     updateExtractionStatus(payload.extraction);
-    const appliedMessage = "Applied to BP data. Historical actuals and normalized financials were updated; generate a new Excel BP to push this into the workbook.";
+    renderClaudeBpBridge(payload.bridge);
+    const bridge = payload.bridge || {};
+    const appliedMessage = `Applied to BP data. ${bridge.historical_lines ?? 0} historical lines, ${bridge.revenue_streams ?? 0} revenue streams, ${bridge.cost_items ?? 0} cost items and ${bridge.debt_tranches ?? 0} debt layers are now feeding the BP builder. Generate a new Excel BP to push this into the workbook.`;
     if (pending) updateClaudeMessage(pending.id, { content: appliedMessage, status: "complete" });
     setResult("bpBuilderResult", {
       status: "Claude chat applied to BP",
       periods: payload.normalized?.periods,
+      bridge: payload.bridge,
       extraction: payload.extraction,
     });
     $("claudeResult").textContent = "Applied to BP data.";
     await refreshWorkspace();
   } catch (error) {
     const errorMessage = `Claude could not apply the data: ${error.message}`;
-    if (pending) pending.textContent = errorMessage;
+    if (pending) updateClaudeMessage(pending.id, { content: errorMessage, status: "error" });
     else addClaudeMessage("assistant", errorMessage);
     $("claudeResult").textContent = error.message;
   } finally {
@@ -1362,6 +1368,23 @@ function updateExtractionStatus(extraction) {
   } else {
     el.textContent = `${mode}${confidence}`;
   }
+}
+
+function renderClaudeBpBridge(bridge) {
+  if (!$("claudeBpBridgeStatus")) return;
+  if (!bridge) {
+    $("claudeBpBridgeStatus").textContent = "Waiting for Claude extraction";
+    $("claudeBpBridgeLines").textContent = "-";
+    $("claudeBpBridgeRevenue").textContent = "-";
+    $("claudeBpBridgeCosts").textContent = "-";
+    $("claudeBpBridgeDebt").textContent = "-";
+    return;
+  }
+  $("claudeBpBridgeStatus").textContent = `${bridge.status || "Synced"} / ${bridge.confidence || "review"}`;
+  $("claudeBpBridgeLines").textContent = bridge.historical_lines ?? 0;
+  $("claudeBpBridgeRevenue").textContent = bridge.revenue_streams ?? 0;
+  $("claudeBpBridgeCosts").textContent = bridge.cost_items ?? 0;
+  $("claudeBpBridgeDebt").textContent = bridge.debt_tranches ?? 0;
 }
 
 async function showView(viewId) {
