@@ -1283,6 +1283,9 @@ function renderMetrics() {
   }
   if ($("dashboardWorkspaceLabel")) $("dashboardWorkspaceLabel").textContent = project ? project.company_name : "No dossier selected";
   if ($("dashboardWorkspaceMeta")) $("dashboardWorkspaceMeta").textContent = project ? `${project.project_type} | ${project.currency} | updated ${formatDate(project.updated_at)}` : "Select a project to unlock the operating workflow.";
+  if ($("dashboardHealthData")) $("dashboardHealthData").textContent = project ? "Active" : "Data";
+  if ($("dashboardHealthBp")) $("dashboardHealthBp").textContent = project ? bpReady : "BP";
+  if ($("dashboardHealthOutputs")) $("dashboardHealthOutputs").textContent = project ? "Generate" : "Outputs";
   if ($("dashboardAccountName")) $("dashboardAccountName").textContent = state.user?.email || "License workspace";
   if ($("dashboardActiveProject")) $("dashboardActiveProject").textContent = project ? project.company_name : "No active dossier";
   if ($("dashboardBpStatus")) $("dashboardBpStatus").textContent = bpReady;

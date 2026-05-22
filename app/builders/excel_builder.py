@@ -46,6 +46,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     styles = _styles(Font, PatternFill, Border, Side, Alignment)
 
     cover = wb.create_sheet("Cover")
+    exec_dashboard = wb.create_sheet("Executive Dashboard")
     model_guide = wb.create_sheet("Model Guide")
     macro_inputs = wb.create_sheet("Macro Inputs")
     output_sep = wb.create_sheet("Output>>")
@@ -138,6 +139,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_summary_financials_quarter(summary_quarter, styles)
     _build_summary_financials_annual(summary_annual, styles)
     _build_ebitda_bridges(ebitda_bridges, styles)
+    _build_executive_dashboard(exec_dashboard, project, styles)
     _build_packaged_output(packaged, project, styles)
     _build_ic_summary(ic_summary, project, styles)
     _build_restructuring_options(restructuring, styles)
@@ -1252,6 +1254,113 @@ def _build_outputs(ws, styles: dict) -> None:
     for row_idx, (label, formula) in enumerate(snapshot, start=35):
         ws.cell(row_idx, 2, label)
         _formula(ws, row_idx, 3, formula, styles, output=True)
+
+
+def _build_executive_dashboard(ws, project: dict, styles: dict) -> None:
+    try:
+        from openpyxl.chart import BarChart, LineChart, Reference
+    except Exception:
+        BarChart = LineChart = Reference = None
+
+    ws["B2"] = f"{project.get('company_name', 'Target Company')} - Executive Dashboard"
+    ws["B2"].font = styles["title_font"]
+    ws["B3"] = "Board-ready view linked to the formula model: annual output, liquidity, leverage, covenant status and model checks."
+    ws["B3"].font = styles["subtitle_font"]
+
+    _table_header(ws, 5, ["Current Month KPI", "Value", "Status", "Source"], styles)
+    kpis = [
+        ("Revenue", "='Outputs'!D6", '="Current forecast month"', "Outputs!D6"),
+        ("EBITDA", "='Outputs'!D8", '=IF(C6>=0,"Positive","Negative")', "Outputs!D8"),
+        ("EBITDA Margin", "='Outputs'!D9", '=IF(C7>=0.1,"Institutional","Review")', "Outputs!D9"),
+        ("Free Cash Flow", "='Outputs'!D10", '=IF(C8>=0,"Cash generative","Cash burn")', "Outputs!D10"),
+        ("Closing Cash", "='Financial Statements'!J23", '=IF(C9>0,"Funded","Liquidity watch")', "Financial Statements!J23"),
+        ("Closing Debt", "='Outputs'!D11", '=IF(C10>=0,"Modelled","Review")', "Outputs!D11"),
+        ("Net Debt / EBITDA", "='Outputs'!D12", '=IF(C11<3.5,"Inside threshold","Review")', "Outputs!D12"),
+        ("Covenant Pass?", "='Outputs'!D13", '=IF(C12="OK","Clean","Review")', "Outputs!D13"),
+    ]
+    for row_idx, (label, formula, status_formula, source) in enumerate(kpis, start=6):
+        ws.cell(row_idx, 2, label)
+        _formula(ws, row_idx, 3, formula, styles, output=True, fmt="0.0%" if "Margin" in label else "0.0x" if "/" in label else None)
+        _formula(ws, row_idx, 4, status_formula, styles, output=True)
+        ws.cell(row_idx, 5, source)
+
+    ws["G5"] = "Five-Year Financial Trajectory"
+    ws["G5"].font = styles["section_font"]
+    _table_header(ws, 6, ["Metric", "FY2026", "FY2027", "FY2028", "FY2029", "FY2030"], styles)
+    annual_rows = [
+        ("Revenue", 6, None),
+        ("Gross Profit", 8, None),
+        ("EBITDA", 11, None),
+        ("EBITDA Margin", 12, "percent"),
+        ("Free Cash Flow", 15, None),
+        ("Closing Cash", 16, None),
+        ("Closing Debt", 17, None),
+        ("Net Debt", 18, None),
+    ]
+    for row_idx, (label, source_row, fmt) in enumerate(annual_rows, start=7):
+        ws.cell(row_idx, 7, label)
+        for col_idx in range(8, 13):
+            source_col = _col(col_idx - 5)
+            _formula(ws, row_idx, col_idx, f"='Summary Financials Annual'!{source_col}{source_row}", styles, output=True, fmt="0.0%" if fmt == "percent" else None)
+
+    ws["B17"] = "Credit & Covenant Dashboard"
+    ws["B17"].font = styles["section_font"]
+    _table_header(ws, 19, ["Metric", "FY2026", "FY2027", "FY2028", "FY2029", "FY2030", "Comment"], styles)
+    credit_rows = [
+        ("Net Debt / EBITDA", "'Output_Group_Annual'!{col}11", "0.0x", "Leverage path from annual output"),
+        ("Interest Cover", "'Covenants'!{month_col}12", "0.0x", "EBITDA / cash interest at year-end"),
+        ("Liquidity", "'Financial Statements'!{fs_col}23", None, "Closing cash at year-end"),
+        ("Covenant Pass?", "'Covenants'!{month_col}17", None, "All lender tests must pass"),
+        ("Model Checks", "'Checks'!{month_col}10", None, "Workbook integrity status"),
+    ]
+    fs_year_end_cols = ["U", "AG", "AS", "BE", "BQ"]
+    covenant_year_end_cols = ["O", "AA", "AM", "AY", "BK"]
+    for row_idx, (label, template, fmt, comment) in enumerate(credit_rows, start=20):
+        ws.cell(row_idx, 2, label)
+        for offset, col_idx in enumerate(range(3, 8)):
+            annual_col = _col(col_idx)
+            fs_col = fs_year_end_cols[offset]
+            month_col = covenant_year_end_cols[offset]
+            formula = template.format(col=annual_col, fs_col=fs_col, month_col=month_col)
+            _formula(ws, row_idx, col_idx, f"={formula}", styles, output=True, fmt=fmt)
+        ws.cell(row_idx, 8, comment)
+
+    ws["B29"] = "Claude / BP Data Readiness"
+    ws["B29"].font = styles["section_font"]
+    readiness = [
+        ("Historical lines mapped", "=COUNTA('Historical Detail Input'!$F$6:$F$185)", "Target: 150+ lines for full 3FS mapping"),
+        ("Revenue streams", "=COUNTA('Revenue Drivers'!$B$7:$B$16)", "Configured from SaaS or Claude extraction"),
+        ("Cost lines", "=COUNTA('Opex'!$B$7:$B$18)", "Fixed / variable / FTE-linked operating cost build"),
+        ("Debt layers", "=COUNTA('Debt Config'!$B$5:$B$14)", "Each tranche modelled separately"),
+        ("All checks OK", "='Checks'!D10", "Review before external distribution"),
+    ]
+    _table_header(ws, 31, ["Control", "Value", "Review Note"], styles)
+    for row_idx, (label, formula, note) in enumerate(readiness, start=32):
+        ws.cell(row_idx, 2, label)
+        _formula(ws, row_idx, 3, formula, styles, output=True)
+        ws.cell(row_idx, 4, note)
+
+    if LineChart and Reference:
+        line = LineChart()
+        line.title = "Revenue and EBITDA"
+        line.y_axis.title = "Amount"
+        line.x_axis.title = "Fiscal year"
+        data = Reference(ws, min_col=8, max_col=12, min_row=7, max_row=9)
+        cats = Reference(ws, min_col=8, max_col=12, min_row=6, max_row=6)
+        line.add_data(data, titles_from_data=False, from_rows=True)
+        line.set_categories(cats)
+        line.height = 7
+        line.width = 15
+        ws.add_chart(line, "G17")
+
+        bar = BarChart()
+        bar.title = "Closing debt and liquidity"
+        debt_data = Reference(ws, min_col=8, max_col=12, min_row=12, max_row=13)
+        bar.add_data(debt_data, titles_from_data=False, from_rows=True)
+        bar.set_categories(cats)
+        bar.height = 7
+        bar.width = 15
+        ws.add_chart(bar, "G32")
 
 
 def _build_summary_financials_quarter(ws, styles: dict) -> None:

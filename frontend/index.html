@@ -155,6 +155,12 @@
               <p class="eyebrow">Workspace cockpit</p>
               <h3 id="dashboardHeroTitle">Turn one active dossier into a complete finance pack.</h3>
               <p id="dashboardHeroCopy" class="muted">Choose the active company, load source files, configure assumptions, then generate Excel and presentation outputs.</p>
+              <div class="hero-proof-row">
+                <span>Claude extraction</span>
+                <span>Formula-driven BP</span>
+                <span>Debt & covenants</span>
+                <span>Investment outputs</span>
+              </div>
             </div>
             <div class="dashboard-hero-actions">
               <button data-view-button="libraryView">Start</button>
@@ -181,6 +187,11 @@
               <p class="eyebrow">Active workspace</p>
               <h3 id="dashboardWorkspaceLabel">No dossier selected</h3>
               <p id="dashboardWorkspaceMeta" class="muted">Select a project to unlock the operating workflow.</p>
+              <div class="workspace-health">
+                <span><strong id="dashboardHealthData">Data</strong> source files</span>
+                <span><strong id="dashboardHealthBp">BP</strong> assumptions</span>
+                <span><strong id="dashboardHealthOutputs">Outputs</strong> ready</span>
+              </div>
             </div>
           </section>
           <div class="metric-grid">
@@ -223,6 +234,7 @@
                 <button class="flow-step" data-view-button="bpBuilderView"><span>3</span><strong>Configure BP</strong><em id="dashboardBpStatus">Select dossier</em></button>
                 <button class="flow-step" data-view-button="outputsView"><span>4</span><strong>Generate outputs</strong><em id="dashboardOutputStatus">No dossier selected</em></button>
               </div>
+              <div class="flow-note">Use the Claude button in the top bar to extract actuals, then sync them into the BP builder before generating the model.</div>
             </div>
           </section>
         </section>
