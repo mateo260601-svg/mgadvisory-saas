@@ -49,15 +49,25 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     exec_dashboard = wb.create_sheet("Executive Dashboard")
     model_guide = wb.create_sheet("Model Guide")
     macro_inputs = wb.create_sheet("Macro Inputs")
+    assumptions_sep = wb.create_sheet("Assumptions>>")
+    bolt_revenue_inputs = wb.create_sheet("Revenue and COGS Inputs")
+    bolt_opex_inputs = wb.create_sheet("Opex Inputs")
+    bolt_bs_inputs = wb.create_sheet("BS and NWC Schedules")
+    calculations_sep = wb.create_sheet("Calculations>>")
+    bolt_revenue_calcs = wb.create_sheet("Revenue and COGS Calcs")
+    bolt_opex_calcs = wb.create_sheet("Opex Calcs")
+    bolt_bs_calcs = wb.create_sheet("BS and NWC Calcs")
+    ciq_links = wb.create_sheet("CIQ_LinkingNames")
+    consolidated_calcs = wb.create_sheet("Consolidated Financials Calcs")
     output_sep = wb.create_sheet("Output>>")
-    statements = wb.create_sheet("Financial Statements")
     summary_quarter = wb.create_sheet("Summary Financials Quarter")
     summary_annual = wb.create_sheet("Summary Financials Annual")
     ebitda_bridges = wb.create_sheet("EBITDA Bridges")
+    supporting_sep = wb.create_sheet("Supporting Information>>")
+    statements = wb.create_sheet("Financial Statements")
     outputs = wb.create_sheet("Outputs")
     packaged = wb.create_sheet("Packaged Output")
     ic_summary = wb.create_sheet("IC Summary")
-    assumptions_sep = wb.create_sheet("Assumptions>>")
     admin = wb.create_sheet("Admin")
     group_assumptions = wb.create_sheet("Group Assumptions")
     data_room = wb.create_sheet("Data Room")
@@ -84,14 +94,12 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     restructuring_sep = wb.create_sheet("Restructuring & Sensitivities>>")
     restructuring = wb.create_sheet("Restructuring Options")
     sensitivities = wb.create_sheet("Sensitivity Matrix")
-    calculations_sep = wb.create_sheet("Calculations>>")
     detail_3fs = wb.create_sheet("3FS Detail Output")
     detail_lines = wb.create_sheet("Detailed Forecast Lines")
     checks_sep = wb.create_sheet("Checks & Mapping>>")
     checks = wb.create_sheet("Checks")
     lookup = wb.create_sheet("Lookup")
     mapping = wb.create_sheet("Mapping")
-    supporting_sep = wb.create_sheet("Supporting Information>>")
     lists = wb.create_sheet("Lists & Dates")
 
     _build_lists(lists, project, styles)
@@ -134,6 +142,14 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_financial_statements(statements, styles)
     _build_3fs_detail_output(detail_3fs, styles)
     _build_detail_forecast_lines(detail_lines, styles)
+    _build_bolt_revenue_cogs_inputs(bolt_revenue_inputs, project, styles)
+    _build_bolt_opex_inputs(bolt_opex_inputs, project, styles)
+    _build_bolt_bs_nwc_schedules(bolt_bs_inputs, project, styles)
+    _build_bolt_revenue_cogs_calcs(bolt_revenue_calcs, project, styles)
+    _build_bolt_opex_calcs(bolt_opex_calcs, project, styles)
+    _build_bolt_bs_nwc_calcs(bolt_bs_calcs, project, styles)
+    _build_ciq_linking_names(ciq_links, project, styles)
+    _build_consolidated_financials_calcs(consolidated_calcs, project, styles)
     _build_covenants(covenants, styles, assumptions)
     _build_outputs(outputs, styles)
     _build_summary_financials_quarter(summary_quarter, styles)
@@ -553,6 +569,235 @@ def _build_historical_bridge(ws, styles: dict) -> None:
     for row, (label, formula) in enumerate(checks, start=18):
         ws.cell(row, 2, label)
         _formula(ws, row, 3, formula, styles, output=True)
+
+
+def _build_bolt_sheet_header(ws, project: dict, styles: dict, freeze: str = "J10") -> None:
+    company = project.get("company_name", "Target Company")
+    currency = project.get("currency", "EUR")
+    ws["A1"] = f"{company.upper()} FINANCIAL MODEL"
+    ws["A1"].font = styles["title_font"]
+    ws["A2"] = '=UPPER(MID(CELL("filename",C3),FIND("]",CELL("filename",C3))+1,LEN(CELL("filename",C3))))'
+    ws["I1"] = "='Cover'!$B$2"
+    ws["I2"] = '=COUNTIF(I4:I1048576,"FALSE")'
+    ws["C4"] = company
+    ws["C5"] = currency
+    ws["I4"] = "Financial Year"
+    ws["I5"] = "Financial Quarter"
+    ws["I7"] = "Start date"
+    ws["I8"] = "End date"
+    ws["I9"] = "# Days"
+    for row in [4, 5, 7, 8, 9]:
+        ws.cell(row, 9).font = styles["bold_font"]
+    for idx, c in enumerate(range(10, 10 + PERIODS), start=2):
+        date_ref = f"'Lists & Dates'!V{idx}"
+        cell = ws.cell(10, c)
+        cell.value = f"={date_ref}"
+        cell.number_format = "mmm-yy"
+        cell.fill = styles["header_fill"]
+        cell.font = styles["header_font"]
+        cell.alignment = styles["center"]
+        _formula(ws, 4, c, f"=YEAR({cell.coordinate})", styles, output=True)
+        _formula(ws, 5, c, f'="Q"&ROUNDUP(MONTH({cell.coordinate})/3,0)', styles, output=True)
+        _formula(ws, 7, c, f"={cell.coordinate}", styles, output=True)
+        _formula(ws, 8, c, f"=EOMONTH({cell.coordinate},0)", styles, output=True)
+        _formula(ws, 9, c, f"=DAY(EOMONTH({cell.coordinate},0))", styles, output=True)
+    ws.freeze_panes = freeze
+
+
+def _bolt_section(ws, row: int, title: str, styles: dict) -> None:
+    ws.cell(row, 2, title)
+    ws.cell(row, 2).font = styles["section_font"]
+    ws.cell(row, 2).fill = styles["section_fill"]
+
+
+def _build_bolt_revenue_cogs_inputs(ws, project: dict, styles: dict) -> None:
+    _build_bolt_sheet_header(ws, project, styles, freeze="O196")
+    _bolt_section(ws, 13, "1. Revenue and COGS input assumptions", styles)
+    _table_header(ws, 15, ["Line", "Type", "Start Volume", "Start Price", "Volume Growth", "Price Growth", "COGS %", "Fulfilment / Unit"], styles)
+    for idx in range(MAX_REVENUE_STREAMS):
+        row = 16 + idx
+        source = 7 + idx
+        ws.cell(row, 2, f"='Revenue Drivers'!B{source}")
+        ws.cell(row, 3, f"='Revenue Drivers'!C{source}")
+        ws.cell(row, 4, f"='Revenue Drivers'!D{source}")
+        ws.cell(row, 5, f"='Revenue Drivers'!E{source}")
+        ws.cell(row, 6, f"='Revenue Drivers'!F{source}")
+        ws.cell(row, 7, f"='Revenue Drivers'!G{source}")
+        ws.cell(row, 8, f"='Product Build'!C{source}")
+        ws.cell(row, 9, f"='Product Build'!D{source}")
+    _bolt_section(ws, 30, "2. Monthly revenue and gross profit output", styles)
+    rows = [
+        ("Gross Revenue", f"'Revenue Drivers'!{{col}}{REVENUE_TOTAL_ROW}", None),
+        ("COGS", f"'Product Build'!{{col}}{PRODUCT_COGS_ROW}", None),
+        ("Gross Profit", f"'Product Build'!{{col}}{PRODUCT_GP_ROW}", None),
+        ("Gross Margin", f"'Product Build'!{{col}}{PRODUCT_MARGIN_ROW}", "0.0%"),
+    ]
+    for row_idx, (label, template, fmt) in enumerate(rows, start=32):
+        ws.cell(row_idx, 2, label)
+        for idx, out_col in enumerate(range(10, 10 + PERIODS)):
+            source_col = _col(FIRST_PERIOD_COL + idx)
+            _formula(ws, row_idx, out_col, f"={template.format(col=source_col)}", styles, output=True, fmt=fmt)
+
+
+def _build_bolt_opex_inputs(ws, project: dict, styles: dict) -> None:
+    _build_bolt_sheet_header(ws, project, styles, freeze="J27")
+    _bolt_section(ws, 13, "1. Opex and payroll input assumptions", styles)
+    _table_header(ws, 15, ["Cost Category", "Driver", "Monthly Fixed", "% Revenue", "Cost / FTE"], styles)
+    for idx in range(MAX_COST_ITEMS):
+        row = 16 + idx
+        source = 7 + idx
+        for target_col, source_col in enumerate(range(2, 7), start=2):
+            ws.cell(row, target_col, f"='Opex'!{_col(source_col)}{source}")
+    _bolt_section(ws, 32, "2. Headcount assumptions", styles)
+    _table_header(ws, 34, ["Department", "Opening FTE", "Avg Salary / Month", "Hiring Every N Months", "New Hires"], styles)
+    for idx in range(MAX_HEADCOUNT_LINES):
+        row = 35 + idx
+        source = 7 + idx
+        for target_col, source_col in enumerate(range(2, 7), start=2):
+            ws.cell(row, target_col, f"='Headcount'!{_col(source_col)}{source}")
+
+
+def _build_bolt_bs_nwc_schedules(ws, project: dict, styles: dict) -> None:
+    _build_bolt_sheet_header(ws, project, styles, freeze="J182")
+    _bolt_section(ws, 13, "1. Balance sheet and net working capital assumptions", styles)
+    rows = [
+        ("DSO", "'Working Capital'!$C$6"),
+        ("DIO", "'Working Capital'!$C$7"),
+        ("DPO", "'Working Capital'!$C$8"),
+        ("Opening Cash", "'Control Panel'!$C$11"),
+        ("Opening Debt", "'Control Panel'!$C$12"),
+        ("Maintenance Capex % Revenue", "'Capex D&A'!$C$6"),
+        ("Growth Capex / Month", "'Capex D&A'!$C$7"),
+        ("Depreciation Life Months", "'Capex D&A'!$C$8"),
+    ]
+    _table_header(ws, 15, ["Schedule Input", "Value", "Source"], styles)
+    for row_idx, (label, formula) in enumerate(rows, start=16):
+        ws.cell(row_idx, 2, label)
+        _formula(ws, row_idx, 3, f"={formula}", styles, output=True)
+        ws.cell(row_idx, 4, formula)
+    _bolt_section(ws, 29, "2. Monthly NWC and capex schedule", styles)
+    schedule_rows = [
+        ("Receivables", "'Working Capital'!{col}9"),
+        ("Inventory", "'Working Capital'!{col}10"),
+        ("Payables", "'Working Capital'!{col}11"),
+        ("Net Working Capital", "'Working Capital'!{col}12"),
+        ("Change in NWC", "'Working Capital'!{col}13"),
+        ("Maintenance Capex", "'Capex D&A'!{col}11"),
+        ("Growth Capex", "'Capex D&A'!{col}12"),
+        ("Total Capex", "'Capex D&A'!{col}13"),
+        ("Depreciation", "'Capex D&A'!{col}14"),
+        ("Net PPE", "'Capex D&A'!{col}15"),
+    ]
+    for row_idx, (label, template) in enumerate(schedule_rows, start=31):
+        ws.cell(row_idx, 2, label)
+        for idx, out_col in enumerate(range(10, 10 + PERIODS)):
+            source_col = _col(FIRST_PERIOD_COL + idx)
+            _formula(ws, row_idx, out_col, f"={template.format(col=source_col)}", styles, output=True)
+
+
+def _build_bolt_revenue_cogs_calcs(ws, project: dict, styles: dict) -> None:
+    _build_bolt_sheet_header(ws, project, styles, freeze="J10")
+    _bolt_section(ws, 13, "1. Revenue and COGS calculations", styles)
+    calc_rows = [
+        ("Gross Revenue", "'Revenue and COGS Inputs'!{col}32"),
+        ("COGS", "'Revenue and COGS Inputs'!{col}33"),
+        ("Gross Profit", "'Revenue and COGS Inputs'!{col}34"),
+        ("Gross Margin", "'Revenue and COGS Inputs'!{col}35"),
+    ]
+    for row_idx, (label, template) in enumerate(calc_rows, start=15):
+        ws.cell(row_idx, 2, label)
+        for out_col in range(10, 10 + PERIODS):
+            fmt = "0.0%" if "Margin" in label else None
+            _formula(ws, row_idx, out_col, f"={template.format(col=_col(out_col))}", styles, output=True, fmt=fmt)
+
+
+def _build_bolt_opex_calcs(ws, project: dict, styles: dict) -> None:
+    _build_bolt_sheet_header(ws, project, styles, freeze="J10")
+    _bolt_section(ws, 13, "1. Opex and payroll calculations", styles)
+    calc_rows = [
+        ("Payroll Cost", f"'Headcount'!{{col}}{HEADCOUNT_PAYROLL_ROW}"),
+        ("Opex excl. Payroll", f"'Opex'!{{col}}{OPEX_TOTAL_EXCL_PAYROLL_ROW}"),
+        ("Opex incl. Payroll", f"'Opex'!{{col}}{OPEX_TOTAL_INCL_PAYROLL_ROW}"),
+        ("Total FTE", f"'Headcount'!{{col}}{HEADCOUNT_TOTAL_FTE_ROW}"),
+        ("Opex / Revenue", f"IFERROR('Opex'!{{col}}{OPEX_TOTAL_INCL_PAYROLL_ROW}/'Revenue Drivers'!{{col}}{REVENUE_TOTAL_ROW},0)"),
+    ]
+    for row_idx, (label, template) in enumerate(calc_rows, start=15):
+        ws.cell(row_idx, 2, label)
+        for idx, out_col in enumerate(range(10, 10 + PERIODS)):
+            source_col = _col(FIRST_PERIOD_COL + idx)
+            formula = f"={template.format(col=source_col)}"
+            _formula(ws, row_idx, out_col, formula, styles, output=True, fmt="0.0%" if "/" in label else None)
+
+
+def _build_bolt_bs_nwc_calcs(ws, project: dict, styles: dict) -> None:
+    _build_bolt_sheet_header(ws, project, styles, freeze="J93")
+    _bolt_section(ws, 13, "1. BS and NWC calculations", styles)
+    calc_rows = [
+        ("Receivables", "'BS and NWC Schedules'!{col}31"),
+        ("Inventory", "'BS and NWC Schedules'!{col}32"),
+        ("Payables", "'BS and NWC Schedules'!{col}33"),
+        ("Net Working Capital", "'BS and NWC Schedules'!{col}34"),
+        ("Change in NWC", "'BS and NWC Schedules'!{col}35"),
+        ("Total Capex", "'BS and NWC Schedules'!{col}38"),
+        ("Depreciation", "'BS and NWC Schedules'!{col}39"),
+        ("Net PPE", "'BS and NWC Schedules'!{col}40"),
+    ]
+    for row_idx, (label, template) in enumerate(calc_rows, start=15):
+        ws.cell(row_idx, 2, label)
+        for out_col in range(10, 10 + PERIODS):
+            _formula(ws, row_idx, out_col, f"={template.format(col=_col(out_col))}", styles, output=True)
+
+
+def _build_ciq_linking_names(ws, project: dict, styles: dict) -> None:
+    _build_bolt_sheet_header(ws, project, styles, freeze="J10")
+    _bolt_section(ws, 13, "1. Linking names and model trace map", styles)
+    _table_header(ws, 15, ["Name", "Source Sheet", "Source Row", "Linked Output", "Status"], styles)
+    rows = [
+        ("Revenue", "Revenue and COGS Calcs", "15", "Consolidated Financials Calcs", "Active"),
+        ("COGS", "Revenue and COGS Calcs", "16", "Consolidated Financials Calcs", "Active"),
+        ("Opex", "Opex Calcs", "17", "Consolidated Financials Calcs", "Active"),
+        ("NWC", "BS and NWC Calcs", "18", "Consolidated Financials Calcs", "Active"),
+        ("Debt", "Debt Schedule", "Aggregate summary", "Consolidated Financials Calcs", "Active"),
+    ]
+    for row_idx, values in enumerate(rows, start=16):
+        for col_idx, value in enumerate(values, start=2):
+            ws.cell(row_idx, col_idx, value)
+
+
+def _build_consolidated_financials_calcs(ws, project: dict, styles: dict) -> None:
+    _build_bolt_sheet_header(ws, project, styles, freeze="J10")
+    _bolt_section(ws, 13, "1. Consolidated financial statements calculations", styles)
+    _table_header(ws, 15, ["Statement", "Line Item", "Source"], styles)
+    rows = [
+        ("Income Statement", "Revenue", "'Financial Statements'!{fs_col}6"),
+        ("Income Statement", "COGS", "'Financial Statements'!{fs_col}7"),
+        ("Income Statement", "Gross Profit", "'Financial Statements'!{fs_col}8"),
+        ("Income Statement", "Payroll", "'Financial Statements'!{fs_col}9"),
+        ("Income Statement", "Opex", "'Financial Statements'!{fs_col}10"),
+        ("Income Statement", "EBITDA", "'Financial Statements'!{fs_col}11"),
+        ("Income Statement", "D&A", "'Financial Statements'!{fs_col}12"),
+        ("Income Statement", "EBIT", "'Financial Statements'!{fs_col}13"),
+        ("Income Statement", "Cash Interest", "'Financial Statements'!{fs_col}14"),
+        ("Income Statement", "PBT", "'Financial Statements'!{fs_col}15"),
+        ("Income Statement", "Tax", "'Financial Statements'!{fs_col}16"),
+        ("Income Statement", "Net Income", "'Financial Statements'!{fs_col}17"),
+        ("Cash Flow", "Change in NWC", "'Financial Statements'!{fs_col}18"),
+        ("Cash Flow", "Capex", "'Financial Statements'!{fs_col}19"),
+        ("Cash Flow", "Cash Flow Before Debt", "'Financial Statements'!{fs_col}20"),
+        ("Cash Flow", "Debt Amortization / Sweep", "'Financial Statements'!{fs_col}21"),
+        ("Cash Flow", "Free Cash Flow", "'Financial Statements'!{fs_col}22"),
+        ("Balance Sheet", "Closing Cash", "'Financial Statements'!{fs_col}23"),
+        ("Balance Sheet", "Closing Debt", "'Financial Statements'!{fs_col}24"),
+        ("Balance Sheet", "Net Debt", "'Financial Statements'!{fs_col}25"),
+    ]
+    for row_idx, (statement, label, source_template) in enumerate(rows, start=16):
+        ws.cell(row_idx, 2, statement)
+        ws.cell(row_idx, 3, label)
+        ws.cell(row_idx, 4, source_template)
+        for idx, out_col in enumerate(range(10, 10 + PERIODS)):
+            fs_col = _financial_monthly_col(FIRST_PERIOD_COL + idx)
+            fmt = "0.0%" if "Margin" in label else "0.0x" if "/" in label else None
+            _formula(ws, row_idx, out_col, f"={source_template.format(fs_col=fs_col)}", styles, output=True, fmt=fmt)
 
 
 def _build_entity_input(ws, entity: str, styles: dict) -> None:
@@ -1807,10 +2052,27 @@ def _add_list_validation(ws, cell_range: str, formula_range: str, DataValidation
 
 def _polish_sheet(ws, styles: dict) -> None:
     ws.sheet_view.showGridLines = False
-    ws.freeze_panes = "J5" if ws.title == "Financial Statements" else "D5"
+    bolt_freezes = {
+        "Revenue and COGS Inputs": "O196",
+        "Opex Inputs": "J27",
+        "BS and NWC Schedules": "J182",
+        "Revenue and COGS Calcs": "J10",
+        "Opex Calcs": "J10",
+        "BS and NWC Calcs": "J93",
+        "CIQ_LinkingNames": "J10",
+        "Consolidated Financials Calcs": "J10",
+        "Summary Financials Quarter": "J10",
+        "Summary Financials Annual": "J10",
+        "EBITDA Bridges": "J10",
+    }
+    ws.freeze_panes = bolt_freezes.get(ws.title, "J5" if ws.title == "Financial Statements" else "D5")
     ws.column_dimensions["A"].width = 3
     ws.column_dimensions["B"].width = 28
     ws.column_dimensions["C"].width = 18
+    if ws.title in bolt_freezes:
+        ws.column_dimensions["I"].width = 18
+        for col in range(10, 10 + PERIODS):
+            ws.column_dimensions[_col(col)].width = 12
     max_period_col = max(FIRST_PERIOD_COL + PERIODS, FINANCIAL_MONTHLY_COL + PERIODS)
     for col in range(4, max_period_col):
         ws.column_dimensions[_col(col)].width = 12
