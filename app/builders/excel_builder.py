@@ -2272,6 +2272,136 @@ def _polish_sheet(ws, styles: dict) -> None:
             if isinstance(cell.value, (int, float)) or (isinstance(cell.value, str) and cell.value.startswith("=")):
                 if not cell.number_format or cell.number_format == "General":
                     cell.number_format = '#,##0;[Red](#,##0);-'
+    if ws.title == "Summary Financials Annual":
+        _apply_bolt_annual_output_format(ws)
+
+
+def _apply_bolt_annual_output_format(ws) -> None:
+    from openpyxl.styles import Alignment, Font, PatternFill, Side, Border
+
+    dark_blue = "203764"
+    light_section = "D9EAF7"
+    pale_blue = "EAF2F8"
+    white = "FFFFFF"
+    green = "008000"
+    blue = "0000FF"
+    red = "C00000"
+    thin_blue = Side(style="thin", color="D9E1F2")
+    no_side = Side(style=None)
+
+    ws.sheet_view.zoomScale = 85
+    ws.freeze_panes = "J10"
+    widths = {
+        "A": 2.58,
+        "B": 13.0,
+        "C": 13.0,
+        "D": 30.58,
+        "E": 8.58,
+        "F": 10.58,
+        "G": 13.0,
+        "H": 13.0,
+        "I": 13.0,
+        "J": 20.58,
+        "K": 13.0,
+        "L": 13.0,
+        "M": 13.0,
+        "N": 13.0,
+        "O": 10.58,
+    }
+    for col, width in widths.items():
+        ws.column_dimensions[col].width = width
+    for col in range(16, 123):
+        ws.column_dimensions[_col(col)].width = 10.58
+
+    heights = {1: 30, 2: 25, 3: 13, 10: 13}
+    for row in range(4, 250):
+        ws.row_dimensions[row].height = 15.75
+    for row in [11, 37, 76, 122, 189, 249]:
+        ws.row_dimensions[row].height = 20.15
+    for row, height in heights.items():
+        ws.row_dimensions[row].height = height
+
+    ws["A1"].font = Font(name="Helvetica", size=16, bold=True, color=dark_blue)
+    ws["A1"].alignment = Alignment(vertical="center")
+    ws["A2"].font = Font(name="Calibri", size=14, color=dark_blue)
+    ws["A2"].alignment = Alignment(vertical="center")
+    ws["I1"].number_format = '"Check Model";;"Model OK"'
+    ws["I2"].number_format = '"Check Sheet";;"Sheet OK"'
+
+    dark_fill = PatternFill("solid", fgColor=dark_blue)
+    section_fill = PatternFill("solid", fgColor=light_section)
+    pale_fill = PatternFill("solid", fgColor=pale_blue)
+    transparent_border = Border(left=no_side, right=no_side, top=no_side, bottom=no_side)
+    thin_border = Border(left=thin_blue, right=thin_blue, top=thin_blue, bottom=thin_blue)
+
+    for row in [4, 5]:
+        for col in range(3, 15):
+            cell = ws.cell(row, col)
+            cell.fill = dark_fill
+            cell.font = Font(name="Calibri", size=10 if col >= 9 else 12, bold=True, color=white)
+            cell.alignment = Alignment(horizontal="right" if col >= 9 else "center", vertical="center")
+            cell.border = transparent_border
+    for col in range(10, 15):
+        ws.cell(4, col).number_format = '"FY" 0'
+        ws.cell(5, col).number_format = '"Q"0;;-'
+
+    for row in [7, 8, 9]:
+        for col in range(3, 15):
+            cell = ws.cell(row, col)
+            cell.fill = PatternFill(fill_type=None)
+            cell.font = Font(name="Calibri", size=10, color=dark_blue if col == 9 else "000000")
+            cell.alignment = Alignment(horizontal="right" if col == 9 else "center", vertical="center")
+            cell.border = transparent_border
+        for col in range(10, 15):
+            ws.cell(row, col).number_format = "d-mmm-yy" if row in [7, 8] else "0"
+
+    for row in [11, 37, 76, 122, 189, 249]:
+        for col in range(1, 15):
+            cell = ws.cell(row, col)
+            cell.fill = section_fill
+            cell.border = transparent_border
+        ws.cell(row, 2).font = Font(name="Arial", size=12, bold=True, color=dark_blue)
+        ws.cell(row, 3).font = Font(name="Arial", size=11, bold=True, color=dark_blue)
+
+    percent_rows = {15, 47, 48, 49, 50, 62, 63, 64, 65, 66, 98, 109}
+    check_rows = {44, 51, 59, 67, 120, 186, 246}
+    bold_rows = {
+        43, 50, 58, 66, 73, 83, 88, 91, 95, 97, 103, 106, 108, 119,
+        131, 153, 155, 165, 177, 182, 184, 198, 229, 235, 240, 242, 244,
+    }
+    section_labels = {30, 39, 46, 53, 61, 69, 111, 124, 126, 133, 158, 160, 167, 179, 200, 202, 208, 212, 218, 221, 225}
+    for row in range(13, 249):
+        if row in [37, 76, 122, 189]:
+            continue
+        ws.cell(row, 3).font = Font(name="Calibri", size=10, bold=row in bold_rows or row in section_labels, color=dark_blue if row in section_labels else "000000")
+        ws.cell(row, 3).alignment = Alignment(horizontal="left", vertical="center")
+        ws.cell(row, 5).font = Font(name="Calibri", size=10, italic=True, color="000000")
+        ws.cell(row, 5).alignment = Alignment(horizontal="center", vertical="center")
+        ws.cell(row, 7).font = Font(name="Calibri", size=10, color=green)
+        ws.cell(row, 7).alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        ws.cell(row, 9).font = Font(name="Calibri", size=10, color=blue if row in check_rows else "000000")
+        for col in range(10, 15):
+            cell = ws.cell(row, col)
+            cell.fill = pale_fill if row in bold_rows else PatternFill(fill_type=None)
+            cell.font = Font(name="Calibri", size=10, bold=row in bold_rows, color=red if row in check_rows else "000000")
+            cell.alignment = Alignment(vertical="center")
+            cell.border = thin_border
+            if row in percent_rows:
+                cell.number_format = '0%;(0%);-'
+            elif row in check_rows:
+                cell.number_format = '0'
+            else:
+                cell.number_format = '#,##0;(#,##0);"-" '
+
+    for row in [30, 39, 46, 53, 61, 69, 111, 124, 126, 133, 158, 160, 167, 179, 200, 202, 208, 212, 218, 221, 225]:
+        for col in range(3, 15):
+            ws.cell(row, col).fill = PatternFill(fill_type=None)
+            ws.cell(row, col).border = transparent_border
+
+    for row in [13, 14, 17, 40, 41, 42, 54, 55, 56, 57]:
+        for col in [7, 8]:
+            ws.cell(row, col).font = Font(name="Calibri", size=10, color=green)
+            ws.cell(row, col).number_format = '"FY" 0' if col == 7 else '"Q"0'
 
 
 def _num(value, fallback: float = 0) -> float:
