@@ -1635,27 +1635,214 @@ def _build_summary_financials_quarter(ws, styles: dict) -> None:
                 _formula(ws, row_idx, col_idx, f'=SUMIFS(\'3FS Detail Output\'!$M${detail_row}:$BT${detail_row},\'3FS Detail Output\'!$M$5:$BT$5,">="&{start_ref},\'3FS Detail Output\'!$M$5:$BT$5,"<="&{end_ref})', styles, output=True)
 
 
+def _bolt_annual_section(ws, row: int, title: str, styles: dict) -> None:
+    ws.cell(row, 2, title)
+    ws.cell(row, 2).font = styles["section_font"]
+    for col in range(2, 15):
+        ws.cell(row, col).fill = styles["section_fill"]
+
+
+def _bolt_annual_row(
+    ws,
+    row: int,
+    label: str,
+    unit: str | None,
+    comment: str | None,
+    styles: dict,
+    formulas: list[str],
+    fmt: str | None = None,
+    bold: bool = False,
+) -> None:
+    ws.cell(row, 3, label)
+    ws.cell(row, 5, unit)
+    ws.cell(row, 7, comment)
+    if bold:
+        ws.cell(row, 3).font = styles["bold_font"]
+    for idx, formula in enumerate(formulas[:5]):
+        col = 10 + idx
+        if formula == "":
+            continue
+        _formula(ws, row, col, formula if formula.startswith("=") else f"={formula}", styles, output=True, fmt=fmt)
+
+
 def _build_summary_financials_annual(ws, styles: dict) -> None:
-    ws["B2"] = "Summary Financials Annual"
-    ws["B2"].font = styles["section_font"]
-    ws["B3"] = "Annual banker summary with the same line set as the quarterly output."
     years = [2026, 2027, 2028, 2029, 2030]
-    _table_header(ws, 5, ["Metric"] + [f"FY{year}" for year in years], styles)
-    rows = _summary_financial_rows(include_details=True)
-    for row_idx, (label, source, mode) in enumerate(rows, start=6):
-        ws.cell(row_idx, 2, label)
-        for col_idx, year in enumerate(years, start=3):
-            if source.startswith("FS:"):
-                fs_row = int(source.split(":")[1])
-                if mode == "balance":
-                    _formula(ws, row_idx, col_idx, f"='Financial Statements'!{_col(col_idx)}{fs_row}", styles, output=True)
-                elif mode == "margin":
-                    _formula(ws, row_idx, col_idx, f"=IFERROR('Financial Statements'!{_col(col_idx)}{fs_row}/'Financial Statements'!{_col(col_idx)}6,0)", styles, output=True, fmt="0.0%")
-                else:
-                    _formula(ws, row_idx, col_idx, f"='Financial Statements'!{_col(col_idx)}{fs_row}", styles, output=True)
-            else:
-                detail_row = int(source.split(":")[1])
-                _formula(ws, row_idx, col_idx, f"='3FS Detail Output'!{_col(col_idx + 4)}{detail_row}", styles, output=True)
+    ws["A1"] = "MG ADVISORY FINANCIAL MODEL"
+    ws["A1"].font = styles["title_font"]
+    ws["A2"] = '=UPPER(MID(CELL("filename",C3),FIND("]",CELL("filename",C3))+1,LEN(CELL("filename",C3))))'
+    ws["I1"] = "='Cover'!$B$2"
+    ws["I2"] = '=COUNTIF(I4:I1048576,"FALSE")'
+    ws["C4"] = "='Cover'!$B$2"
+    ws["C5"] = "='Control Panel'!$C$6"
+    ws["I4"] = "Financial Year"
+    ws["I7"] = "Start date"
+    ws["I8"] = "End date"
+    ws["I9"] = "# Days"
+    for row in [4, 5]:
+        for col in range(3, 15):
+            ws.cell(row, col).fill = styles["header_fill"]
+            ws.cell(row, col).font = styles["header_font"]
+    for row in [7, 8, 9]:
+        ws.cell(row, 9).font = styles["bold_font"]
+    for offset, year in enumerate(years):
+        col = 10 + offset
+        letter = _col(col)
+        _formula(ws, 4, col, f"={year}", styles, output=True)
+        ws.cell(4, col).number_format = '"FY" 0'
+        _formula(ws, 7, col, f"=DATE({year},1,1)", styles, output=True, fmt="d-mmm-yy")
+        _formula(ws, 8, col, f"=DATE({year},12,31)", styles, output=True, fmt="d-mmm-yy")
+        _formula(ws, 9, col, f"={letter}8-{letter}7+1", styles, output=True)
+
+    _bolt_annual_section(ws, 11, "1. Summary KPIs & Unit Economics - Annual", styles)
+    _bolt_annual_row(ws, 13, "Annual production capacity", "Units", "Revenue / implied price capacity", styles, [f"='Summary Financials Annual'!{_col(10+i)}14*1.20" for i in range(5)])
+    _bolt_annual_row(ws, 14, "Production volume", "Units", "Revenue / blended price", styles, [f"=IFERROR('Financial Statements'!{_col(3+i)}6/1000,0)" for i in range(5)])
+    _bolt_annual_row(ws, 15, "Utilisation rate", "%", None, styles, [f"=IFERROR({_col(10+i)}14/{_col(10+i)}13,0)" for i in range(5)], fmt="0.0%")
+    _bolt_annual_row(ws, 17, "Sales Volumes", "Units", None, styles, [f"={_col(10+i)}14" for i in range(5)])
+    _bolt_annual_row(ws, 18, "Gross Sales Price", "Currency/unit", "Gross revenue / volume", styles, [f"=IFERROR({_col(10+i)}83/{_col(10+i)}17,0)" for i in range(5)])
+    _bolt_annual_row(ws, 19, "Gross Sales Ex-price", "Currency/unit", "Gross revenue less freight / volume", styles, [f"=IFERROR(SUM({_col(10+i)}83,{_col(10+i)}85)/{_col(10+i)}17,0)" for i in range(5)])
+    _bolt_annual_row(ws, 20, "Gross Spread", "Currency/unit", "Gross revenue less direct materials / volume", styles, [f"=IFERROR(SUM({_col(10+i)}83,{_col(10+i)}90)/{_col(10+i)}17,0)" for i in range(5)])
+    _bolt_annual_row(ws, 22, "Net Realisation", "Currency/unit", "Revenue less freight, commissions and tariffs", styles, [f"=IFERROR({_col(10+i)}88/{_col(10+i)}17,0)" for i in range(5)])
+    _bolt_annual_row(ws, 23, "Direct materials", "Currency/unit", None, styles, [f"=IFERROR({_col(10+i)}90/{_col(10+i)}17,0)" for i in range(5)])
+    _bolt_annual_row(ws, 24, "Implied Net spread", "Currency/unit", "Net realisation less direct materials", styles, [f"=IFERROR({_col(10+i)}91/{_col(10+i)}17,0)" for i in range(5)])
+    _bolt_annual_row(ws, 25, "Variable costs", "Currency/unit", "COGS variable cost base", styles, [f"=IFERROR({_col(10+i)}95/{_col(10+i)}17,0)" for i in range(5)])
+    _bolt_annual_row(ws, 26, "Contribution margin", "Currency/unit", "Implied net spread less variable costs", styles, [f"=IFERROR({_col(10+i)}97/{_col(10+i)}17,0)" for i in range(5)])
+    _bolt_annual_row(ws, 27, "Operating expense", "Currency/unit", "Payroll and opex / volume", styles, [f"=IFERROR({_col(10+i)}106/{_col(10+i)}17,0)" for i in range(5)])
+    _bolt_annual_row(ws, 28, "Adjusted EBITDA", "Currency/unit", "Contribution margin less fixed costs", styles, [f"=IFERROR({_col(10+i)}108/{_col(10+i)}17,0)" for i in range(5)])
+    ws["C30"] = "Working Capital Days"
+    for row, label, formula in [
+        (31, "Raw Materials - DIO", "='Working Capital'!$C$7"),
+        (32, "Finished Goods - DIO", "='Working Capital'!$C$7"),
+        (33, "Gross Payables - DPO", "='Working Capital'!$C$8"),
+        (34, "Gross Receivables - DSO", "='Working Capital'!$C$6"),
+    ]:
+        _bolt_annual_row(ws, row, label, "Days", None, styles, [formula for _ in years])
+
+    _bolt_annual_section(ws, 37, "2. Sales and Pricing Breakdown - Annual", styles)
+    product_rows = [(40, "Core product"), (41, "Services"), (42, "Recurring / Other")]
+    ws["C39"] = "Sales volume by Product (Units)"
+    for row, label in product_rows:
+        _bolt_annual_row(ws, row, label, "Units", None, styles, [f"={_col(10+i)}17/{len(product_rows)}" for i in range(5)])
+    _bolt_annual_row(ws, 43, "Total Volumes", "Units", None, styles, [f"=SUM({_col(10+i)}40:{_col(10+i)}42)" for i in range(5)], bold=True)
+    _bolt_annual_row(ws, 44, "Volume check", None, None, styles, [f"={_col(10+i)}43-{_col(10+i)}17" for i in range(5)])
+    ws["C46"] = "Sales volume by Product (%)"
+    for row, label in [(47, "Core product"), (48, "Services"), (49, "Recurring / Other")]:
+        _bolt_annual_row(ws, row, label, "%", None, styles, [f"=IFERROR({_col(10+i)}{row}/{_col(10+i)}43,0)" for i in range(5)], fmt="0.0%")
+    _bolt_annual_row(ws, 50, "Total", "%", None, styles, [f"=SUM({_col(10+i)}47:{_col(10+i)}49)" for i in range(5)], fmt="0.0%", bold=True)
+    _bolt_annual_row(ws, 51, "Check", None, None, styles, [f"=IFERROR(IF({_col(10+i)}50=1,0,1),1)" for i in range(5)])
+    ws["C53"] = "Sales volume by Region (Units)"
+    for row, label in [(54, "North America"), (55, "Europe"), (56, "Middle East"), (57, "Rest of World")]:
+        _bolt_annual_row(ws, row, label, "Units", None, styles, [f"={_col(10+i)}17/4" for i in range(5)])
+    _bolt_annual_row(ws, 58, "Total Volumes", "Units", None, styles, [f"=SUM({_col(10+i)}54:{_col(10+i)}57)" for i in range(5)], bold=True)
+    _bolt_annual_row(ws, 59, "Volume check", None, None, styles, [f"=ROUND({_col(10+i)}58-{_col(10+i)}17,0)" for i in range(5)])
+    ws["C61"] = "Sales volume by Region (%)"
+    for row, label in [(62, "North America"), (63, "Europe"), (64, "Middle East"), (65, "Rest of World")]:
+        _bolt_annual_row(ws, row, label, "%", None, styles, [f"=IFERROR({_col(10+i)}{row-8}/{_col(10+i)}58,0)" for i in range(5)], fmt="0.0%")
+    _bolt_annual_row(ws, 66, "Total", "%", None, styles, [f"=SUM({_col(10+i)}62:{_col(10+i)}65)" for i in range(5)], fmt="0.0%", bold=True)
+    _bolt_annual_row(ws, 67, "Check", None, None, styles, [f"=IFERROR(IF({_col(10+i)}66=1,0,1),1)" for i in range(5)])
+    ws["C69"] = "Net Spread by Product"
+    for row, label in [(70, "Core product"), (71, "Services"), (72, "Recurring / Other")]:
+        _bolt_annual_row(ws, row, label, "Currency/unit", None, styles, [f"={_col(10+i)}24" for i in range(5)])
+    _bolt_annual_row(ws, 73, "Weighted-average net spread", "Currency/unit", None, styles, [f"=SUMPRODUCT({_col(10+i)}47:{_col(10+i)}49,{_col(10+i)}70:{_col(10+i)}72)" for i in range(5)], bold=True)
+
+    _bolt_annual_section(ws, 76, "3. Income Statement (P&L) - Annual", styles)
+    pnl_rows = [
+        (79, "North America", "Currency", [f"={_col(10+i)}83/4" for i in range(5)]),
+        (80, "Europe", "Currency", [f"={_col(10+i)}83/4" for i in range(5)]),
+        (81, "Middle East", "Currency", [f"={_col(10+i)}83/4" for i in range(5)]),
+        (82, "Rest of World", "Currency", [f"={_col(10+i)}83/4" for i in range(5)]),
+        (83, "Gross Revenue", "Currency", [f"='Financial Statements'!{_col(3+i)}6" for i in range(5)]),
+        (85, "Less: Freight and Forwarding", "Currency", ["=0" for _ in years]),
+        (86, "Less: Sales Commissions", "Currency", ["=0" for _ in years]),
+        (87, "Less: Tariffs", "Currency", ["=0" for _ in years]),
+        (88, "Net Realisation", "Currency", [f"=SUM({_col(10+i)}83:{_col(10+i)}87)" for i in range(5)]),
+        (90, "Less: Direct Materials", "Currency", [f"='Financial Statements'!{_col(3+i)}7" for i in range(5)]),
+        (91, "Implied Net Spread", "Currency", [f"={_col(10+i)}88+{_col(10+i)}90" for i in range(5)]),
+        (93, "Utilities Costs", "Currency", [f"='Financial Statements'!{_col(3+i)}10*0.25" for i in range(5)]),
+        (94, "Packing Costs", "Currency", [f"='Financial Statements'!{_col(3+i)}10*0.10" for i in range(5)]),
+        (95, "Total Variable Costs", "Currency", [f"=SUM({_col(10+i)}93:{_col(10+i)}94)" for i in range(5)]),
+        (97, "Contribution Margin", "Currency", [f"={_col(10+i)}91+{_col(10+i)}95" for i in range(5)]),
+        (98, "Contribution Margin %", "%", [f"=IFERROR({_col(10+i)}97/{_col(10+i)}83,0)" for i in range(5)]),
+        (100, "Plant salary & wages", "Currency", [f"='Financial Statements'!{_col(3+i)}9" for i in range(5)]),
+        (101, "Other manufacturing overheads", "Currency", [f"='Financial Statements'!{_col(3+i)}10*0.35" for i in range(5)]),
+        (102, "Conversion cost adjustments", "Currency", ["=0" for _ in years]),
+        (103, "Total Operating Costs", "Currency", [f"=SUM({_col(10+i)}100:{_col(10+i)}102)" for i in range(5)]),
+        (104, "Selling & distribution", "Currency", [f"='Financial Statements'!{_col(3+i)}10*0.25" for i in range(5)]),
+        (105, "Admin expenses", "Currency", [f"='Financial Statements'!{_col(3+i)}10*0.40" for i in range(5)]),
+        (106, "Total Operating Expense", "Currency", [f"=SUM({_col(10+i)}103:{_col(10+i)}105)" for i in range(5)]),
+        (108, "Adjusted EBITDA", "Currency", [f"='Financial Statements'!{_col(3+i)}11" for i in range(5)]),
+        (109, "Adj. EBITDA Margin %", "%", [f"=IFERROR({_col(10+i)}108/{_col(10+i)}83,0)" for i in range(5)]),
+        (111, "Simplified EBITDA to Net Income bridge (for BS completeness)", None, ["" for _ in years]),
+        (113, "Management and restructuring fees", "Currency", ["=0" for _ in years]),
+        (114, "Exchange Gain / (Loss)", "Currency", ["=0" for _ in years]),
+        (115, "Other Income / (Loss)", "Currency", ["=0" for _ in years]),
+        (116, "Depreciation (D&A)", "Currency", [f"='Financial Statements'!{_col(3+i)}12" for i in range(5)]),
+        (117, "Interest expense", "Currency", [f"='Financial Statements'!{_col(3+i)}14" for i in range(5)]),
+        (118, "Corporate tax", "Currency", [f"='Financial Statements'!{_col(3+i)}16" for i in range(5)]),
+        (119, "Simplified Net Income", "Currency", [f"='Financial Statements'!{_col(3+i)}17" for i in range(5)]),
+        (120, "Check", None, [f"={_col(10+i)}119-'Financial Statements'!{_col(3+i)}17" for i in range(5)]),
+    ]
+    for row, label, unit, formulas in pnl_rows:
+        _bolt_annual_row(ws, row, label, unit, None, styles, formulas, fmt="0.0%" if unit == "%" else None, bold=row in {83, 88, 91, 95, 97, 106, 108, 119})
+
+    _bolt_annual_section(ws, 122, "4. Balance Sheet (BS) - Annual", styles)
+    for row, label in [(124, "ASSETS"), (126, "Non-Current Assets"), (133, "Current Assets"), (158, "LIABILITIES & EQUITY"), (160, "Non-Current Liabilities"), (167, "Current Liabilities"), (179, "Equity")]:
+        ws.cell(row, 3, label)
+        ws.cell(row, 3).font = styles["section_font"]
+    bs_map = {
+        127: ("Fixed Assets", 0), 128: ("Intangible Assets", 0), 129: ("Loans Receivable", 0), 130: ("Investments in Subsidiaries", 0),
+        131: ("Total non-current assets", 0), 134: ("Cash & cash equivalents", 23), 135: ("Trade & other inventory", 0),
+        136: ("Raw Materials", 0), 137: ("Packing Materials", 0), 138: ("Semi Finished Goods", 0), 139: ("Finished Goods", 0),
+        140: ("Goods in Transit", 0), 141: ("By Product", 0), 142: ("Spares, Consumables and Others", 0),
+        144: ("Trade & other receivables", 0), 145: ("Gross Receivables", 0), 146: ("Advances from Customers", 0),
+        147: ("Other Receivables", 0), 148: ("Prepayments", 0), 150: ("Due from related parties", 0),
+        151: ("Due from related parties - trade", 0), 152: ("Due from related parties - non-trade", 0),
+        153: ("Total current assets", 0), 155: ("Total Assets", 0), 161: ("Loans Payable", 24), 162: ("Accrued Interest", 0),
+        163: ("Government Grant", 0), 164: ("Deferred Taxes", 0), 165: ("Total non-current liabilities", 0),
+        168: ("Trade & other payables", 0), 169: ("Gross Payables", 0), 170: ("Advances to Suppliers", 0),
+        171: ("Employee and Salary Provisions", 0), 172: ("Other Payables", 0), 174: ("Due to related parties", 0),
+        175: ("Due to related parties - trade", 0), 176: ("Due to related parties - non-trade", 0),
+        177: ("Total current liabilities", 0), 180: ("Shareholders Equity", 0), 181: ("Retained Earnings", 0),
+        182: ("Total equity", 0), 184: ("Total Liabilities and Equity", 0), 186: ("Balance Sheet Check", None),
+    }
+    for row, (label, fs_row) in bs_map.items():
+        if fs_row is None:
+            formulas = [f"={_col(10+i)}155-{_col(10+i)}184" for i in range(5)]
+        elif fs_row:
+            formulas = [f"='Financial Statements'!{_col(3+i)}{fs_row}" for i in range(5)]
+        else:
+            formulas = ["=0" for _ in years]
+        _bolt_annual_row(ws, row, label, "Currency" if fs_row is not None else None, None, styles, formulas, bold=row in {131, 153, 155, 165, 177, 182, 184})
+
+    _bolt_annual_section(ws, 189, "5. Cash Flow Statement (CFS) - Annual", styles)
+    cfs_rows = {
+        191: ("Net Income", 17), 192: ("Prior period equity adjustment", 0), 193: ("Add: Interest Expense", 14),
+        194: ("Add: Depreciation (D&A)", 12), 195: ("Add: Other income / (loss)", 0), 196: ("Add: Exchange gain / (loss)", 0),
+        197: ("Add: Corporate tax", 16), 198: ("EBITDA (incl.restructuring fees)", 11), 200: ("Change in NWC", None),
+        201: ("Change in trade working capital", 18), 202: ("Trade - Inventory", None), 203: ("Raw Materials", 0),
+        204: ("Packing Materials", 0), 205: ("Semi Finished Goods", 0), 206: ("Finished Goods", 0), 207: ("Goods in Transit", 0),
+        208: ("Trade - Account Receivables", None), 209: ("Gross Receivables", 0), 210: ("Advances from Customers", 0),
+        211: ("Due from Related Parties - Trade", 0), 212: ("Trade - Account Payables", None), 213: ("Gross Payables", 0),
+        214: ("Advances to Suppliers", 0), 215: ("Due to related parties - Trade", 0), 217: ("Change in non-trade working capital", 0),
+        218: ("Non-Trade - Other Inventory", None), 219: ("By Product", 0), 220: ("Spares, Consumables and Others", 0),
+        221: ("Non-Trade - Other Account Receivables", None), 222: ("Other Receivables", 0), 223: ("Prepayments", 0),
+        224: ("Due from Related Parties - Non Trade", 0), 225: ("Non-Trade - Other Account Payables", None),
+        226: ("Employee and Salary Provisions", 0), 227: ("Other Payables", 0), 228: ("Due to related parties - Non trade", 0),
+        229: ("Cash flow from Operations", 20), 231: ("Sale/ (Purchase) of fixed assets", 19), 232: ("Loan Receivable", 0),
+        233: ("Investments in Subsidiaries", 0), 234: ("Change in intangible assets", 0), 235: ("Cash flow from Investing activities", 19),
+        237: ("Interest Paid", 14), 238: ("Loan Repayment", 21), 239: ("Government Grant", 0), 240: ("Cash flow from Financing activities", 21),
+        242: ("Net change in cash", 22), 243: ("Opening Cash Balance", 0), 244: ("Closing Cash Balance", 23), 246: ("Cash Balance Check", None),
+    }
+    for row, (label, fs_row) in cfs_rows.items():
+        if fs_row is None:
+            formulas = ["" for _ in years]
+        elif fs_row:
+            formulas = [f"='Financial Statements'!{_col(3+i)}{fs_row}" for i in range(5)]
+        else:
+            formulas = ["=0" for _ in years]
+        if row == 246:
+            formulas = [f"={_col(10+i)}244-'Financial Statements'!{_col(3+i)}23" for i in range(5)]
+        _bolt_annual_row(ws, row, label, "Currency" if fs_row is not None else None, None, styles, formulas, bold=row in {198, 229, 235, 240, 242, 244})
+    _bolt_annual_section(ws, 249, "END", styles)
 
 
 def _build_ebitda_bridges(ws, styles: dict) -> None:
