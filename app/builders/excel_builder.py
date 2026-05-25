@@ -31,6 +31,68 @@ CHECK_FILL = "FCE4D6"
 FORMULA_FILL = "FFFFFF"
 LINK_FILL = "EAF2F8"
 
+ANNUAL_PLACEHOLDER_LINES = [
+    ("P&L", 85, "Less: Freight and Forwarding", "Logistics / customer delivery cost override"),
+    ("P&L", 86, "Less: Sales Commissions", "Commercial commission override"),
+    ("P&L", 87, "Less: Tariffs", "Duties, tariffs or import/export charges"),
+    ("P&L", 102, "Conversion cost adjustments", "Manufacturing cost normalization"),
+    ("P&L", 113, "Management and restructuring fees", "One-off advisory/restructuring fees"),
+    ("P&L", 114, "Exchange Gain / (Loss)", "FX remeasurement / transaction gains or losses"),
+    ("P&L", 115, "Other Income / (Loss)", "Non-operating or miscellaneous income/expense"),
+    ("BS", 128, "Intangible Assets", "Goodwill, software and acquired intangibles"),
+    ("BS", 129, "Loans Receivable", "Shareholder, vendor or third-party receivable loans"),
+    ("BS", 130, "Investments in Subsidiaries", "HoldCo investment balances"),
+    ("BS", 136, "Raw Materials", "Inventory component override"),
+    ("BS", 137, "Packing Materials", "Inventory component override"),
+    ("BS", 138, "Semi Finished Goods", "Inventory component override"),
+    ("BS", 139, "Finished Goods", "Inventory component override"),
+    ("BS", 140, "Goods in Transit", "Inventory component override"),
+    ("BS", 141, "By Product", "Inventory component override"),
+    ("BS", 142, "Spares, Consumables and Others", "Inventory component override"),
+    ("BS", 147, "Other Receivables", "Other current asset bridge"),
+    ("BS", 148, "Prepayments", "Prepaid expenses and advances"),
+    ("BS", 150, "Due from related parties", "Related party receivable total"),
+    ("BS", 151, "Due from related parties - trade", "Related party trade receivable"),
+    ("BS", 152, "Due from related parties - non-trade", "Related party non-trade receivable"),
+    ("BS", 162, "Accrued Interest", "Interest accrual / PIK bridge"),
+    ("BS", 163, "Government Grant", "Grant liabilities or deferred income"),
+    ("BS", 164, "Deferred Taxes", "Deferred tax liability / asset bridge"),
+    ("BS", 171, "Employee and Salary Provisions", "Payroll accruals and employee provisions"),
+    ("BS", 172, "Other Payables", "Other accrued liabilities"),
+    ("BS", 174, "Due to related parties", "Related party payable total"),
+    ("BS", 175, "Due to related parties - trade", "Related party trade payable"),
+    ("BS", 176, "Due to related parties - non-trade", "Related party non-trade payable"),
+    ("CFS", 192, "Prior period equity adjustment", "Opening balance / reserve movements"),
+    ("CFS", 195, "Add: Other income / (loss)", "Cash-flow bridge adjustment"),
+    ("CFS", 196, "Add: Exchange gain / (loss)", "Cash-flow bridge adjustment"),
+    ("CFS", 203, "Raw Materials", "Inventory movement override"),
+    ("CFS", 204, "Packing Materials", "Inventory movement override"),
+    ("CFS", 205, "Semi Finished Goods", "Inventory movement override"),
+    ("CFS", 206, "Finished Goods", "Inventory movement override"),
+    ("CFS", 207, "Goods in Transit", "Inventory movement override"),
+    ("CFS", 210, "Advances from Customers", "Receivable working-capital bridge"),
+    ("CFS", 211, "Due from Related Parties - Trade", "Receivable working-capital bridge"),
+    ("CFS", 214, "Advances to Suppliers", "Payable working-capital bridge"),
+    ("CFS", 215, "Due to related parties - Trade", "Payable working-capital bridge"),
+    ("CFS", 217, "Change in non-trade working capital", "Other NWC bridge"),
+    ("CFS", 219, "By Product", "Inventory movement override"),
+    ("CFS", 220, "Spares, Consumables and Others", "Inventory movement override"),
+    ("CFS", 222, "Other Receivables", "Other receivable movement"),
+    ("CFS", 223, "Prepayments", "Prepayment movement"),
+    ("CFS", 224, "Due from Related Parties - Non Trade", "Related party receivable movement"),
+    ("CFS", 226, "Employee and Salary Provisions", "Payroll provision movement"),
+    ("CFS", 227, "Other Payables", "Other payable movement"),
+    ("CFS", 228, "Due to related parties - Non trade", "Related party payable movement"),
+    ("CFS", 232, "Loan Receivable", "Investing cash-flow bridge"),
+    ("CFS", 233, "Investments in Subsidiaries", "Investing cash-flow bridge"),
+    ("CFS", 234, "Change in intangible assets", "Investing cash-flow bridge"),
+    ("CFS", 239, "Government Grant", "Financing cash-flow bridge"),
+]
+
+ANNUAL_PLACEHOLDER_INPUT_ROW = {
+    summary_row: idx + 12 for idx, (_, summary_row, _, _) in enumerate(ANNUAL_PLACEHOLDER_LINES)
+}
+
 
 def build_business_plan_workbook(project: dict, financials: dict, output_path: Path, assumptions: dict | None = None) -> None:
     try:
@@ -73,6 +135,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     data_room = wb.create_sheet("Data Room")
     control = wb.create_sheet("Control Panel")
     assumption_map = wb.create_sheet("Assumption Input Map")
+    manual_adjustments = wb.create_sheet("Manual Adjustments")
     historical_detail = wb.create_sheet("Historical Detail Input")
     historical = wb.create_sheet("Historical Inputs")
     historical_bridge = wb.create_sheet("Historical Bridge")
@@ -122,6 +185,7 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     _build_data_room(data_room, project, financials, styles)
     _build_control(control, project, styles, DataValidation, assumptions)
     _build_assumption_input_map(assumption_map, assumptions, styles)
+    _build_manual_adjustments(manual_adjustments, styles)
     _build_historical_detail_input(historical_detail, financials, styles, DataValidation, assumptions)
     _build_historical(historical, financials, styles)
     _build_historical_bridge(historical_bridge, styles)
@@ -456,6 +520,83 @@ def _build_assumption_input_map(ws, assumptions: dict, styles: dict) -> None:
         ws.cell(row, 8, _assumption_priority(base_category, key, value))
         ws.cell(row, 9, destination_map.get(base_category, "Model workbook"))
         ws.cell(row, 10, _assumption_validation_note(base_category, key, value))
+
+
+def _build_manual_adjustments(ws, styles: dict) -> None:
+    try:
+        from openpyxl.comments import Comment
+    except Exception:
+        Comment = None
+
+    ws["B2"] = "Manual Adjustments"
+    ws["B2"].font = styles["section_font"]
+    ws["B3"] = "Optional adjustment layer for analyst review. Blue cells are deliberately editable and flow into the annual output placeholders."
+    ws["B5"] = "Convention"
+    ws["B5"].font = styles["section_font"]
+    convention = [
+        ("Use case", "Add one-off manual adjustments, source-review changes or temporary analyst plugs without breaking formulas."),
+        ("Sign convention", "Revenue / asset increases positive; expenses, liabilities and cash outflows negative unless the row label says otherwise."),
+        ("Audit trail", "Keep a note and source reference for every non-zero override before external distribution."),
+        ("Model link", "Annual adjustment cells feed Summary Financials Annual placeholder rows. Monthly rows are a staging area for future monthly links."),
+    ]
+    for row, (label, note) in enumerate(convention, start=6):
+        _label(ws, row, 2, label, styles)
+        ws.cell(row, 3, note)
+
+    header_row = 11
+    for col, label in [(2, "Section"), (3, "Model line"), (4, "Review note"), (5, "Owner"), (6, "Source / support")]:
+        ws.cell(header_row, col, label).fill = styles["header_fill"]
+        ws.cell(header_row, col).font = styles["header_font"]
+        ws.cell(header_row, col).alignment = styles["center"]
+    for idx in range(5):
+        col = 10 + idx
+        _formula(ws, header_row, col, f"='Summary Financials Annual'!{_col(col)}$4", styles, output=True)
+        ws.cell(header_row, col).number_format = '"FY" 0'
+        ws.cell(header_row, col).fill = styles["header_fill"]
+        ws.cell(header_row, col).font = styles["header_font"]
+
+    for idx, (section, _summary_row, label, note) in enumerate(ANNUAL_PLACEHOLDER_LINES, start=12):
+        ws.cell(idx, 2, section)
+        ws.cell(idx, 3, f"[Placeholder] {label}")
+        ws.cell(idx, 4, note)
+        _input(ws, idx, 5, "Analyst", styles)
+        _input(ws, idx, 6, "Source / rationale to document", styles)
+        if Comment:
+            ws.cell(idx, 6).comment = Comment("Document source file, page/tab and rationale for any non-zero manual adjustment.", "MG Advisory Finance OS")
+        for col in range(10, 15):
+            _input(ws, idx, col, 0, styles)
+            ws.cell(idx, col).number_format = '#,##0;[Red](#,##0);-'
+
+    monthly_start = 72
+    ws.cell(monthly_start, 2, "Monthly Adjustment Staging")
+    ws.cell(monthly_start, 2).font = styles["section_font"]
+    ws.cell(monthly_start + 1, 2, "These rows provide a controlled staging area for monthly phasing reviews before the next model-depth pass.")
+    _table_header(ws, monthly_start + 3, ["Adjustment type", "Line / item", "Driver", "Source / support"], styles)
+    for idx, c in enumerate(_period_cols(), start=4):
+        cell = ws.cell(monthly_start + 3, c)
+        cell.value = f"='Lists & Dates'!V{idx - 2}"
+        cell.number_format = "mmm-yy"
+        cell.fill = styles["header_fill"]
+        cell.font = styles["header_font"]
+        cell.alignment = styles["center"]
+    monthly_lines = [
+        ("Revenue timing", "[Placeholder] Revenue cut-off / deferral", "Manual phasing"),
+        ("Cost timing", "[Placeholder] Supplier invoice cut-off", "Manual phasing"),
+        ("Payroll", "[Placeholder] Bonus / severance accrual", "Manual phasing"),
+        ("Working capital", "[Placeholder] Customer collection catch-up", "Manual phasing"),
+        ("Working capital", "[Placeholder] Supplier payment deferral", "Manual phasing"),
+        ("Debt", "[Placeholder] Waiver fee / amendment cost", "Manual phasing"),
+        ("Capex", "[Placeholder] One-off project capex", "Manual phasing"),
+        ("Other", "[Placeholder] Other analyst adjustment", "Manual phasing"),
+    ]
+    for row, (section, label, driver) in enumerate(monthly_lines, start=monthly_start + 4):
+        ws.cell(row, 2, section)
+        ws.cell(row, 3, label)
+        ws.cell(row, 4, driver)
+        _input(ws, row, 5, "Source / rationale to document", styles)
+        for col in _period_cols():
+            _input(ws, row, col, 0, styles)
+            ws.cell(row, col).number_format = '#,##0;[Red](#,##0);-'
 
 
 def _build_historical_detail_input(ws, financials: dict, styles: dict, DataValidation, assumptions: dict) -> None:
@@ -1665,6 +1806,13 @@ def _bolt_annual_row(
         _formula(ws, row, col, formula if formula.startswith("=") else f"={formula}", styles, output=True, fmt=fmt)
 
 
+def _annual_placeholder_formulas(summary_row: int) -> list[str]:
+    input_row = ANNUAL_PLACEHOLDER_INPUT_ROW.get(summary_row)
+    if not input_row:
+        return ["=0" for _ in range(5)]
+    return [f"='Manual Adjustments'!{_col(10 + i)}{input_row}" for i in range(5)]
+
+
 def _build_summary_financials_annual(ws, styles: dict) -> None:
     years = [2026, 2027, 2028, 2029, 2030]
     ws["A1"] = "MG ADVISORY FINANCIAL MODEL"
@@ -1751,9 +1899,9 @@ def _build_summary_financials_annual(ws, styles: dict) -> None:
         (81, "Middle East", "Currency", [f"={_col(10+i)}83/4" for i in range(5)]),
         (82, "Rest of World", "Currency", [f"={_col(10+i)}83/4" for i in range(5)]),
         (83, "Gross Revenue", "Currency", [f"='Financial Statements'!{_col(3+i)}6" for i in range(5)]),
-        (85, "[Placeholder] Less: Freight and Forwarding", "Currency", ["=0" for _ in years]),
-        (86, "[Placeholder] Less: Sales Commissions", "Currency", ["=0" for _ in years]),
-        (87, "[Placeholder] Less: Tariffs", "Currency", ["=0" for _ in years]),
+        (85, "[Placeholder] Less: Freight and Forwarding", "Currency", _annual_placeholder_formulas(85)),
+        (86, "[Placeholder] Less: Sales Commissions", "Currency", _annual_placeholder_formulas(86)),
+        (87, "[Placeholder] Less: Tariffs", "Currency", _annual_placeholder_formulas(87)),
         (88, "Net Realisation", "Currency", [f"=SUM({_col(10+i)}83:{_col(10+i)}87)" for i in range(5)]),
         (90, "Less: Direct Materials", "Currency", [f"='Financial Statements'!{_col(3+i)}7" for i in range(5)]),
         (91, "Implied Net Spread", "Currency", [f"={_col(10+i)}88+{_col(10+i)}90" for i in range(5)]),
@@ -1764,7 +1912,7 @@ def _build_summary_financials_annual(ws, styles: dict) -> None:
         (98, "Contribution Margin %", "%", [f"=IFERROR({_col(10+i)}97/{_col(10+i)}83,0)" for i in range(5)]),
         (100, "Plant salary & wages", "Currency", [f"='Financial Statements'!{_col(3+i)}9" for i in range(5)]),
         (101, "Other manufacturing overheads", "Currency", [f"='Financial Statements'!{_col(3+i)}10*0.35" for i in range(5)]),
-        (102, "[Placeholder] Conversion cost adjustments", "Currency", ["=0" for _ in years]),
+        (102, "[Placeholder] Conversion cost adjustments", "Currency", _annual_placeholder_formulas(102)),
         (103, "Total Operating Costs", "Currency", [f"=SUM({_col(10+i)}100:{_col(10+i)}102)" for i in range(5)]),
         (104, "Selling & distribution", "Currency", [f"='Financial Statements'!{_col(3+i)}10*0.25" for i in range(5)]),
         (105, "Admin expenses", "Currency", [f"='Financial Statements'!{_col(3+i)}10*0.40" for i in range(5)]),
@@ -1772,9 +1920,9 @@ def _build_summary_financials_annual(ws, styles: dict) -> None:
         (108, "Adjusted EBITDA", "Currency", [f"='Financial Statements'!{_col(3+i)}11" for i in range(5)]),
         (109, "Adj. EBITDA Margin %", "%", [f"=IFERROR({_col(10+i)}108/{_col(10+i)}83,0)" for i in range(5)]),
         (111, "Simplified EBITDA to Net Income bridge (for BS completeness)", None, ["" for _ in years]),
-        (113, "[Placeholder] Management and restructuring fees", "Currency", ["=0" for _ in years]),
-        (114, "[Placeholder] Exchange Gain / (Loss)", "Currency", ["=0" for _ in years]),
-        (115, "[Placeholder] Other Income / (Loss)", "Currency", ["=0" for _ in years]),
+        (113, "[Placeholder] Management and restructuring fees", "Currency", _annual_placeholder_formulas(113)),
+        (114, "[Placeholder] Exchange Gain / (Loss)", "Currency", _annual_placeholder_formulas(114)),
+        (115, "[Placeholder] Other Income / (Loss)", "Currency", _annual_placeholder_formulas(115)),
         (116, "Depreciation (D&A)", "Currency", [f"='Financial Statements'!{_col(3+i)}12" for i in range(5)]),
         (117, "Interest expense", "Currency", [f"='Financial Statements'!{_col(3+i)}14" for i in range(5)]),
         (118, "Corporate tax", "Currency", [f"='Financial Statements'!{_col(3+i)}16" for i in range(5)]),
@@ -1805,7 +1953,35 @@ def _build_summary_financials_annual(ws, styles: dict) -> None:
         182: ("Total equity", 0), 184: ("Total Liabilities and Equity", 0), 186: ("Balance Sheet Check", None),
     }
     for row, (label, fs_row) in bs_map.items():
-        if fs_row is None:
+        if row in ANNUAL_PLACEHOLDER_INPUT_ROW:
+            formulas = _annual_placeholder_formulas(row)
+        elif row == 131:
+            formulas = [f"=SUM({_col(10+i)}127:{_col(10+i)}130)" for i in range(5)]
+        elif row == 135:
+            formulas = [f"=SUM({_col(10+i)}136:{_col(10+i)}142)" for i in range(5)]
+        elif row == 144:
+            formulas = [f"=SUM({_col(10+i)}145:{_col(10+i)}148,{_col(10+i)}150)" for i in range(5)]
+        elif row == 150:
+            formulas = [f"=SUM({_col(10+i)}151:{_col(10+i)}152)" for i in range(5)]
+        elif row == 153:
+            formulas = [f"=SUM({_col(10+i)}134:{_col(10+i)}135,{_col(10+i)}144)" for i in range(5)]
+        elif row == 155:
+            formulas = [f"=SUM({_col(10+i)}131,{_col(10+i)}153)" for i in range(5)]
+        elif row == 165:
+            formulas = [f"=SUM({_col(10+i)}161:{_col(10+i)}164)" for i in range(5)]
+        elif row == 168:
+            formulas = [f"=SUM({_col(10+i)}169:{_col(10+i)}172,{_col(10+i)}174)" for i in range(5)]
+        elif row == 174:
+            formulas = [f"=SUM({_col(10+i)}175:{_col(10+i)}176)" for i in range(5)]
+        elif row == 177:
+            formulas = [f"=SUM({_col(10+i)}168,{_col(10+i)}174)" for i in range(5)]
+        elif row == 181:
+            formulas = [f"={_col(10+i)}180+{_col(10+i)}119" for i in range(5)]
+        elif row == 182:
+            formulas = [f"=SUM({_col(10+i)}180:{_col(10+i)}181)" for i in range(5)]
+        elif row == 184:
+            formulas = [f"=SUM({_col(10+i)}165,{_col(10+i)}177,{_col(10+i)}182)" for i in range(5)]
+        elif fs_row is None:
             formulas = [f"={_col(10+i)}155-{_col(10+i)}184" for i in range(5)]
         elif fs_row:
             formulas = [f"='Financial Statements'!{_col(3+i)}{fs_row}" for i in range(5)]
@@ -1833,7 +2009,23 @@ def _build_summary_financials_annual(ws, styles: dict) -> None:
         242: ("Net change in cash", 22), 243: ("Opening Cash Balance", 0), 244: ("Closing Cash Balance", 23), 246: ("Cash Balance Check", None),
     }
     for row, (label, fs_row) in cfs_rows.items():
-        if fs_row is None:
+        if row in ANNUAL_PLACEHOLDER_INPUT_ROW:
+            formulas = _annual_placeholder_formulas(row)
+        elif row == 200:
+            formulas = [f"=SUM({_col(10+i)}201,{_col(10+i)}217)" for i in range(5)]
+        elif row == 202:
+            formulas = [f"=SUM({_col(10+i)}203:{_col(10+i)}207)" for i in range(5)]
+        elif row == 208:
+            formulas = [f"=SUM({_col(10+i)}209:{_col(10+i)}211)" for i in range(5)]
+        elif row == 212:
+            formulas = [f"=SUM({_col(10+i)}213:{_col(10+i)}215)" for i in range(5)]
+        elif row == 218:
+            formulas = [f"=SUM({_col(10+i)}219:{_col(10+i)}220)" for i in range(5)]
+        elif row == 221:
+            formulas = [f"=SUM({_col(10+i)}222:{_col(10+i)}224)" for i in range(5)]
+        elif row == 225:
+            formulas = [f"=SUM({_col(10+i)}226:{_col(10+i)}228)" for i in range(5)]
+        elif fs_row is None:
             formulas = ["" for _ in years]
         elif fs_row:
             formulas = [f"='Financial Statements'!{_col(3+i)}{fs_row}" for i in range(5)]
@@ -2068,6 +2260,7 @@ def _build_checks(ws, styles: dict) -> None:
         "3FS Debt Tie",
         "Historical Mapping Populated",
         "Balance Sheet Signal",
+        "Manual Adjustment Support",
     ]
     for r, label in enumerate(rows, start=6):
         ws.cell(r, 2, label)
@@ -2081,7 +2274,7 @@ def _build_checks(ws, styles: dict) -> None:
         _formula(ws, 7, c, f'=IF(ABS(\'Debt Schedule\'!{letter}{debt_agg+8}-(\'Debt Schedule\'!{letter}{debt_agg+1}+\'Debt Schedule\'!{letter}{debt_agg+2}+\'Debt Schedule\'!{letter}{debt_agg+4}-\'Debt Schedule\'!{letter}{debt_agg+5}-\'Debt Schedule\'!{letter}{debt_agg+6}-\'Debt Schedule\'!{letter}{debt_agg+7}))<1,"OK","ERROR")', styles, output=True)
         _formula(ws, 8, c, f'=IF(\'Financial Statements\'!{fs_col}6>0,"OK","ERROR")', styles, output=True)
         _formula(ws, 9, c, f'=IF(\'Covenants\'!{letter}17<>"","OK","ERROR")', styles, output=True)
-        _formula(ws, 10, c, f'=IF(AND({letter}6="OK",{letter}7="OK",{letter}8="OK",{letter}9="OK",{letter}11="OK",{letter}12="OK",{letter}13="OK",{letter}14="OK",{letter}15="OK",{letter}16="OK",{letter}17="OK"),"OK","ERROR")', styles, output=True)
+        _formula(ws, 10, c, f'=IF(AND({letter}6="OK",{letter}7="OK",{letter}8="OK",{letter}9="OK",{letter}11="OK",{letter}12="OK",{letter}13="OK",{letter}14="OK",{letter}15="OK",{letter}16="OK",{letter}17="OK",{letter}18="OK"),"OK","ERROR")', styles, output=True)
         _formula(ws, 11, c, f'=IF(ABS(\'Financial Statements\'!{fs_col}23-({previous_cash}+\'Financial Statements\'!{fs_col}22))<1,"OK","ERROR")', styles, output=True)
         _formula(ws, 12, c, f'=IF(ABS(\'Financial Statements\'!{fs_col}25-(\'Financial Statements\'!{fs_col}24-\'Financial Statements\'!{fs_col}23))<1,"OK","ERROR")', styles, output=True)
         _formula(ws, 13, c, f'=IF(SUMIFS(\'Historical Detail Input\'!$P:$P,\'Historical Detail Input\'!$F:$F,"Revenue")=0,"OK",IF(ABS(SUMIF(\'3FS Detail Output\'!$E$6:$E$185,"Revenue",\'3FS Detail Output\'!${detail_col}$6:${detail_col}$185)-\'Financial Statements\'!{fs_col}6)<1,"OK","ERROR"))', styles, output=True)
@@ -2089,6 +2282,7 @@ def _build_checks(ws, styles: dict) -> None:
         _formula(ws, 15, c, f'=IF(SUMIFS(\'Historical Detail Input\'!$P:$P,\'Historical Detail Input\'!$F:$F,"Closing Debt")=0,"OK",IF(ABS(SUMIF(\'3FS Detail Output\'!$E$6:$E$185,"Closing Debt",\'3FS Detail Output\'!${detail_col}$6:${detail_col}$185)-\'Financial Statements\'!{fs_col}24)<1,"OK","ERROR"))', styles, output=True)
         _formula(ws, 16, c, '=IF(COUNTA(\'Historical Detail Input\'!$F$6:$F$185)>=150,"OK","ERROR")', styles, output=True)
         _formula(ws, 17, c, f'=IF(\'Financial Statements\'!{fs_col}23+MAX(\'Financial Statements\'!{fs_col}24,0)>=0,"OK","ERROR")', styles, output=True)
+        _formula(ws, 18, c, '=IF(SUMPRODUCT(ABS(\'Manual Adjustments\'!$J$12:$N$65))=0,"OK",IF(COUNTIF(\'Manual Adjustments\'!$F$12:$F$65,"Source / rationale to document")<ROWS(\'Manual Adjustments\'!$F$12:$F$65),"OK","ERROR"))', styles, output=True)
 
 
 def _build_lookup(ws, styles: dict) -> None:
@@ -2122,6 +2316,7 @@ def _build_mapping(ws, styles: dict) -> None:
         ("Debt Interest", "Debt Schedule", "Aggregate cash interest", "Linked by monthly period", "Active"),
         ("Closing Debt", "Debt Schedule", "Aggregate closing debt", "Linked by monthly period", "Active"),
         ("Historical Granularity", "Historical Detail Input", f"{HISTORICAL_DETAIL_LINES} lines", "Claude/manual actuals bridge", "Active"),
+        ("Manual Placeholders", "Manual Adjustments", f"{len(ANNUAL_PLACEHOLDER_LINES)} annual rows", "Flows into Summary Financials Annual placeholder lines", "Active"),
         ("3FS Granularity", "3FS Detail Output", f"{HISTORICAL_DETAIL_LINES} projected lines", "Annual left + monthly grouped detail", "Active"),
         ("Covenants", "Covenants", "11:17", "Linked to FS and Debt Schedule", "Active"),
         ("Checks", "Checks", "6:17", "Cash, debt, 3FS, covenant and historical controls", "Active"),
@@ -2251,6 +2446,7 @@ def _polish_sheet(ws, styles: dict) -> None:
         "Summary Financials Quarter": "J10",
         "Summary Financials Annual": "J10",
         "EBITDA Bridges": "J10",
+        "Manual Adjustments": "J12",
     }
     ws.freeze_panes = bolt_freezes.get(ws.title, "J5" if ws.title == "Financial Statements" else "D5")
     ws.column_dimensions["A"].width = 3
@@ -2266,6 +2462,11 @@ def _polish_sheet(ws, styles: dict) -> None:
     if ws.title == "Financial Statements":
         ws.column_dimensions["C"].width = 16
         ws.column_dimensions["I"].width = 4
+    if ws.title == "Manual Adjustments":
+        ws.column_dimensions["C"].width = 34
+        ws.column_dimensions["D"].width = 34
+        ws.column_dimensions["E"].width = 16
+        ws.column_dimensions["F"].width = 30
     for row in ws.iter_rows():
         for cell in row:
             cell.border = styles["thin_border"]
@@ -2370,10 +2571,11 @@ def _apply_bolt_annual_output_format(ws) -> None:
         131, 153, 155, 165, 177, 182, 184, 198, 229, 235, 240, 242, 244,
     }
     section_labels = {30, 39, 46, 53, 61, 69, 111, 124, 126, 133, 158, 160, 167, 179, 200, 202, 208, 212, 218, 221, 225}
+    placeholder_rows = set(ANNUAL_PLACEHOLDER_INPUT_ROW)
     for row in range(13, 249):
         if row in [37, 76, 122, 189]:
             continue
-        ws.cell(row, 3).font = Font(name="Calibri", size=10, bold=row in bold_rows or row in section_labels, color=dark_blue if row in section_labels else "000000")
+        ws.cell(row, 3).font = Font(name="Calibri", size=10, italic=row in placeholder_rows, bold=row in bold_rows or row in section_labels, color=blue if row in placeholder_rows else dark_blue if row in section_labels else "000000")
         ws.cell(row, 3).alignment = Alignment(horizontal="left", vertical="center")
         ws.cell(row, 5).font = Font(name="Calibri", size=10, italic=True, color="000000")
         ws.cell(row, 5).alignment = Alignment(horizontal="center", vertical="center")
@@ -2383,7 +2585,7 @@ def _apply_bolt_annual_output_format(ws) -> None:
         for col in range(10, 15):
             cell = ws.cell(row, col)
             cell.fill = pale_fill if row in bold_rows else PatternFill(fill_type=None)
-            cell.font = Font(name="Calibri", size=10, bold=row in bold_rows, color=red if row in check_rows else "000000")
+            cell.font = Font(name="Calibri", size=10, bold=row in bold_rows, color=green if row in placeholder_rows else red if row in check_rows else "000000")
             cell.alignment = Alignment(vertical="center")
             cell.border = thin_border
             if row in percent_rows:

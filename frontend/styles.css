@@ -468,6 +468,23 @@ h3 {
   animation: dataPulse 2.4s ease-in-out infinite;
 }
 
+.model-signal-tape {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.model-signal-tape span {
+  flex: 0 0 auto;
+  border: 1px solid rgba(155, 228, 95, 0.22);
+  border-radius: 999px;
+  background: rgba(155, 228, 95, 0.08);
+  color: #dff5d7;
+  padding: 7px 10px;
+  animation: signalTape 14s linear infinite;
+}
+
 .login-assurance {
   display: grid;
   gap: 7px;
@@ -1114,6 +1131,47 @@ h3 {
   overflow: hidden;
   padding: 16px;
   position: relative;
+}
+
+.ai-pulse-map {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ai-pulse-map i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 0 8px rgba(204, 120, 92, 0.10), 0 0 28px rgba(204, 120, 92, 0.26);
+  opacity: 0.55;
+  animation: aiNodeDrift 7.8s ease-in-out infinite;
+}
+
+.ai-pulse-map i:nth-child(1) {
+  left: 72%;
+  top: 22%;
+}
+
+.ai-pulse-map i:nth-child(2) {
+  left: 83%;
+  top: 62%;
+  animation-delay: -2s;
+}
+
+.ai-pulse-map i:nth-child(3) {
+  left: 62%;
+  top: 72%;
+  animation-delay: -4s;
+}
+
+.ai-pulse-map i:nth-child(4) {
+  left: 91%;
+  top: 34%;
+  animation-delay: -6s;
 }
 
 .ai-orchestration-card::before {
@@ -2477,6 +2535,27 @@ h3 {
   55%,
   100% {
     transform: translateX(240%);
+  }
+}
+
+@keyframes signalTape {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-120px);
+  }
+}
+
+@keyframes aiNodeDrift {
+  0%,
+  100% {
+    opacity: 0.36;
+    transform: translate3d(0, 0, 0) scale(0.92);
+  }
+  50% {
+    opacity: 0.84;
+    transform: translate3d(-18px, -10px, 0) scale(1.18);
   }
 }
 
