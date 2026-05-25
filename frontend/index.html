@@ -116,11 +116,11 @@
             </div>
           </div>
           <nav class="nav-list">
-            <button class="nav-item active" data-view="dashboardView">Dashboard</button>
-            <button class="nav-item" data-view="libraryView">Project Library</button>
-            <button class="nav-item" data-view="projectView">Active Project</button>
-            <button class="nav-item" data-view="bpBuilderView">BP Builder</button>
-            <button class="nav-item" data-view="outputsView">Outputs</button>
+            <button class="nav-item active" data-view="dashboardView" data-icon="⌁">Dashboard</button>
+            <button class="nav-item" data-view="libraryView" data-icon="□">Project Library</button>
+            <button class="nav-item" data-view="projectView" data-icon="↗">Active Project</button>
+            <button class="nav-item" data-view="bpBuilderView" data-icon="∑">BP Builder</button>
+            <button class="nav-item" data-view="outputsView" data-icon="↓">Outputs</button>
           </nav>
         </div>
         <div class="nav-footer">
@@ -143,6 +143,10 @@
             <h2 id="pageTitle">Dashboard</h2>
           </div>
           <div class="topbar-actions">
+            <div class="workspace-live-pill" aria-hidden="true">
+              <span></span>
+              <strong>Live workspace</strong>
+            </div>
             <button id="claudeNavButton" class="claude-nav-button hidden" type="button" aria-label="Open Claude assistant">
               <span class="claude-logo" aria-hidden="true">
                 <svg viewBox="0 0 186 48" role="img">
@@ -175,6 +179,12 @@
                 <span>Formula-driven BP</span>
                 <span>Debt & covenants</span>
                 <span>Investment outputs</span>
+              </div>
+              <div class="hero-live-strip" aria-hidden="true">
+                <i></i><strong>Actuals</strong>
+                <i></i><strong>Drivers</strong>
+                <i></i><strong>3FS</strong>
+                <i></i><strong>Outputs</strong>
               </div>
             </div>
             <div class="dashboard-hero-actions">
@@ -268,6 +278,19 @@
 
         <!-- Library -->
         <section id="libraryView" class="view">
+          <section class="library-hero">
+            <div>
+              <p class="eyebrow">Project command centre</p>
+              <h3>Every dossier lives in one account library.</h3>
+              <p class="muted">Create the company file once, then move through data upload, Claude extraction, BP configuration and deliverables without losing context.</p>
+            </div>
+            <div class="library-hero-steps" aria-hidden="true">
+              <span>Create</span>
+              <span>Extract</span>
+              <span>Model</span>
+              <span>Deliver</span>
+            </div>
+          </section>
           <section class="workbench">
             <div class="panel">
               <p class="eyebrow">Create</p>

@@ -94,12 +94,20 @@ function setPointerGlow(event) {
   document.documentElement.style.setProperty("--cursor-y", `${y}px`);
 }
 
+function setButtonBusy(buttonOrId, busy, label) {
+  const button = typeof buttonOrId === "string" ? $(buttonOrId) : buttonOrId;
+  if (!button) return;
+  if (!button.dataset.defaultLabel) button.dataset.defaultLabel = button.textContent;
+  button.disabled = Boolean(busy);
+  button.classList.toggle("is-busy", Boolean(busy));
+  button.textContent = busy ? label || "Working..." : button.dataset.defaultLabel;
+}
+
 // ── Auth: license key login ───────────────────────────────────────────────────
 async function login(event) {
   event.preventDefault();
   const btn = $("licenseSubmitButton");
-  btn.disabled = true;
-  btn.textContent = "Checking…";
+  setButtonBusy(btn, true, "Checking...");
   try {
     const payload = await api("/api/auth/login", {
       method: "POST",
@@ -112,8 +120,7 @@ async function login(event) {
   } catch (error) {
     $("loginMessage").textContent = error.message;
   } finally {
-    btn.disabled = false;
-    btn.textContent = "Enter workspace";
+    setButtonBusy(btn, false);
   }
 }
 
@@ -297,6 +304,7 @@ async function loadAiStatus() {
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 async function createProject() {
+  setButtonBusy("createProjectButton", true, "Creating dossier...");
   try {
     requireUnlocked();
     const companyName = $("companyName").value.trim();
@@ -319,11 +327,14 @@ async function createProject() {
     showView("projectView");
   } catch (error) {
     $("createMessage").textContent = error.message;
+  } finally {
+    setButtonBusy("createProjectButton", false);
   }
 }
 
 // ── Upload / extraction ───────────────────────────────────────────────────────
 async function uploadFile() {
+  setButtonBusy("uploadButton", true, "Uploading...");
   try {
     requireUnlocked();
     const project = activeProject();
@@ -348,10 +359,14 @@ async function uploadFile() {
     await refreshWorkspace();
   } catch (error) {
     setResult("uploadResult", error.message);
+  } finally {
+    setButtonBusy("uploadButton", false);
   }
 }
 
 async function extractHistoricals() {
+  setButtonBusy("extractHistoricalsButton", true, "Extracting...");
+  setButtonBusy("extractHistoricalsBuilderButton", true, "Extracting...");
   try {
     requireUnlocked();
     const project = activeProject();
@@ -382,6 +397,9 @@ async function extractHistoricals() {
   } catch (error) {
     setResult("uploadResult", error.message);
     setResult("bpBuilderResult", error.message);
+  } finally {
+    setButtonBusy("extractHistoricalsButton", false);
+    setButtonBusy("extractHistoricalsBuilderButton", false);
   }
 }
 
@@ -582,7 +600,7 @@ async function sendClaudeMessage() {
     addClaudeMessage("user", message);
     assistant = addClaudeMessage("assistant", "", "streaming");
     setClaudeActivity("Claude is reading the dossier context and drafting an answer...", "working");
-    $("claudeSendButton").disabled = true;
+    setButtonBusy("claudeSendButton", true, "Thinking...");
     state.chat.streaming = true;
     const response = await fetch(`/api/ai/projects/${project.id}/chat/stream`, {
       method: "POST",
@@ -612,11 +630,12 @@ async function sendClaudeMessage() {
     setClaudeActivity(error.message, "error");
   } finally {
     state.chat.streaming = false;
-    $("claudeSendButton").disabled = false;
+    setButtonBusy("claudeSendButton", false);
   }
 }
 
 async function uploadFileFromClaude() {
+  setButtonBusy("claudeUploadButton", true, "Uploading...");
   try {
     requireUnlocked();
     const project = await activeProjectForClaude();
@@ -641,11 +660,14 @@ async function uploadFileFromClaude() {
   } catch (error) {
     addClaudeMessage("assistant", `Upload failed: ${error.message}`);
     setClaudeActivity(error.message, "error");
+  } finally {
+    setButtonBusy("claudeUploadButton", false);
   }
 }
 
 async function applyClaudeToBp() {
   let pending = null;
+  setButtonBusy("claudeApplyButton", true, "Applying...");
   try {
     requireUnlocked();
     const project = await activeProjectForClaude();
@@ -653,7 +675,6 @@ async function applyClaudeToBp() {
     addClaudeMessage("user", `[Apply to BP] ${message}`);
     pending = addClaudeMessage("assistant", "Claude is extracting and applying the data to the BP...");
     setClaudeActivity("Claude is extracting, mapping and applying to BP data...", "working");
-    $("claudeApplyButton").disabled = true;
     const payload = await api(`/api/ai/projects/${project.id}/chat/apply`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -679,16 +700,16 @@ async function applyClaudeToBp() {
     else addClaudeMessage("assistant", errorMessage);
     setClaudeActivity(error.message, "error");
   } finally {
-    $("claudeApplyButton").disabled = false;
+    setButtonBusy("claudeApplyButton", false);
   }
 }
 
 async function regenerateClaudeResponse() {
+  setButtonBusy("claudeRegenerateButton", true, "Regenerating...");
   try {
     requireUnlocked();
     const project = await activeProjectForClaude();
     const pending = addClaudeMessage("assistant", "Regenerating response...", "pending");
-    $("claudeRegenerateButton").disabled = true;
     const payload = await api(`/api/ai/projects/${project.id}/chat/regenerate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -700,12 +721,14 @@ async function regenerateClaudeResponse() {
     addClaudeMessage("assistant", `Regenerate failed: ${error.message}`, "error");
     setClaudeActivity(error.message, "error");
   } finally {
-    $("claudeRegenerateButton").disabled = false;
+    setButtonBusy("claudeRegenerateButton", false);
   }
 }
 
 // ── Outputs ───────────────────────────────────────────────────────────────────
 async function generateBp() {
+  setButtonBusy("generateBpButton", true, "Generating...");
+  setButtonBusy("generateBpOutputButton", true, "Generating...");
   try {
     requireUnlocked();
     const project = activeProject();
@@ -717,6 +740,9 @@ async function generateBp() {
     setResult("outputResult", payload.output);
   } catch (error) {
     setResult("outputResult", error.message);
+  } finally {
+    setButtonBusy("generateBpButton", false);
+    setButtonBusy("generateBpOutputButton", false);
   }
 }
 
@@ -747,6 +773,8 @@ async function loadBpAssumptions() {
 }
 
 async function saveBpAssumptions() {
+  setButtonBusy("saveBpAssumptionsButton", true, "Saving...");
+  setButtonBusy("saveBpFinalButton", true, "Saving...");
   try {
     requireUnlocked();
     const project = activeProject();
@@ -764,6 +792,9 @@ async function saveBpAssumptions() {
   } catch (error) {
     setResult("bpBuilderResult", error.message);
     throw error;
+  } finally {
+    setButtonBusy("saveBpAssumptionsButton", false);
+    setButtonBusy("saveBpFinalButton", false);
   }
 }
 
@@ -797,6 +828,9 @@ function updateBpReadiness() {
 }
 
 async function generateBpFromBuilder() {
+  setButtonBusy("generateBpBuilderButton", true, "Generating...");
+  setButtonBusy("generateBpFinalButton", true, "Generating...");
+  setButtonBusy("bpWizardNextButton", true, "Generating...");
   try {
     await saveBpAssumptions();
     setResult("bpBuilderResult", "Generating Excel BP with saved assumptions...");
@@ -807,6 +841,10 @@ async function generateBpFromBuilder() {
     setResult("bpBuilderResult", payload.output);
   } catch (_) {
     // saveBpAssumptions already writes the message
+  } finally {
+    setButtonBusy("generateBpBuilderButton", false);
+    setButtonBusy("generateBpFinalButton", false);
+    setButtonBusy("bpWizardNextButton", false);
   }
 }
 
