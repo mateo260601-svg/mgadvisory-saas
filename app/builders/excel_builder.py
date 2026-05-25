@@ -15,13 +15,17 @@ MAX_COST_ITEMS = 12
 MAX_HEADCOUNT_LINES = 10
 HISTORICAL_DETAIL_LINES = 180
 REVENUE_TOTAL_ROW = 7 + MAX_REVENUE_STREAMS + 2
+REVENUE_STREAM_OUTPUT_START_ROW = REVENUE_TOTAL_ROW + 1
 PRODUCT_COGS_ROW = REVENUE_TOTAL_ROW
 PRODUCT_GP_ROW = PRODUCT_COGS_ROW + 1
 PRODUCT_MARGIN_ROW = PRODUCT_COGS_ROW + 2
 HEADCOUNT_TOTAL_FTE_ROW = 7 + MAX_HEADCOUNT_LINES + 2
 HEADCOUNT_PAYROLL_ROW = HEADCOUNT_TOTAL_FTE_ROW + 1
+HEADCOUNT_DEPT_FTE_START_ROW = HEADCOUNT_PAYROLL_ROW + 4
+HEADCOUNT_DEPT_PAYROLL_START_ROW = HEADCOUNT_DEPT_FTE_START_ROW + MAX_HEADCOUNT_LINES + 1
 OPEX_TOTAL_EXCL_PAYROLL_ROW = 7 + MAX_COST_ITEMS + 2
 OPEX_TOTAL_INCL_PAYROLL_ROW = OPEX_TOTAL_EXCL_PAYROLL_ROW + 1
+OPEX_LINE_OUTPUT_START_ROW = OPEX_TOTAL_INCL_PAYROLL_ROW + 4
 ENTITIES = ["Group", "OpCo", "HoldCo"]
 INPUT_FILL = "D9EAF7"
 HEADER_FILL = "1F4E78"
@@ -717,7 +721,7 @@ def _build_bolt_sheet_header(ws, project: dict, styles: dict, freeze: str = "J10
     currency = project.get("currency", "EUR")
     ws["A1"] = f"{company.upper()} FINANCIAL MODEL"
     ws["A1"].font = styles["title_font"]
-    ws["A2"] = '=UPPER(MID(CELL("filename",C3),FIND("]",CELL("filename",C3))+1,LEN(CELL("filename",C3))))'
+    ws["A2"] = "='Cover'!$B$2"
     ws["I1"] = "='Cover'!$B$2"
     ws["I2"] = '=COUNTIF(I4:I1048576,"FALSE")'
     ws["C4"] = company
@@ -1048,14 +1052,23 @@ def _build_revenue_drivers(ws, styles: dict, DataValidation, assumptions: dict) 
         _add_list_validation(ws, f"C{idx}", "'Lists & Dates'!$H$2:$H$20", DataValidation)
     ws.cell(REVENUE_TOTAL_ROW, 2, "Total Revenue")
     ws.cell(REVENUE_TOTAL_ROW, 2).font = styles["bold_font"]
+    ws.cell(REVENUE_TOTAL_ROW - 1, 2, "Monthly revenue output")
+    ws.cell(REVENUE_TOTAL_ROW - 1, 2).font = styles["section_font"]
+    for stream_idx in range(MAX_REVENUE_STREAMS):
+        input_row = 7 + stream_idx
+        output_row = REVENUE_STREAM_OUTPUT_START_ROW + stream_idx
+        _formula(ws, output_row, 2, f"=B{input_row}", styles, output=True)
+        ws.cell(output_row, 3, "Revenue by stream")
     for c in _period_cols():
         letter = _col(c)
-        formulas = []
+        stream_refs = []
         for r in range(7, 7 + MAX_REVENUE_STREAMS):
             month_index = c - FIRST_PERIOD_COL
-            formulas.append(f"($D{r}*(1+$F{r})^{month_index})*($E{r}*(1+$G{r})^{month_index})")
+            output_row = REVENUE_STREAM_OUTPUT_START_ROW + (r - 7)
+            _formula(ws, output_row, c, f"=($D{r}*(1+$F{r})^{month_index})*($E{r}*(1+$G{r})^{month_index})", styles)
+            stream_refs.append(f"{letter}{output_row}")
         history_formula = f"'Historical Bridge'!$D$5*(1+'Historical Bridge'!$E$5)^({month_index}/12)"
-        _formula(ws, REVENUE_TOTAL_ROW, c, f"=MAX({'+'.join(formulas)},{history_formula})", styles, output=True)
+        _formula(ws, REVENUE_TOTAL_ROW, c, f"=MAX(SUM({','.join(stream_refs)}),{history_formula})", styles, output=True)
 
 
 def _build_product_build(ws, styles: dict, DataValidation, assumptions: dict) -> None:
@@ -1074,8 +1087,13 @@ def _build_product_build(ws, styles: dict, DataValidation, assumptions: dict) ->
     ws.cell(PRODUCT_MARGIN_ROW, 2, "Gross Margin")
     for c in _period_cols():
         letter = _col(c)
-        revenue_col = letter
-        formulas = [f"('Revenue Drivers'!{revenue_col}{REVENUE_TOTAL_ROW}*($C{r}/{MAX_REVENUE_STREAMS}))" for r in range(7, 7 + MAX_REVENUE_STREAMS)]
+        month_index = c - FIRST_PERIOD_COL
+        formulas = []
+        for r in range(7, 7 + MAX_REVENUE_STREAMS):
+            stream_output_row = REVENUE_STREAM_OUTPUT_START_ROW + (r - 7)
+            volume_formula = f"'Revenue Drivers'!$D{r}*(1+'Revenue Drivers'!$F{r})^{month_index}"
+            revenue_formula = f"'Revenue Drivers'!{letter}{stream_output_row}"
+            formulas.append(f"({revenue_formula}*$C{r})+({volume_formula}*$D{r})")
         _formula(ws, PRODUCT_COGS_ROW, c, "=-(" + "+".join(formulas) + ")", styles, output=True)
         _formula(ws, PRODUCT_GP_ROW, c, f"='Revenue Drivers'!{letter}{REVENUE_TOTAL_ROW}+{letter}{PRODUCT_COGS_ROW}", styles, output=True)
         _formula(ws, PRODUCT_MARGIN_ROW, c, f"=IFERROR({letter}{PRODUCT_GP_ROW}/'Revenue Drivers'!{letter}{REVENUE_TOTAL_ROW},0)", styles, output=True, fmt="0.0%")
@@ -1103,13 +1121,30 @@ def _build_headcount(ws, styles: dict, assumptions: dict) -> None:
         _input(ws, r, 6, _num(dept.get("new_hires"), 0), styles)
     ws.cell(HEADCOUNT_TOTAL_FTE_ROW, 2, "Total FTE")
     ws.cell(HEADCOUNT_PAYROLL_ROW, 2, "Payroll Cost")
+    ws.cell(HEADCOUNT_DEPT_FTE_START_ROW - 1, 2, "Department FTE Output")
+    ws.cell(HEADCOUNT_DEPT_FTE_START_ROW - 1, 2).font = styles["section_font"]
+    ws.cell(HEADCOUNT_DEPT_PAYROLL_START_ROW - 1, 2, "Department Payroll Output")
+    ws.cell(HEADCOUNT_DEPT_PAYROLL_START_ROW - 1, 2).font = styles["section_font"]
+    for idx in range(MAX_HEADCOUNT_LINES):
+        input_row = 7 + idx
+        fte_row = HEADCOUNT_DEPT_FTE_START_ROW + idx
+        payroll_row = HEADCOUNT_DEPT_PAYROLL_START_ROW + idx
+        _formula(ws, fte_row, 2, f"=B{input_row}", styles, output=True)
+        _formula(ws, payroll_row, 2, f"=B{input_row}", styles, output=True)
     for c in _period_cols():
         letter = _col(c)
         month_idx = c - FIRST_PERIOD_COL
+        fte_refs = []
+        payroll_refs = []
         for r in range(7, 7 + MAX_HEADCOUNT_LINES):
-            _formula(ws, r, c, f"=$C{r}+INT({month_idx}/$E{r})*$F{r}", styles)
-        _formula(ws, HEADCOUNT_TOTAL_FTE_ROW, c, f"=SUM({letter}7:{letter}{6 + MAX_HEADCOUNT_LINES})", styles, output=True)
-        _formula(ws, HEADCOUNT_PAYROLL_ROW, c, f"=-SUMPRODUCT({letter}7:{letter}{6 + MAX_HEADCOUNT_LINES},$D$7:$D${6 + MAX_HEADCOUNT_LINES})", styles, output=True)
+            fte_row = HEADCOUNT_DEPT_FTE_START_ROW + (r - 7)
+            payroll_row = HEADCOUNT_DEPT_PAYROLL_START_ROW + (r - 7)
+            _formula(ws, fte_row, c, f"=$C{r}+INT({month_idx}/$E{r})*$F{r}", styles)
+            _formula(ws, payroll_row, c, f"=-{letter}{fte_row}*$D{r}", styles)
+            fte_refs.append(f"{letter}{fte_row}")
+            payroll_refs.append(f"{letter}{payroll_row}")
+        _formula(ws, HEADCOUNT_TOTAL_FTE_ROW, c, f"=SUM({','.join(fte_refs)})", styles, output=True)
+        _formula(ws, HEADCOUNT_PAYROLL_ROW, c, f"=SUM({','.join(payroll_refs)})", styles, output=True)
 
 
 def _build_opex(ws, styles: dict, DataValidation, assumptions: dict) -> None:
@@ -1137,11 +1172,20 @@ def _build_opex(ws, styles: dict, DataValidation, assumptions: dict) -> None:
         _add_list_validation(ws, f"C{r}", "'Lists & Dates'!$K$2:$K$8", DataValidation)
     ws.cell(OPEX_TOTAL_EXCL_PAYROLL_ROW, 2, "Total Opex excl Payroll")
     ws.cell(OPEX_TOTAL_INCL_PAYROLL_ROW, 2, "Total Opex incl Payroll")
+    ws.cell(OPEX_LINE_OUTPUT_START_ROW - 1, 2, "Monthly opex line output")
+    ws.cell(OPEX_LINE_OUTPUT_START_ROW - 1, 2).font = styles["section_font"]
+    for idx in range(MAX_COST_ITEMS):
+        input_row = 7 + idx
+        output_row = OPEX_LINE_OUTPUT_START_ROW + idx
+        _formula(ws, output_row, 2, f"=B{input_row}", styles, output=True)
     for c in _period_cols():
         letter = _col(c)
+        output_refs = []
         for r in range(7, 7 + MAX_COST_ITEMS):
-            _formula(ws, r, c, f"=-($D{r}+('Revenue Drivers'!{letter}{REVENUE_TOTAL_ROW}*$E{r})+('Headcount'!{letter}{HEADCOUNT_TOTAL_FTE_ROW}*$F{r}))", styles)
-        _formula(ws, OPEX_TOTAL_EXCL_PAYROLL_ROW, c, f"=SUM({letter}7:{letter}{6 + MAX_COST_ITEMS})", styles, output=True)
+            output_row = OPEX_LINE_OUTPUT_START_ROW + (r - 7)
+            _formula(ws, output_row, c, f"=-($D{r}+('Revenue Drivers'!{letter}{REVENUE_TOTAL_ROW}*$E{r})+('Headcount'!{letter}{HEADCOUNT_TOTAL_FTE_ROW}*$F{r}))", styles)
+            output_refs.append(f"{letter}{output_row}")
+        _formula(ws, OPEX_TOTAL_EXCL_PAYROLL_ROW, c, f"=SUM({','.join(output_refs)})", styles, output=True)
         _formula(ws, OPEX_TOTAL_INCL_PAYROLL_ROW, c, f"={letter}{OPEX_TOTAL_EXCL_PAYROLL_ROW}+'Headcount'!{letter}{HEADCOUNT_PAYROLL_ROW}", styles, output=True)
 
 
@@ -1817,7 +1861,7 @@ def _build_summary_financials_annual(ws, styles: dict) -> None:
     years = [2026, 2027, 2028, 2029, 2030]
     ws["A1"] = "MG ADVISORY FINANCIAL MODEL"
     ws["A1"].font = styles["title_font"]
-    ws["A2"] = '=UPPER(MID(CELL("filename",C3),FIND("]",CELL("filename",C3))+1,LEN(CELL("filename",C3))))'
+    ws["A2"] = "='Cover'!$B$2"
     ws["I1"] = "='Cover'!$B$2"
     ws["I2"] = '=COUNTIF(I4:I1048576,"FALSE")'
     ws["C4"] = "='Cover'!$B$2"
@@ -2378,7 +2422,7 @@ def _build_lists(ws, project: dict, styles: dict) -> None:
     ws["V1"].font = styles["header_font"]
     for idx in range(PERIODS):
         row = idx + 2
-        ws.cell(row, 22, f"=EOMONTH('Control Panel'!$C$8,{idx})")
+        ws.cell(row, 22, "='Control Panel'!$C$8" if idx == 0 else f"=EOMONTH($V$2,{idx})")
         ws.cell(row, 23, f"=YEAR(V{row})")
         ws.cell(row, 24, f'="Q"&ROUNDUP(MONTH(V{row})/3,0)')
         ws.cell(row, 22).number_format = "mmm-yy"

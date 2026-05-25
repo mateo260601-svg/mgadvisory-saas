@@ -367,6 +367,7 @@ async function uploadFile() {
 async function extractHistoricals() {
   setButtonBusy("extractHistoricalsButton", true, "Extracting...");
   setButtonBusy("extractHistoricalsBuilderButton", true, "Extracting...");
+  showWorkspaceTransition("Claude is extracting actuals and mapping BP assumptions");
   try {
     requireUnlocked();
     const project = activeProject();
@@ -400,6 +401,7 @@ async function extractHistoricals() {
   } finally {
     setButtonBusy("extractHistoricalsButton", false);
     setButtonBusy("extractHistoricalsBuilderButton", false);
+    hideWorkspaceTransition();
   }
 }
 
@@ -668,6 +670,7 @@ async function uploadFileFromClaude() {
 async function applyClaudeToBp() {
   let pending = null;
   setButtonBusy("claudeApplyButton", true, "Applying...");
+  showWorkspaceTransition("Claude is applying conversation outputs into the BP");
   try {
     requireUnlocked();
     const project = await activeProjectForClaude();
@@ -701,6 +704,7 @@ async function applyClaudeToBp() {
     setClaudeActivity(error.message, "error");
   } finally {
     setButtonBusy("claudeApplyButton", false);
+    hideWorkspaceTransition();
   }
 }
 
@@ -729,6 +733,7 @@ async function regenerateClaudeResponse() {
 async function generateBp() {
   setButtonBusy("generateBpButton", true, "Generating...");
   setButtonBusy("generateBpOutputButton", true, "Generating...");
+  showWorkspaceTransition("Building formula-driven Excel BP and checks");
   try {
     requireUnlocked();
     const project = activeProject();
@@ -743,6 +748,7 @@ async function generateBp() {
   } finally {
     setButtonBusy("generateBpButton", false);
     setButtonBusy("generateBpOutputButton", false);
+    hideWorkspaceTransition();
   }
 }
 
@@ -831,6 +837,7 @@ async function generateBpFromBuilder() {
   setButtonBusy("generateBpBuilderButton", true, "Generating...");
   setButtonBusy("generateBpFinalButton", true, "Generating...");
   setButtonBusy("bpWizardNextButton", true, "Generating...");
+  showWorkspaceTransition("Generating institutional BP model from assumptions");
   try {
     await saveBpAssumptions();
     setResult("bpBuilderResult", "Generating Excel BP with saved assumptions...");
@@ -845,6 +852,7 @@ async function generateBpFromBuilder() {
     setButtonBusy("generateBpBuilderButton", false);
     setButtonBusy("generateBpFinalButton", false);
     setButtonBusy("bpWizardNextButton", false);
+    hideWorkspaceTransition();
   }
 }
 
