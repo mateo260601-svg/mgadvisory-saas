@@ -1,5 +1,4 @@
 from datetime import date
-from datetime import date
 from pathlib import Path
 
 from app.engines.debt_engine import debt_type_options
@@ -478,6 +477,21 @@ def _build_control(ws, project: dict, styles: dict, DataValidation, assumptions:
     _add_list_validation(ws, "C7", "'Lists & Dates'!$E$2:$E$7", DataValidation)
     _add_list_validation(ws, "C6", "'Lists & Dates'!$B$2:$B$8", DataValidation)
     _add_list_validation(ws, "C15", "'Lists & Dates'!$AB$2:$AB$4", DataValidation)
+    ws["B20"] = "Sensitivity / Repair Controls"
+    ws["B20"].font = styles["section_font"]
+    repair_controls = [
+        ("Sensitivity EBITDA Shock", 0.0),
+        ("Sensitivity Debt Shock", 0.0),
+        ("Sensitivity FCF Shock", 0.0),
+        ("Sensitivity Cash Shock", 0.0),
+        ("Forecast Years", "=ROUNDUP($C$10/12,0)"),
+    ]
+    for row, (label, value) in enumerate(repair_controls, start=21):
+        _label(ws, row, 2, label, styles)
+        if isinstance(value, str) and value.startswith("="):
+            _formula(ws, row, 3, value, styles, output=True)
+        else:
+            _input(ws, row, 3, value, styles, fmt="0.0%")
     _write_period_headers(ws, 17, styles, source_sheet="'Lists & Dates'")
 
 
@@ -1237,10 +1251,13 @@ def _build_capex(ws, styles: dict, assumptions: dict) -> None:
     for c in _period_cols():
         letter = _col(c)
         prev = _col(c - 1)
+        month_idx = c - FIRST_PERIOD_COL + 1
+        window_start = max(FIRST_PERIOD_COL, c - PERIODS + 1)
+        capex_window = f"{_col(window_start)}13:{letter}13"
         _formula(ws, 11, c, f"=-'Revenue Drivers'!{letter}{REVENUE_TOTAL_ROW}*$C$6", styles)
         _formula(ws, 12, c, f"=-$C$7", styles)
         _formula(ws, 13, c, f"={letter}11+{letter}12", styles, output=True)
-        _formula(ws, 14, c, f"=-ABS({letter}13)/$C$8", styles)
+        _formula(ws, 14, c, f"=-SUM(INDEX({capex_window},1,MAX(1,{month_idx}-$C$8+1)):INDEX({capex_window},1,{month_idx}))/MAX(1,$C$8)", styles)
         _formula(ws, 15, c, f"=ABS({letter}13)+{letter}14" if c == FIRST_PERIOD_COL else f"={prev}15+ABS({letter}13)+{letter}14", styles, output=True)
 
 
@@ -1278,20 +1295,20 @@ def _build_debt_config(ws, styles: dict, DataValidation, assumptions: dict) -> N
     defaults = [
         _debt_values(tranche) for tranche in configured[:MAX_DEBT_TRANCHES]
     ] or [
-        ("Senior Term Loan B", "Senior Term Loan B", "OpCo", "='Control Panel'!$C$8", 300000, 300000, 84, 12, 0, 0.035, 0.030, "Linear", 0.25, 0.15, "FALSE", 50000, "Cash", "Monthly", 1.00),
-        ("Super Senior RCF", "Super Senior RCF", "OpCo", "='Control Panel'!$C$8", 0, 100000, 60, 0, 0, 0.020, 0.030, "Revolver", 1.00, 0.00, "FALSE", 50000, "Cash", "Quarterly", 1.00),
-        ("Mezzanine PIK", "Mezzanine PIK", "HoldCo", "='Control Panel'!$C$8", 200000, 200000, 96, 24, 24, 0.060, 0.060, "PIK", 1.00, 0.00, "TRUE", 50000, "PIK", "Annual", 0.00),
-        ("Seller Note", "Seller Note", "Seller", "='Control Panel'!$C$8", 50000, 50000, 36, 12, 0, 0.000, 0.060, "Bullet", 1.00, 0.00, "FALSE", 50000, "Cash", "Annual", 1.00),
-        ("DIP / Rescue", "DIP Financing", "OpCo", "='Control Panel'!$C$8", 0, 0, 24, 0, 0, 0.060, 0.060, "Cash Sweep", 0.00, 0.50, "FALSE", 50000, "Cash", "Monthly", 1.00),
+        ("Senior Term Loan B", "Senior Term Loan B", "OpCo", "='Control Panel'!$C$8", 300000, 300000, 84, 12, 0, 0.035, 0.030, "Linear", 0.25, 0.15, "FALSE", 50000, "", "Cash", "Monthly", 1.00),
+        ("Super Senior RCF", "Super Senior RCF", "OpCo", "='Control Panel'!$C$8", 0, 100000, 60, 0, 0, 0.020, 0.030, "Revolver", 1.00, 0.00, "FALSE", 50000, "", "Cash", "Quarterly", 1.00),
+        ("Mezzanine PIK", "Mezzanine PIK", "HoldCo", "='Control Panel'!$C$8", 200000, 200000, 96, 24, 24, 0.060, 0.060, "PIK", 1.00, 0.00, "TRUE", 50000, "", "PIK", "Annual", 0.00),
+        ("Seller Note", "Seller Note", "Seller", "='Control Panel'!$C$8", 50000, 50000, 36, 12, 0, 0.000, 0.060, "Bullet", 1.00, 0.00, "FALSE", 50000, "", "Cash", "Annual", 1.00),
+        ("DIP / Rescue", "DIP Financing", "OpCo", "='Control Panel'!$C$8", 0, 0, 24, 0, 0, 0.060, 0.060, "Cash Sweep", 0.00, 0.50, "FALSE", 50000, "", "Cash", "Monthly", 1.00),
     ]
     for r in range(5, 5 + MAX_DEBT_TRANCHES):
-        values = defaults[r - 5] if r - 5 < len(defaults) else ("", "Senior Term Loan B", "", "='Control Panel'!$C$8", 0, 0, 60, 0, 0, 0.030, 0.030, "Bullet", 1.00, 0.00, "FALSE", 50000, "Cash", "Monthly", 1.00)
+        values = defaults[r - 5] if r - 5 < len(defaults) else ("", "Senior Term Loan B", "", "='Control Panel'!$C$8", 0, 0, 60, 0, 0, 0.030, 0.030, "Bullet", 1.00, 0.00, "FALSE", 50000, "", "Cash", "Monthly", 1.00)
         for c, value in enumerate(values, start=2):
             _input(ws, r, c, value, styles)
         ws.cell(r, 18, f"=EDATE(E{r},H{r})")
         ws.cell(r, 5).number_format = "yyyy-mm-dd"
         ws.cell(r, 18).number_format = "yyyy-mm-dd"
-        for col in [11, 12, 14, 15, 20]:
+        for col in [11, 12, 14, 15, 21]:
             ws.cell(r, col).number_format = "0.0%"
         _add_list_validation(ws, f"C{r}", "'Lists & Dates'!$N$2:$N$80", DataValidation)
         _add_list_validation(ws, f"M{r}", "'Lists & Dates'!$Q$2:$Q$16", DataValidation)
@@ -1621,8 +1638,13 @@ def _build_covenants(ws, styles: dict, assumptions: dict) -> None:
     for c in _period_cols():
         letter = _col(c)
         fs_col = _financial_monthly_col(c)
-        _formula(ws, 11, c, f"=IFERROR('Financial Statements'!{fs_col}25/'Financial Statements'!{fs_col}11,0)", styles, output=True, fmt="0.0x")
-        _formula(ws, 12, c, f"=IFERROR('Financial Statements'!{fs_col}11/'Financial Statements'!{fs_col}14,99)", styles, output=True, fmt="0.0x")
+        month_idx = c - FIRST_PERIOD_COL
+        ltm_start = max(FIRST_PERIOD_COL, c - 11)
+        ltm_ebitda = "+".join(f"'Financial Statements'!{_financial_monthly_col(period)}11" for period in range(ltm_start, c + 1))
+        ltm_interest = "+".join(f"'Financial Statements'!{_financial_monthly_col(period)}14" for period in range(ltm_start, c + 1))
+        annualization = f"12/{month_idx + 1}" if month_idx < 11 else "1"
+        _formula(ws, 11, c, f"=IFERROR('Financial Statements'!{fs_col}25/(({ltm_ebitda})*{annualization}),0)", styles, output=True, fmt="0.0x")
+        _formula(ws, 12, c, f"=IFERROR((({ltm_ebitda})*{annualization})/(({ltm_interest})*{annualization}),99)", styles, output=True, fmt="0.0x")
         _formula(ws, 13, c, f"='Financial Statements'!{fs_col}23", styles, output=True)
         _formula(ws, 14, c, f"={letter}11<=$C$6", styles, output=True)
         _formula(ws, 15, c, f"={letter}12>=$C$7", styles, output=True)
@@ -2252,6 +2274,7 @@ def _build_debt_capacity(ws, styles: dict) -> None:
 def _build_sensitivity_matrix(ws, styles: dict) -> None:
     ws["B2"] = "Sensitivity Matrix"
     ws["B2"].font = styles["section_font"]
+    ws["B3"] = "FY2028 institutional stress case. Core shocks can also be controlled from Control Panel rows 21-24."
     ws["B4"] = "Net Debt / EBITDA Sensitivity"
     ws["B4"].font = styles["section_font"]
     _table_header(ws, 6, ["EBITDA Case / Debt Case", "-15% Debt", "Base Debt", "+15% Debt"], styles)
@@ -2264,7 +2287,7 @@ def _build_sensitivity_matrix(ws, styles: dict) -> None:
                 ws,
                 row,
                 col_idx,
-                f"=IFERROR(('Financial Statements'!J24*{debt_factor})/('Financial Statements'!J11*{ebitda_factor}),0)",
+                f"=IFERROR(('Financial Statements'!E25*{debt_factor}*(1+'Control Panel'!$C$22))/('Financial Statements'!E11*{ebitda_factor}*(1+'Control Panel'!$C$21)),0)",
                 styles,
                 output=True,
                 fmt="0.0x",
@@ -2281,7 +2304,7 @@ def _build_sensitivity_matrix(ws, styles: dict) -> None:
                 ws,
                 row,
                 col_idx,
-                f"=('Control Panel'!$C$11*{cash_factor})+('Financial Statements'!J22*{fcf_factor})",
+                f"=('Financial Statements'!E23*{cash_factor}*(1+'Control Panel'!$C$24))+('Financial Statements'!E22*{fcf_factor}*(1+'Control Panel'!$C$23))",
                 styles,
                 output=True,
             )
@@ -2690,6 +2713,7 @@ def _debt_values(tranche: dict) -> tuple:
         _num(tranche.get("cash_sweep_percent"), 0.0),
         "TRUE" if tranche.get("pik") in (True, "TRUE", "true", "1", 1) else "FALSE",
         _num(tranche.get("minimum_cash"), 50000),
+        "",
         tranche.get("interest_type", "PIK" if tranche.get("pik") else "Cash"),
         tranche.get("cash_pay_frequency", "Monthly"),
         _num(tranche.get("cash_pay_percent"), 0.0 if tranche.get("pik") else 1.0),
