@@ -1,5 +1,4 @@
 import json
-import json
 import os
 import re
 from urllib.error import HTTPError, URLError
@@ -18,6 +17,25 @@ def claude_status() -> dict:
         "model": DEFAULT_MODEL,
         "provider": "Anthropic Claude",
     }
+
+
+def generate_workspace_intelligence(project: dict, financials: dict, assumptions: dict) -> dict:
+    fallback = _fallback_workspace_intelligence(project, financials, assumptions)
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        return {**fallback, "configured": False, "source": "local_fallback"}
+
+    prompt = _workspace_intelligence_prompt(project, financials, assumptions, fallback)
+    try:
+        text = _call_claude(prompt, max_tokens=1800)
+        intelligence = _parse_json_object(text)
+        return _normalize_workspace_intelligence(intelligence, fallback, configured=True, source="claude")
+    except Exception as exc:
+        return {
+            **fallback,
+            "configured": True,
+            "source": "local_fallback_after_error",
+            "error": str(exc),
+        }
 
 
 def generate_project_brief(project: dict, financials: dict) -> dict:
@@ -231,6 +249,35 @@ def _project_prompt(project: dict, financials: dict) -> str:
     )
 
 
+def _workspace_intelligence_prompt(project: dict, financials: dict, assumptions: dict, baseline: dict) -> str:
+    return (
+        "You are the AI orchestration layer inside MG Advisory Finance OS. Your job is to turn the current "
+        "project state into an intelligent SaaS command centre: what is ready, what is missing, what Claude should "
+        "do next, and which BP/deck actions should be shown to the user. Return ONLY valid JSON, no markdown.\n\n"
+        "Required JSON schema:\n"
+        "{\n"
+        '  "score": 0,\n'
+        '  "stage": "Create|Extract|Configure|Generate|Review",\n'
+        '  "headline": "short command-centre headline",\n'
+        '  "narrative": "one compact sentence",\n'
+        '  "next_action": {"label": "button label", "view": "projectView|bpBuilderView|outputsView|libraryView", "prompt": "optional Claude prompt"},\n'
+        '  "actions": [{"label": "short action", "priority": "High|Medium|Low", "view": "bpBuilderView", "prompt": "Claude prompt to run"}],\n'
+        '  "risks": [{"label": "risk title", "severity": "High|Medium|Low", "detail": "short detail"}],\n'
+        '  "modules": [{"name": "Historicals", "status": "Ready|Needs work|Missing", "detail": "short detail"}],\n'
+        '  "prompt_chips": [{"label": "chip", "prompt": "Claude prompt"}]\n'
+        "}\n\n"
+        "Rules:\n"
+        "- Do not invent financial figures.\n"
+        "- Be specific to the current project state.\n"
+        "- Prefer workflow actions that move data into the BP builder and then into Excel/PPT outputs.\n"
+        "- Keep all labels compact and premium.\n\n"
+        f"Project:\n{json.dumps(project, indent=2)}\n\n"
+        f"Normalized financials:\n{json.dumps(financials, indent=2)[:18000]}\n\n"
+        f"Saved BP assumptions:\n{json.dumps(assumptions, indent=2)[:18000]}\n\n"
+        f"Local baseline diagnostics:\n{json.dumps(baseline, indent=2)}"
+    )
+
+
 def _chat_prompt(project: dict, financials: dict, message: str, history: list[dict]) -> str:
     return (
         "You are Claude inside MG Advisory Finance OS, acting as a senior investment banking / restructuring "
@@ -381,6 +428,134 @@ def _parse_json_object(text: str) -> dict:
     if start == -1 or end == -1 or end <= start:
         raise ValueError("Claude response did not contain a JSON object")
     return json.loads(cleaned[start : end + 1])
+
+
+def _fallback_workspace_intelligence(project: dict, financials: dict, assumptions: dict) -> dict:
+    periods = financials.get("periods") or []
+    detail_lines = financials.get("historical_detail") or assumptions.get("historical_actuals") or []
+    revenue_streams = assumptions.get("revenue_streams") or []
+    cost_items = assumptions.get("cost_items") or []
+    debt_tranches = assumptions.get("debt_tranches") or []
+    model = assumptions.get("model") or {}
+    source_files = financials.get("source_files") or []
+    output_score = 0
+    output_score += 18 if project else 0
+    output_score += 18 if source_files else 0
+    output_score += 22 if len(detail_lines) >= 10 else min(len(detail_lines) * 2, 18)
+    output_score += 16 if len([r for r in revenue_streams if r.get("name")]) >= 2 else 6 if revenue_streams else 0
+    output_score += 12 if len([r for r in cost_items if r.get("name")]) >= 4 else 5 if cost_items else 0
+    output_score += 10 if debt_tranches else 0
+    output_score += 4 if model.get("model_start_date") and model.get("actuals_end_date") else 0
+    score = max(0, min(100, output_score))
+    if not source_files:
+        score = min(score, 42)
+    elif len(detail_lines) < 10:
+        score = min(score, 64)
+
+    if not source_files:
+        stage = "Extract"
+        headline = "Upload source files to activate Claude extraction"
+        next_action = {
+            "label": "Open data room",
+            "view": "projectView",
+            "prompt": "List the exact source files needed to build a Project Bolt-level BP for this dossier.",
+        }
+    elif score < 55:
+        stage = "Configure"
+        headline = "Historical data exists; BP assumptions need structure"
+        next_action = {
+            "label": "Review BP gaps",
+            "view": "bpBuilderView",
+            "prompt": "Review the current extracted historicals and tell me the missing assumptions by BP Builder step.",
+        }
+    elif score < 78:
+        stage = "Generate"
+        headline = "Model is close; validate debt, covenants and checks"
+        next_action = {
+            "label": "Challenge assumptions",
+            "view": "bpBuilderView",
+            "prompt": "Challenge the BP assumptions and identify gaps before I generate the Excel model.",
+        }
+    else:
+        stage = "Review"
+        headline = "Ready for output generation and review"
+        next_action = {
+            "label": "Generate outputs",
+            "view": "outputsView",
+            "prompt": "Prepare a reviewer checklist for the Excel BP, lender deck and IM outputs.",
+        }
+
+    modules = [
+        _module_status("Historicals", len(detail_lines) >= 10, f"{len(detail_lines)} mapped lines"),
+        _module_status("Revenue", len(revenue_streams) >= 2, f"{len(revenue_streams)} revenue streams"),
+        _module_status("Costs", len(cost_items) >= 4, f"{len(cost_items)} cost lines"),
+        _module_status("Debt", len(debt_tranches) >= 1, f"{len(debt_tranches)} debt layers"),
+        _module_status("Dates", bool(model.get("model_start_date")), f"{model.get('model_start_date') or 'not set'}"),
+    ]
+    risks = []
+    if not source_files:
+        risks.append({"label": "No source documents", "severity": "High", "detail": "Claude has no uploaded data room to extract from."})
+    if len(detail_lines) < 10:
+        risks.append({"label": "Thin historical mapping", "severity": "High", "detail": "Historical Detail Input needs more rows for a banker-grade BP."})
+    if len(revenue_streams) < 2:
+        risks.append({"label": "Revenue too aggregated", "severity": "Medium", "detail": "Add product/service lines to unlock proper revenue build."})
+    if not debt_tranches:
+        risks.append({"label": "Debt not configured", "severity": "Medium", "detail": "Add each facility separately: cash/PIK, maturity, amortisation and covenant logic."})
+    if not risks:
+        risks.append({"label": "Review checks after generation", "severity": "Low", "detail": "Open the Checks sheet after Excel recalculation."})
+
+    actions = [
+        {
+            "label": "Map actuals",
+            "priority": "High",
+            "view": "projectView",
+            "prompt": "Extract the uploaded documents into historical P&L, balance sheet, cash flow, working capital and debt lines, then explain what can flow into the BP builder.",
+        },
+        {
+            "label": "BP gap review",
+            "priority": "High" if score < 70 else "Medium",
+            "view": "bpBuilderView",
+            "prompt": "Review current BP assumptions and list the missing inputs needed for a Project Bolt-level output.",
+        },
+        {
+            "label": "Debt diagnostic",
+            "priority": "Medium",
+            "view": "bpBuilderView",
+            "prompt": "Build a debt and covenant diagnostic, including cash interest, PIK, maturity, amortisation and liquidity risks.",
+        },
+    ]
+    return {
+        "score": score,
+        "stage": stage,
+        "headline": headline,
+        "narrative": f"{project.get('company_name', 'This dossier')} is {score}% ready based on data coverage, BP assumptions and debt configuration.",
+        "next_action": next_action,
+        "actions": actions,
+        "risks": risks[:4],
+        "modules": modules,
+        "prompt_chips": [
+            {"label": "Auto-map actuals", "prompt": actions[0]["prompt"]},
+            {"label": "Find BP gaps", "prompt": actions[1]["prompt"]},
+            {"label": "Debt review", "prompt": actions[2]["prompt"]},
+        ],
+    }
+
+
+def _module_status(name: str, ready: bool, detail: str) -> dict:
+    return {"name": name, "status": "Ready" if ready else "Needs work", "detail": detail}
+
+
+def _normalize_workspace_intelligence(payload: dict, fallback: dict, configured: bool, source: str) -> dict:
+    normalized = {**fallback, **(payload or {})}
+    normalized["configured"] = configured
+    normalized["source"] = source
+    normalized["score"] = max(0, min(100, int(float(normalized.get("score", fallback["score"]) or 0))))
+    for key in ["actions", "risks", "modules", "prompt_chips"]:
+        if not isinstance(normalized.get(key), list) or not normalized[key]:
+            normalized[key] = fallback[key]
+    if not isinstance(normalized.get("next_action"), dict):
+        normalized["next_action"] = fallback["next_action"]
+    return normalized
 
 
 def _fallback_deck_blueprint(project: dict, deck_type: str) -> dict:

@@ -217,11 +217,21 @@
               <h3>Ask Claude to move the dossier forward</h3>
               <p id="dashboardAIContext" class="muted">Claude can extract actuals, map BP assumptions and identify missing model inputs once a project is active.</p>
             </div>
+            <div id="aiCommandCentre" class="ai-command-centre">
+              <div class="ai-score-orb"><strong id="aiReadinessScore">0%</strong><span id="aiReadinessStage">Waiting</span></div>
+              <div>
+                <h4 id="aiCommandHeadline">Select a dossier to activate the AI command layer</h4>
+                <p id="aiCommandNarrative">Claude will monitor data coverage, BP assumptions and output readiness.</p>
+              </div>
+            </div>
+            <div id="aiModuleStrip" class="ai-module-strip"></div>
+            <div id="aiRiskList" class="ai-risk-list"></div>
             <div class="ai-command-chips">
               <button type="button" data-claude-prompt="Review the active project and tell me the next 5 BP configuration gaps to fix before generating the Excel model.">BP gaps</button>
               <button type="button" data-claude-prompt="Extract and map the uploaded documents into historical revenue, EBITDA, cash, debt, working capital and BP assumptions.">Map actuals</button>
               <button type="button" data-claude-prompt="Build a lender-style debt and covenant diagnostic from the current BP assumptions and extracted historicals.">Debt review</button>
             </div>
+            <div id="aiActionRail" class="ai-action-rail"></div>
           </section>
           <section class="dashboard-command-grid">
             <div class="command-card primary-command">
@@ -460,6 +470,11 @@
                   <span>Excel output</span>
                   <strong>53 tabs / 59k formulas</strong>
                 </div>
+              </div>
+              <div id="bpAiNudge" class="bp-ai-nudge">
+                <span>AI nudge</span>
+                <strong>Claude will surface the next modelling gap once a dossier is active.</strong>
+                <button type="button" data-claude-prompt="Review the BP Builder and identify the highest-impact missing assumption before Excel generation.">Ask Claude</button>
               </div>
               <div id="bpReadinessIssues" class="readiness-issues"></div>
               <div class="wizard-steps">

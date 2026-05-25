@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.services.ai_service import claude_status, chat_with_claude, extract_financials_from_chat, generate_project_brief, stream_chat_with_claude
+from app.services.ai_service import claude_status, chat_with_claude, extract_financials_from_chat, generate_project_brief, generate_workspace_intelligence, stream_chat_with_claude
 from app.services.bp_assumption_service import load_bp_assumptions, save_bp_assumptions
 from app.services.chat_service import (
     DEFAULT_THREAD_ID,
@@ -62,6 +62,20 @@ def ai_project_brief(project_id: str):
         raise HTTPException(status_code=404, detail="Project not found")
     financials = load_normalized_financials(project_id)
     return generate_project_brief(project, financials)
+
+
+@router.get("/projects/{project_id}/intelligence")
+def ai_project_intelligence(project_id: str):
+    project = get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    financials = load_normalized_financials(project_id)
+    assumptions = load_bp_assumptions(project_id, project)
+    return {
+        "ok": True,
+        "project_id": project_id,
+        "intelligence": generate_workspace_intelligence(project, financials, assumptions),
+    }
 
 
 @router.post("/projects/{project_id}/extract-historicals")

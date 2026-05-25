@@ -9,6 +9,7 @@ const state = {
   lastOutput: null,
   user: null,
   googleConfigured: false,
+  aiIntelligence: null,
   bpStep: 0,
   claudeHistory: [],
   chat: {
@@ -272,6 +273,7 @@ async function enterWorkspace(statusLabel) {
 // ── Workspace ─────────────────────────────────────────────────────────────────
 async function refreshWorkspace() {
   await Promise.all([loadProjects(), loadAiStatus()]);
+  await loadWorkspaceIntelligence();
   renderAll();
 }
 
@@ -299,6 +301,29 @@ async function loadAiStatus() {
   } catch (_) {
     $("aiStatusMetric").textContent = "Offline";
     if ($("aiModuleStatus")) $("aiModuleStatus").textContent = "Offline";
+  }
+}
+
+async function loadWorkspaceIntelligence() {
+  const project = activeProject();
+  if (!project) {
+    state.aiIntelligence = null;
+    return;
+  }
+  try {
+    const payload = await api(`/api/ai/projects/${project.id}/intelligence`);
+    state.aiIntelligence = payload.intelligence || null;
+  } catch (error) {
+    state.aiIntelligence = {
+      score: 0,
+      stage: "Review",
+      headline: "AI command layer unavailable",
+      narrative: error.message,
+      actions: [],
+      risks: [{ label: "AI diagnostic offline", severity: "Medium", detail: error.message }],
+      modules: [],
+      prompt_chips: [],
+    };
   }
 }
 
@@ -1368,6 +1393,7 @@ async function planImDeck() {
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderAll() {
   renderMetrics();
+  renderAiIntelligence();
   renderProjectTables();
   renderActiveProject();
   renderUserBadge();
@@ -1421,6 +1447,69 @@ function renderMetrics() {
   if ($("libraryProjectCount")) $("libraryProjectCount").textContent = `${activeCount} active dossier${activeCount === 1 ? "" : "s"}`;
 }
 
+function renderAiIntelligence() {
+  const intel = state.aiIntelligence;
+  const project = activeProject();
+  const score = intel?.score ?? 0;
+  if ($("aiReadinessScore")) $("aiReadinessScore").textContent = project ? `${score}%` : "0%";
+  if ($("aiReadinessStage")) $("aiReadinessStage").textContent = project ? intel?.stage || "Review" : "Waiting";
+  if ($("aiCommandHeadline")) $("aiCommandHeadline").textContent = project ? intel?.headline || "AI command layer active" : "Select a dossier to activate the AI command layer";
+  if ($("aiCommandNarrative")) $("aiCommandNarrative").textContent = project ? intel?.narrative || "Claude is monitoring model readiness." : "Claude will monitor data coverage, BP assumptions and output readiness.";
+  if ($("aiModuleStrip")) {
+    const modules = intel?.modules || [];
+    $("aiModuleStrip").innerHTML = modules.length
+      ? modules.map((item) => `<span class="${statusClass(item.status)}"><strong>${escapeHtml(item.name)}</strong><em>${escapeHtml(item.status)}</em><small>${escapeHtml(item.detail || "")}</small></span>`).join("")
+      : '<span><strong>Historicals</strong><em>Waiting</em><small>No active dossier</small></span>';
+  }
+  if ($("aiRiskList")) {
+    const risks = intel?.risks || [];
+    $("aiRiskList").innerHTML = risks.length
+      ? risks.map((risk) => `<div class="${severityClass(risk.severity)}"><strong>${escapeHtml(risk.label)}</strong><span>${escapeHtml(risk.detail || "")}</span></div>`).join("")
+      : '<div><strong>No active AI risks</strong><span>Select a dossier to run the command diagnostic.</span></div>';
+  }
+  if ($("aiActionRail")) {
+    const actions = intel?.actions || [];
+    $("aiActionRail").innerHTML = actions.length
+      ? actions.slice(0, 4).map((action) => `<button type="button" data-ai-view="${escapeHtml(action.view || "bpBuilderView")}" data-claude-prompt="${escapeHtml(action.prompt || "")}"><span>${escapeHtml(action.priority || "Next")}</span>${escapeHtml(action.label || "Run action")}</button>`).join("")
+      : '<button type="button" data-view-button="libraryView"><span>Start</span>Create dossier</button>';
+  }
+  if ($("bpAiNudge")) {
+    const primary = intel?.actions?.[0] || intel?.next_action;
+    const label = primary?.label || "Ask Claude for the next modelling gap";
+    const prompt = primary?.prompt || "Review the BP Builder and identify the highest-impact missing assumption before Excel generation.";
+    $("bpAiNudge").querySelector("strong").textContent = project ? label : "Claude will surface the next modelling gap once a dossier is active.";
+    const button = $("bpAiNudge").querySelector("button");
+    if (button) button.dataset.claudePrompt = prompt;
+  }
+  bindAiActionRail();
+}
+
+function bindAiActionRail() {
+  document.querySelectorAll("[data-ai-view]").forEach((button) => {
+    if (button.dataset.boundAiAction) return;
+    button.dataset.boundAiAction = "true";
+    button.addEventListener("click", async () => {
+      const view = button.dataset.aiView || "bpBuilderView";
+      await showView(view);
+      if (button.dataset.claudePrompt) openClaudeWithPrompt(button.dataset.claudePrompt);
+    });
+  });
+}
+
+function statusClass(status) {
+  const value = String(status || "").toLowerCase();
+  if (value.includes("ready")) return "is-ready";
+  if (value.includes("missing")) return "is-missing";
+  return "needs-work";
+}
+
+function severityClass(severity) {
+  const value = String(severity || "").toLowerCase();
+  if (value.includes("high")) return "risk-high";
+  if (value.includes("low")) return "risk-low";
+  return "risk-medium";
+}
+
 function renderProjectTables() {
   renderProjectList("projectList", true);
   renderProjectList("recentProjects", false, 5);
@@ -1459,9 +1548,10 @@ function renderProjectList(targetId, allowSearch, limit) {
     .join("");
 
   target.querySelectorAll("[data-project-id]").forEach((row) => {
-    row.addEventListener("click", () => {
+    row.addEventListener("click", async () => {
       state.activeProjectId = row.dataset.projectId;
       localStorage.setItem(ACTIVE_PROJECT_STORAGE_KEY, state.activeProjectId);
+      await loadWorkspaceIntelligence();
       renderAll();
       loadClaudeThread();
       showView("projectView");
