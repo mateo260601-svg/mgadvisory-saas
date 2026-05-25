@@ -17,6 +17,14 @@
       </div>
     </div>
 
+    <div id="workspaceTransition" class="workspace-transition hidden" aria-live="polite">
+      <div class="workspace-transition-card">
+        <img src="/frontend/assets/mg-strategic-finance-ai-logo.png" alt="MG Strategic Finance AI" />
+        <span id="workspaceTransitionLabel">Preparing workspace</span>
+        <div class="workspace-transition-bar"><i></i></div>
+      </div>
+    </div>
+
     <!-- ── Login view ── -->
     <section id="loginView" class="login-view">
       <div class="finance-backdrop" aria-hidden="true">
@@ -152,6 +160,12 @@
         <!-- Dashboard -->
         <section id="dashboardView" class="view active-view">
           <section class="dashboard-hero">
+            <div class="hero-market-orbit" aria-hidden="true">
+              <span>3FS</span>
+              <span>NWC</span>
+              <span>Debt</span>
+              <span>ICR</span>
+            </div>
             <div>
               <p class="eyebrow">Workspace cockpit</p>
               <h3 id="dashboardHeroTitle">Turn one active dossier into a complete finance pack.</h3>

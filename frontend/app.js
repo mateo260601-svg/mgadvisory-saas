@@ -68,6 +68,32 @@ function hideOverlay() {
   $("redirectOverlay").classList.add("hidden");
 }
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function showWorkspaceTransition(text) {
+  const overlay = $("workspaceTransition");
+  if (!overlay) return;
+  if (text && $("workspaceTransitionLabel")) $("workspaceTransitionLabel").textContent = text;
+  overlay.classList.remove("hidden");
+  requestAnimationFrame(() => overlay.classList.add("active"));
+}
+
+function hideWorkspaceTransition() {
+  const overlay = $("workspaceTransition");
+  if (!overlay) return;
+  overlay.classList.remove("active");
+  setTimeout(() => overlay.classList.add("hidden"), 260);
+}
+
+function setPointerGlow(event) {
+  const x = event.clientX || window.innerWidth / 2;
+  const y = event.clientY || window.innerHeight / 2;
+  document.documentElement.style.setProperty("--cursor-x", `${x}px`);
+  document.documentElement.style.setProperty("--cursor-y", `${y}px`);
+}
+
 // ── Auth: license key login ───────────────────────────────────────────────────
 async function login(event) {
   event.preventDefault();
@@ -136,6 +162,8 @@ async function logout() {
   state.projects = [];
   state.user = null;
   renderUserBadge();
+  $("loginView").classList.remove("login-view-exit");
+  $("appView").classList.remove("app-shell-enter", "app-shell-ready");
   $("appView").classList.add("hidden");
   $("loginView").classList.remove("hidden");
   if ($("claudeAssistant")) $("claudeAssistant").classList.add("hidden");
@@ -208,16 +236,30 @@ async function loadGoogleStatus() {
 
 // ── Enter workspace (shared between Google and license) ───────────────────────
 async function enterWorkspace(statusLabel) {
-  $("loginView").classList.add("hidden");
+  showWorkspaceTransition("Preparing your finance workspace");
+  $("loginView").classList.add("login-view-exit");
+  await wait(280);
   $("appView").classList.remove("hidden");
+  $("appView").classList.add("app-shell-enter");
+  $("loginView").classList.add("hidden");
   if ($("claudeAssistant")) $("claudeAssistant").classList.remove("hidden");
   if ($("claudeNavButton")) $("claudeNavButton").classList.remove("hidden");
   $("licenseStatus").textContent = statusLabel;
   hideOverlay();
   renderUserBadge();
-  await refreshWorkspace();
-  await loadClaudeThread();
-  showView("dashboardView");
+  try {
+    await refreshWorkspace();
+    if ($("workspaceTransitionLabel")) $("workspaceTransitionLabel").textContent = "Loading projects and Claude context";
+    await loadClaudeThread();
+  } catch (error) {
+    if ($("loginMessage")) $("loginMessage").textContent = error.message;
+  } finally {
+    await showView("dashboardView");
+    await wait(180);
+    $("appView").classList.add("app-shell-ready");
+    $("appView").classList.remove("app-shell-enter");
+    hideWorkspaceTransition();
+  }
 }
 
 // ── Workspace ─────────────────────────────────────────────────────────────────
@@ -1594,6 +1636,9 @@ document.querySelectorAll("[data-view], [data-view-button]").forEach((el) => {
 document.querySelectorAll("[data-bp-step-target]").forEach((el) => {
   el.addEventListener("click", () => showBpStep(el.dataset.bpStepTarget));
 });
+
+window.addEventListener("pointermove", setPointerGlow, { passive: true });
+setPointerGlow({ clientX: window.innerWidth * 0.72, clientY: window.innerHeight * 0.28 });
 
 $("bpWizardPrevButton").addEventListener("click", previousBpStep);
 $("bpWizardNextButton").addEventListener("click", nextBpStep);
