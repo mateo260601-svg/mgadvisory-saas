@@ -1790,7 +1790,6 @@ async function showView(viewId) {
   };
   $("pageTitle").textContent = titles[viewId] || "Workspace";
   if (viewId === "bpBuilderView" && activeProject()) {
-    if (!state.actualsValidation?.validated) state.bpStep = 1;
     showBpStep(state.bpStep || 0);
     loadBpAssumptions();
   }
@@ -1799,21 +1798,13 @@ async function showView(viewId) {
 function viewAccessIssue(viewId) {
   if (viewId === "dashboardView" || viewId === "libraryView") return "";
   if (!activeProject()) return "Create or select a dossier first.";
-  if (viewId === "outputsView") {
-    const issues = bpGenerationIssues();
-    if (issues.length) return `Outputs are locked until BP inputs are complete:\n- ${issues.join("\n- ")}`;
-  }
   return "";
 }
 
 function showBpStep(step) {
   const maxStep = 8;
   const requested = Math.max(0, Math.min(maxStep, Number(step) || 0));
-  const allowed = maxAllowedBpStep();
-  if (requested > allowed) {
-    setResult("bpBuilderResult", allowed < 2 ? "Projection steps are locked until actuals are transferred and manually validated." : "Complete the previous BP inputs before moving forward.");
-  }
-  state.bpStep = Math.min(requested, allowed);
+  state.bpStep = requested;
   document.querySelectorAll("[data-bp-step]").forEach((panel) => {
     panel.classList.toggle("active-step", Number(panel.dataset.bpStep) === state.bpStep);
   });
@@ -1822,13 +1813,10 @@ function showBpStep(step) {
   });
   if ($("bpWizardPrevButton")) $("bpWizardPrevButton").disabled = state.bpStep === 0;
   if ($("bpWizardNextButton")) $("bpWizardNextButton").textContent = state.bpStep === maxStep ? "Generate" : "Next";
+  if (!state.actualsValidation?.validated && state.bpStep > 1) {
+    setResult("bpBuilderResult", "You can explore and prepare assumptions now. Final BP generation will remain blocked until actuals are validated.");
+  }
   updateBpReadiness();
-}
-
-function maxAllowedBpStep() {
-  if (!activeProject()) return 0;
-  if (!state.actualsValidation?.validated) return 1;
-  return 8;
 }
 
 function nextBpStep() {

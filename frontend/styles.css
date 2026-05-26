@@ -28,7 +28,8 @@
 body {
   margin: 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(238, 242, 240, 0.86) 260px),
+    radial-gradient(circle 520px at 92% 6%, rgba(155, 228, 95, 0.12), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(238, 242, 240, 0.9) 260px),
     var(--bg);
   color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
@@ -613,7 +614,7 @@ h3 {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 286px 1fr;
+  grid-template-columns: 264px 1fr;
 }
 
 .app-shell-enter {
@@ -628,10 +629,11 @@ h3 {
 
 .side-nav {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 190px),
+    radial-gradient(circle 260px at 50% -40px, rgba(155, 228, 95, 0.13), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 190px),
     var(--nav);
   color: #fff;
-  padding: 22px 18px;
+  padding: 18px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -641,7 +643,7 @@ h3 {
 .brand-row {
   display: grid;
   gap: 10px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   padding: 4px 0 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -661,7 +663,7 @@ h3 {
 
 .nav-list {
   display: grid;
-  gap: 7px;
+  gap: 6px;
 }
 
 .nav-item,
@@ -671,13 +673,13 @@ h3 {
   border: 1px solid transparent;
   color: #dce8ee;
   text-align: left;
-  min-height: 43px;
+  min-height: 40px;
 }
 
 .nav-item {
   position: relative;
   display: grid;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: 26px 1fr;
   align-items: center;
   gap: 8px;
   overflow: hidden;
@@ -687,8 +689,8 @@ h3 {
   content: attr(data-icon);
   display: grid;
   place-items: center;
-  width: 27px;
-  height: 27px;
+  width: 25px;
+  height: 25px;
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.05);
@@ -778,7 +780,7 @@ h3 {
 
 .main-area {
   min-width: 0;
-  padding: 28px;
+  padding: 24px 28px 28px;
 }
 
 .topbar,
@@ -794,11 +796,15 @@ h3 {
   position: sticky;
   top: 0;
   z-index: 30;
-  margin: -28px -28px 24px;
-  padding: 22px 28px 16px;
-  background: rgba(238, 242, 240, 0.88);
+  margin: -24px -28px 22px;
+  padding: 18px 28px 14px;
+  background: rgba(248, 250, 248, 0.86);
   border-bottom: 1px solid rgba(214, 222, 217, 0.76);
   backdrop-filter: blur(14px);
+}
+
+.topbar h2 {
+  font-size: 24px;
 }
 
 .topbar-actions,
@@ -1744,6 +1750,20 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow-card);
+}
+
+.panel,
+.project-hero,
+.deal-process-board,
+.empty-state {
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.panel:hover,
+.project-hero:hover,
+.deal-process-board:hover {
+  border-color: rgba(79, 135, 88, 0.24);
+  box-shadow: 0 16px 38px rgba(31, 49, 43, 0.09);
 }
 
 .metric-card {
