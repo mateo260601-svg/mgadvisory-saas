@@ -369,6 +369,36 @@ h3 {
   backdrop-filter: blur(10px);
 }
 
+.mentor-callout {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(232, 242, 237, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.16);
+  display: inline-grid;
+  gap: 3px 14px;
+  grid-template-columns: auto 1fr;
+  margin-top: 22px;
+  padding: 12px 16px 12px 14px;
+}
+
+.mentor-callout .login-mentor {
+  --mentor-size: 82px;
+  grid-row: span 2;
+}
+
+.mentor-callout strong {
+  color: #f8fff9;
+  font-size: 15px;
+}
+
+.mentor-callout em {
+  color: #dce8e1;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 800;
+}
+
 .login-product-preview {
   position: relative;
   width: min(760px, 100%);
@@ -779,6 +809,11 @@ h3 {
   align-items: center;
 }
 
+.topbar-mentor {
+  filter: drop-shadow(0 8px 13px rgba(31, 49, 43, 0.18));
+  margin-right: 2px;
+}
+
 .workspace-live-pill {
   align-items: center;
   background: rgba(255, 255, 255, 0.74);
@@ -1082,6 +1117,10 @@ h3 {
   --mentor-size: 126px;
   margin-right: 20px;
   z-index: 2;
+}
+
+.dashboard-hero .dashboard-mentor {
+  filter: drop-shadow(0 22px 30px rgba(0, 0, 0, 0.28));
 }
 
 .hero-proof-row {
