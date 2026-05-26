@@ -2692,40 +2692,44 @@ h3 {
 }
 
 .mentor-mascot {
-  --mentor-size: 54px;
+  --mentor-size: 76px;
   animation: mentorFloat 3.2s ease-in-out infinite;
-  background: radial-gradient(circle at 50% 35%, #c8f09a 0 18%, #6fa56d 19% 52%, #37653f 53% 100%);
-  border: 2px solid rgba(198, 255, 117, 0.92);
-  border-radius: 48% 48% 44% 44%;
-  box-shadow: 0 14px 30px rgba(31, 49, 43, 0.28), inset 0 -8px 12px rgba(0, 0, 0, 0.16);
+  background:
+    radial-gradient(circle at 24% 76%, rgba(203, 218, 127, 0.95) 0 9%, transparent 10%),
+    radial-gradient(circle at 76% 76%, rgba(203, 218, 127, 0.95) 0 9%, transparent 10%),
+    radial-gradient(ellipse at 50% 78%, rgba(246, 249, 229, 0.8) 0 16%, transparent 17%),
+    linear-gradient(135deg, #dad8bc 0%, #eee9d0 46%, #bdbb96 100%);
+  border: 1px solid rgba(132, 132, 84, 0.62);
+  border-radius: 44% 44% 24% 24% / 42% 42% 48% 48%;
+  box-shadow: 0 16px 34px rgba(31, 49, 43, 0.24), inset 0 -9px 18px rgba(83, 80, 54, 0.13);
   display: inline-block;
   flex: 0 0 auto;
-  height: var(--mentor-size);
+  height: calc(var(--mentor-size) * 0.86);
   position: relative;
   width: var(--mentor-size);
 }
 
 .mentor-mascot::before,
 .mentor-mascot::after {
-  background: linear-gradient(135deg, #8fcf6a, #d7f5a9);
-  border: 2px solid rgba(198, 255, 117, 0.72);
-  border-radius: 70% 6px 70% 8px;
+  background: linear-gradient(135deg, #8fa258, #d8d993 58%, #6f8750);
+  border: 1px solid rgba(92, 105, 56, 0.62);
+  border-radius: 86% 10px 86% 10px;
   content: "";
-  height: calc(var(--mentor-size) * 0.34);
+  height: calc(var(--mentor-size) * 0.21);
   position: absolute;
-  top: 19%;
-  width: calc(var(--mentor-size) * 0.54);
-  z-index: -1;
+  top: calc(var(--mentor-size) * 0.03);
+  width: calc(var(--mentor-size) * 0.47);
+  z-index: 0;
 }
 
 .mentor-mascot::before {
-  left: -36%;
-  transform: rotate(-22deg);
+  left: calc(var(--mentor-size) * 0.02);
+  transform: rotate(-17deg) translateX(-58%);
 }
 
 .mentor-mascot::after {
-  right: -36%;
-  transform: scaleX(-1) rotate(-22deg);
+  right: calc(var(--mentor-size) * 0.02);
+  transform: scaleX(-1) rotate(-17deg) translateX(-58%);
 }
 
 .mentor-mascot i,
@@ -2736,41 +2740,92 @@ h3 {
 }
 
 .mentor-mascot i {
-  background: #26342c;
-  border-radius: 50%;
-  box-shadow: 18px 0 0 #26342c;
-  height: 5px;
-  left: 15px;
-  top: 21px;
-  width: 5px;
+  background:
+    radial-gradient(circle at 36% 45%, #253228 0 5%, transparent 6%),
+    radial-gradient(circle at 64% 45%, #253228 0 5%, transparent 6%),
+    radial-gradient(ellipse at 50% 58%, rgba(58, 75, 47, 0.46) 0 9%, transparent 10%),
+    radial-gradient(ellipse at 50% 22%, rgba(245, 244, 168, 0.6) 0 18%, transparent 19%),
+    linear-gradient(180deg, #c7cf77 0%, #95a95f 58%, #657e4b 100%);
+  border: 1px solid rgba(87, 98, 48, 0.68);
+  border-radius: 46% 46% 42% 42%;
+  box-shadow: inset 0 -8px 12px rgba(45, 64, 38, 0.22);
+  height: calc(var(--mentor-size) * 0.42);
+  left: 50%;
+  top: calc(var(--mentor-size) * -0.02);
+  transform: translateX(-50%);
+  width: calc(var(--mentor-size) * 0.44);
+  z-index: 1;
 }
 
 .mentor-mascot i::before {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(65, 76, 44, 0.68);
   border-radius: 999px;
+  box-shadow:
+    -6px -8px 0 -1px rgba(93, 103, 55, 0.34),
+    6px -8px 0 -1px rgba(93, 103, 55, 0.34),
+    0 7px 0 -1px rgba(242, 237, 181, 0.86);
   height: 2px;
-  left: 7px;
-  top: 13px;
-  width: 13px;
+  left: 50%;
+  top: 62%;
+  transform: translateX(-50%);
+  width: 16px;
 }
 
 .mentor-mascot i::after {
-  background: rgba(55, 101, 63, 0.82);
+  background: rgba(126, 123, 82, 0.32);
   border-radius: 999px;
+  box-shadow:
+    -14px 18px 0 rgba(126, 123, 82, 0.22),
+    14px 18px 0 rgba(126, 123, 82, 0.22),
+    0 28px 0 rgba(255, 255, 255, 0.32);
   height: 2px;
-  left: -3px;
-  top: -7px;
-  width: 32px;
+  left: 50%;
+  top: calc(var(--mentor-size) * 0.5);
+  transform: translateX(-50%);
+  width: calc(var(--mentor-size) * 0.46);
 }
 
 .mentor-mascot.small {
-  --mentor-size: 42px;
+  --mentor-size: 58px;
   display: block;
   margin: 0 auto 16px;
 }
 
 .mentor-mascot.tiny {
   --mentor-size: 34px;
+  background: linear-gradient(180deg, #c7cf77, #6f8750);
+  border-radius: 48% 48% 42% 42%;
+  height: var(--mentor-size);
+}
+
+.mentor-mascot.tiny::before,
+.mentor-mascot.tiny::after {
+  height: calc(var(--mentor-size) * 0.22);
+  top: 22%;
+  width: calc(var(--mentor-size) * 0.48);
+}
+
+.mentor-mascot.tiny i {
+  background:
+    radial-gradient(circle at 36% 45%, #253228 0 7%, transparent 8%),
+    radial-gradient(circle at 64% 45%, #253228 0 7%, transparent 8%),
+    linear-gradient(180deg, transparent 0 100%);
+  border: 0;
+  box-shadow: none;
+  inset: 0;
+  height: auto;
+  left: 0;
+  transform: none;
+  width: auto;
+}
+
+.mentor-mascot.tiny i::before {
+  top: 61%;
+  width: 12px;
+}
+
+.mentor-mascot.tiny i::after {
+  display: none;
 }
 
 .readiness-card .mentor-mascot,
