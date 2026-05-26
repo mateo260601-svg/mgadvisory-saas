@@ -160,72 +160,40 @@
         <!-- Dashboard -->
         <section id="dashboardView" class="view active-view">
           <section class="dashboard-hero">
-            <div class="hero-market-orbit" aria-hidden="true">
-              <span>3FS</span>
-              <span>NWC</span>
-              <span>Debt</span>
-              <span>ICR</span>
-            </div>
             <div>
-              <p class="eyebrow">Workspace cockpit</p>
-              <h3 id="dashboardHeroTitle">Turn one active dossier into a complete finance pack.</h3>
-              <p id="dashboardHeroCopy" class="muted">Choose the active company, load source files, configure assumptions, then generate Excel and presentation outputs.</p>
-              <div class="hero-proof-row">
-                <span>Claude extraction</span>
-                <span>Formula-driven BP</span>
-                <span>Debt & covenants</span>
-                <span>Investment outputs</span>
-              </div>
-              <div class="hero-live-strip" aria-hidden="true">
-                <i></i><strong>Actuals</strong>
-                <i></i><strong>Drivers</strong>
-                <i></i><strong>3FS</strong>
-                <i></i><strong>Outputs</strong>
-              </div>
+              <p class="eyebrow">Start here</p>
+              <h3 id="dashboardHeroTitle">Build the BP step by step.</h3>
+              <p id="dashboardHeroCopy" class="muted">Create a dossier, upload actuals, validate the mapping, then fill the BP assumptions. The app tells you exactly what is missing.</p>
             </div>
+            <span class="mentor-mascot dashboard-mentor" aria-hidden="true"><i></i></span>
           </section>
-          <section class="ai-orchestration-card">
-            <div class="ai-pulse-map" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <section class="deal-process-board simplified-process">
             <div>
-              <p class="eyebrow">AI orchestration</p>
-              <h3>Claude prepares the dossier in the background</h3>
-              <p id="dashboardAIContext" class="muted">Claude monitors documents, actuals, assumptions and missing controls without adding extra steps to the analyst workflow.</p>
-            </div>
-            <div id="aiCommandCentre" class="ai-command-centre">
-              <div class="ai-score-orb"><strong id="aiReadinessScore">0%</strong><span id="aiReadinessStage">Waiting</span></div>
-              <div>
-                <h4 id="aiCommandHeadline">Select a dossier to activate the AI command layer</h4>
-                <p id="aiCommandNarrative">Claude will monitor data coverage, BP assumptions and output readiness.</p>
+              <div class="process-head">
+                <div>
+                  <p class="eyebrow">Next action</p>
+                  <h3 id="dashboardNextAction">Create or select a dossier</h3>
+                  <p id="dashboardNextActionCopy" class="muted">Start with one company file. The BP generation stays locked until the required inputs are complete.</p>
+                </div>
+                <button id="dashboardPrimaryAction" data-view-button="libraryView">Continue</button>
               </div>
-            </div>
-            <div id="aiModuleStrip" class="ai-module-strip"></div>
-            <div id="aiRiskList" class="ai-risk-list"></div>
-          </section>
-          <section class="deal-process-board">
-            <div class="process-head">
-              <div>
-                <p class="eyebrow">Guided BP process</p>
-                <h3 id="dashboardNextAction">Create or select a dossier</h3>
-                <p id="dashboardNextActionCopy" class="muted">The model generation stays locked until the analyst has transferred and validated actuals, then completed the core projections.</p>
-              </div>
-              <button id="dashboardPrimaryAction" data-view-button="libraryView">Continue</button>
             </div>
             <div id="workflowRail" class="workflow-rail"></div>
             <div class="dashboard-focus-grid">
               <article class="focus-card">
-                <span>Active dossier</span>
+                <span>Selected dossier</span>
                 <strong id="dashboardWorkspaceLabel">No dossier selected</strong>
-                <p id="dashboardWorkspaceMeta">Select a project to start the controlled workflow.</p>
+                <p id="dashboardWorkspaceMeta">Choose one company before uploading documents.</p>
               </article>
               <article class="focus-card actuals-focus">
-                <span>Critical control</span>
+                <span>Most important check</span>
                 <strong id="actualsValidationStatus">Actuals not validated</strong>
-                <p>Transfer actuals first, then run a manual analyst validation before the BP can be generated.</p>
+                <p>Review the historical numbers manually before moving to projections.</p>
               </article>
               <article class="focus-card">
-                <span>System</span>
+                <span>AI assistant</span>
                 <strong id="aiStatusMetric">Checking</strong>
-                <p>Silent AI layer monitors the dossier and prepares next steps without interrupting the user.</p>
+                <p id="dashboardAIContext">Claude prepares mappings and flags missing items quietly.</p>
               </article>
             </div>
           </section>

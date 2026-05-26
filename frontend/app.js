@@ -1543,17 +1543,17 @@ function renderMetrics() {
   const bpReady = project ? "Ready to configure" : "Select dossier";
   if ($("projectCount")) $("projectCount").textContent = activeCount;
   if ($("activeProjectMetric")) $("activeProjectMetric").textContent = project ? project.company_name : "None";
-  if ($("dashboardHeroTitle")) $("dashboardHeroTitle").textContent = project ? `${project.company_name}: move from data to outputs.` : "Turn one active dossier into a complete finance pack.";
+  if ($("dashboardHeroTitle")) $("dashboardHeroTitle").textContent = project ? `${project.company_name}: next BP step is ready.` : "Build the BP step by step.";
   if ($("dashboardHeroCopy")) $("dashboardHeroCopy").textContent = project
-    ? `${project.project_type} | ${project.currency} | ${project.id}. Continue with source files, assumptions, debt and deliverables.`
-    : "Choose the active company, load source files, configure assumptions, then generate Excel and presentation outputs.";
+    ? `Current dossier: ${project.project_type} | ${project.currency}. Follow the next action below; the system blocks anything risky until the required checks are done.`
+    : "Create a dossier, upload actuals, validate the mapping, then fill the BP assumptions. The app tells you exactly what is missing.";
   const needsActualsValidation = project && !state.actualsValidation?.validated;
-  if ($("dashboardNextAction")) $("dashboardNextAction").textContent = !project ? "Create or select a dossier" : needsActualsValidation ? "Transfer and validate actuals" : "Continue BP projections";
+  if ($("dashboardNextAction")) $("dashboardNextAction").textContent = !project ? "Create your first dossier" : needsActualsValidation ? "Upload and validate actuals" : "Complete BP assumptions";
   if ($("dashboardNextActionCopy")) $("dashboardNextActionCopy").textContent = !project
-    ? "Your projects are saved by account. Start in the library, then continue into data upload and BP setup."
+    ? "A dossier is the company file. It keeps uploads, extracted historicals, BP assumptions and outputs together."
     : needsActualsValidation
-      ? "Upload source files, let the silent AI layer map actuals, then perform the analyst validation check before projections unlock."
-      : "Actuals are validated. Complete projections, debt and covenants before generating the model.";
+      ? "Upload source files, let Claude prepare the mapping, then confirm the actuals manually before projections unlock."
+      : "Actuals are validated. Now fill revenue, costs, working capital, debt and covenants.";
   if ($("dashboardPrimaryAction")) {
     $("dashboardPrimaryAction").textContent = !project ? "Open project library" : needsActualsValidation ? "Open actuals transfer" : "Open BP Builder";
     $("dashboardPrimaryAction").dataset.viewButton = !project ? "libraryView" : needsActualsValidation ? "projectView" : "bpBuilderView";
@@ -1564,8 +1564,8 @@ function renderMetrics() {
   if ($("dashboardHealthBp")) $("dashboardHealthBp").textContent = project ? bpReady : "BP";
   if ($("dashboardHealthOutputs")) $("dashboardHealthOutputs").textContent = project ? "Generate" : "Outputs";
   if ($("dashboardAIContext")) $("dashboardAIContext").textContent = project
-    ? `Claude is attached to ${project.company_name} and silently prepares actuals mapping, assumptions coverage and next-step diagnostics.`
-    : "Claude monitors documents, actuals, assumptions and missing controls once a project is active.";
+    ? `Claude watches ${project.company_name} in the background and flags missing actuals or assumptions.`
+    : "Claude prepares mappings and flags missing items quietly once a dossier is selected.";
   updateClaudeContextLine();
   if ($("dashboardAccountName")) $("dashboardAccountName").textContent = state.user?.email || "License workspace";
   if ($("dashboardActiveProject")) $("dashboardActiveProject").textContent = project ? project.company_name : "No active dossier";
@@ -1583,14 +1583,12 @@ function workflowState() {
   const historicalModule = modules.find((item) => item.name === "Historicals");
   const docsCount = Number(intel.documents_count || 0);
   const assumptions = $("bpBuilderWorkspace") ? collectBpBuilder() : null;
-  const revenueReady = assumptions ? assumptions.revenue_streams.some((row) => row.name && row.volume > 0 && row.price > 0) : false;
   const generationIssues = assumptions ? bpGenerationIssues() : ["BP not loaded"];
   return [
-    { key: "library", label: "Dossier", view: "libraryView", complete: Boolean(project), locked: false, note: project ? project.company_name : "Create/select project" },
-    { key: "actuals", label: "Actuals transfer", view: "projectView", complete: docsCount > 0 || historicalModule?.status === "Ready", locked: !project, note: docsCount ? `${docsCount} source file${docsCount > 1 ? "s" : ""}` : "Upload files" },
-    { key: "validate", label: "Analyst validation", view: "projectView", complete: Boolean(state.actualsValidation?.validated), locked: !project, note: state.actualsValidation?.validated ? "Validated" : "Manual check required" },
-    { key: "projections", label: "Projection inputs", view: "bpBuilderView", complete: revenueReady && generationIssues.length <= 3, locked: !state.actualsValidation?.validated, note: revenueReady ? "Drivers started" : "Fill assumptions" },
-    { key: "outputs", label: "Outputs", view: "outputsView", complete: generationIssues.length === 0, locked: generationIssues.length > 0, note: generationIssues.length ? `${generationIssues.length} blockers` : "Ready" },
+    { key: "library", label: "1. Company file", view: "libraryView", complete: Boolean(project), locked: false, note: project ? project.company_name : "Create or select" },
+    { key: "actuals", label: "2. Actuals", view: "projectView", complete: docsCount > 0 || historicalModule?.status === "Ready", locked: !project, note: docsCount ? `${docsCount} file${docsCount > 1 ? "s" : ""} uploaded` : "Upload PDFs/Excel" },
+    { key: "validate", label: "3. Validate", view: "projectView", complete: Boolean(state.actualsValidation?.validated), locked: !project, note: state.actualsValidation?.validated ? "Checked by analyst" : "Manual check" },
+    { key: "outputs", label: "4. Build BP", view: "bpBuilderView", complete: generationIssues.length === 0, locked: !state.actualsValidation?.validated, note: generationIssues.length ? `${generationIssues.length} item${generationIssues.length > 1 ? "s" : ""} missing` : "Ready to generate" },
   ];
 }
 
