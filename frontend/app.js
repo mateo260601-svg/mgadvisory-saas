@@ -10,6 +10,13 @@ const state = {
   user: null,
   googleConfigured: false,
   aiIntelligence: null,
+  actualsValidation: { validated: false },
+  backgroundAi: {
+    running: false,
+    timer: null,
+    lastProjectId: null,
+    lastMode: "idle",
+  },
   bpStep: 0,
   claudeHistory: [],
   chat: {
@@ -21,6 +28,7 @@ const state = {
 
 const $ = (id) => document.getElementById(id);
 const ACTIVE_PROJECT_STORAGE_KEY = "mg_advisory_active_project_id";
+const BACKGROUND_AI_INTERVAL_MS = 90000;
 const MAX_REVENUE_STREAMS = 10;
 const MAX_COST_ITEMS = 12;
 const MAX_HEADCOUNT_LINES = 10;
@@ -169,6 +177,7 @@ async function logout() {
   localStorage.removeItem(ACTIVE_PROJECT_STORAGE_KEY);
   state.projects = [];
   state.user = null;
+  stopBackgroundAi();
   renderUserBadge();
   $("loginView").classList.remove("login-view-exit");
   $("appView").classList.remove("app-shell-enter", "app-shell-ready");
@@ -257,6 +266,7 @@ async function enterWorkspace(statusLabel) {
   renderUserBadge();
   try {
     await refreshWorkspace();
+    startBackgroundAi();
     if ($("workspaceTransitionLabel")) $("workspaceTransitionLabel").textContent = "Loading projects and Claude context";
     await loadClaudeThread();
   } catch (error) {
@@ -267,6 +277,50 @@ async function enterWorkspace(statusLabel) {
     $("appView").classList.add("app-shell-ready");
     $("appView").classList.remove("app-shell-enter");
     hideWorkspaceTransition();
+  }
+}
+
+function startBackgroundAi() {
+  if (state.backgroundAi.timer) return;
+  state.backgroundAi.timer = window.setInterval(() => runBackgroundAi("interval"), BACKGROUND_AI_INTERVAL_MS);
+  window.setTimeout(() => runBackgroundAi("warmup"), 1800);
+}
+
+function stopBackgroundAi() {
+  if (state.backgroundAi.timer) window.clearInterval(state.backgroundAi.timer);
+  state.backgroundAi.timer = null;
+  state.backgroundAi.running = false;
+}
+
+async function runBackgroundAi(reason = "silent") {
+  if (!state.unlocked || state.backgroundAi.running || document.hidden) return;
+  const project = activeProject();
+  if (!project) return;
+  state.backgroundAi.running = true;
+  state.backgroundAi.lastProjectId = project.id;
+  try {
+    const payload = await api(`/api/ai/projects/${project.id}/auto-orchestrate`, { method: "POST" });
+    state.aiIntelligence = payload.intelligence || state.aiIntelligence;
+    state.actualsValidation = state.aiIntelligence?.actuals_validation || state.actualsValidation;
+    state.backgroundAi.lastMode = payload.mode || reason;
+    renderAiIntelligence();
+  } catch (error) {
+    state.backgroundAi.lastMode = "quiet_error";
+    if (!state.aiIntelligence) {
+      state.aiIntelligence = {
+        score: 0,
+        stage: "Review",
+        headline: "AI command layer warming up",
+        narrative: error.message,
+        actions: [],
+        risks: [],
+        modules: [],
+        prompt_chips: [],
+      };
+      renderAiIntelligence();
+    }
+  } finally {
+    state.backgroundAi.running = false;
   }
 }
 
@@ -308,12 +362,15 @@ async function loadWorkspaceIntelligence() {
   const project = activeProject();
   if (!project) {
     state.aiIntelligence = null;
+    state.actualsValidation = { validated: false };
     return;
   }
   try {
     const payload = await api(`/api/ai/projects/${project.id}/intelligence`);
     state.aiIntelligence = payload.intelligence || null;
+    state.actualsValidation = state.aiIntelligence?.actuals_validation || { validated: false };
   } catch (error) {
+    state.actualsValidation = { validated: false };
     state.aiIntelligence = {
       score: 0,
       stage: "Review",
@@ -420,6 +477,8 @@ async function extractHistoricals() {
       bridge: payload.bridge,
       extraction: payload.extraction,
     });
+    await loadWorkspaceIntelligence();
+    renderAll();
   } catch (error) {
     setResult("uploadResult", error.message);
     setResult("bpBuilderResult", error.message);
@@ -427,6 +486,40 @@ async function extractHistoricals() {
     setButtonBusy("extractHistoricalsButton", false);
     setButtonBusy("extractHistoricalsBuilderButton", false);
     hideWorkspaceTransition();
+  }
+}
+
+async function validateActuals() {
+  setButtonBusy("validateActualsButton", true, "Validating...");
+  setButtonBusy("validateActualsBuilderButton", true, "Validating...");
+  try {
+    requireUnlocked();
+    const project = activeProject();
+    if (!project) throw new Error("Select a project first.");
+    const historicalRows = collectHistoricalRows();
+    const populatedRows = historicalRows.filter((row) => row.detail_line && (row.latest_actual || row.fy2025 || row.fy2024 || row.fy2023 || row.fy2022));
+    if (populatedRows.length < 5) {
+      throw new Error("Actuals validation blocked: review and populate at least 5 historical lines first.");
+    }
+    const payload = await api(`/api/ai/projects/${project.id}/actuals-validation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reviewer: state.user?.name || state.user?.email || "Analyst",
+        comment: "Analyst confirmed actuals mapping from SaaS workflow.",
+      }),
+    });
+    state.actualsValidation = payload.validation || { validated: true };
+    if (state.aiIntelligence) state.aiIntelligence.actuals_validation = state.actualsValidation;
+    setResult("uploadResult", "Actuals mapping validated by analyst. BP configuration is now unlocked.");
+    setResult("bpBuilderResult", "Actuals validation complete. Continue the BP Builder projections.");
+    renderAll();
+  } catch (error) {
+    setResult("uploadResult", error.message);
+    setResult("bpBuilderResult", error.message);
+  } finally {
+    setButtonBusy("validateActualsButton", false);
+    setButtonBusy("validateActualsBuilderButton", false);
   }
 }
 
@@ -763,10 +856,11 @@ async function generateBp() {
     requireUnlocked();
     const project = activeProject();
     if (!project) throw new Error("Select a project first.");
+    assertBpGenerationAllowed();
     setResult("outputResult", "Generating institutional Excel BP… (this takes ~10 seconds)");
     const payload = await api(`/api/projects/${project.id}/bp/generate`, { method: "POST" });
     state.lastOutput = payload.output;
-    $("modelStatusMetric").textContent = "Generated";
+    if ($("modelStatusMetric")) $("modelStatusMetric").textContent = "Generated";
     setResult("outputResult", payload.output);
   } catch (error) {
     setResult("outputResult", error.message);
@@ -858,18 +952,49 @@ function updateBpReadiness() {
   $("bpReadinessIssues").innerHTML = issues.slice(0, 4).map((issue) => `<span>${escapeHtml(issue)}</span>`).join("") || "<span>Ready to generate and review Excel outputs.</span>";
 }
 
+function bpGenerationIssues() {
+  const assumptions = collectBpBuilder();
+  const revenueRows = assumptions.revenue_streams.filter((row) => row.name && row.volume > 0 && row.price > 0);
+  const historicalRows = assumptions.historical_actuals.filter((row) => row.detail_line && (row.latest_actual || row.fy2025 || row.fy2024 || row.fy2023));
+  const costRows = assumptions.cost_items.filter((row) => row.name && (row.monthly_fixed || row.percent_revenue || row.cost_per_fte));
+  const headcountRows = assumptions.headcount.filter((row) => row.department && row.avg_salary_month >= 0);
+  const debtRows = assumptions.debt_tranches.filter((row) => row.name && (row.opening_balance || row.commitment));
+  const issues = [];
+  if (!activeProject()) issues.push("Create or select a dossier.");
+  if (historicalRows.length < 5) issues.push("Transfer at least 5 actual historical lines.");
+  if (!state.actualsValidation?.validated) issues.push("Run the analyst actuals validation check.");
+  if (!assumptions.model.model_start_date || !assumptions.model.actuals_end_date) issues.push("Complete model setup dates.");
+  if (revenueRows.length < 1) issues.push("Add at least one revenue stream with volume and price.");
+  if (costRows.length < 3) issues.push("Add at least three key cost lines.");
+  if (headcountRows.length < 1) issues.push("Add headcount/payroll assumptions.");
+  if (!assumptions.working_capital.dso || !assumptions.working_capital.dpo) issues.push("Complete working capital assumptions.");
+  if (assumptions.model.opening_debt > 0 && debtRows.length < 1) issues.push("Add at least one debt layer or set opening debt to zero.");
+  if (!assumptions.covenants.max_net_debt_ebitda || !assumptions.covenants.min_liquidity) issues.push("Complete covenant thresholds.");
+  return issues;
+}
+
+function assertBpGenerationAllowed() {
+  const issues = bpGenerationIssues();
+  if (!issues.length) return true;
+  const message = `BP generation locked:\n- ${issues.join("\n- ")}`;
+  setResult("bpBuilderResult", message);
+  setResult("outputResult", message);
+  throw new Error(message);
+}
+
 async function generateBpFromBuilder() {
   setButtonBusy("generateBpBuilderButton", true, "Generating...");
   setButtonBusy("generateBpFinalButton", true, "Generating...");
   setButtonBusy("bpWizardNextButton", true, "Generating...");
   showWorkspaceTransition("Generating institutional BP model from assumptions");
   try {
+    assertBpGenerationAllowed();
     await saveBpAssumptions();
     setResult("bpBuilderResult", "Generating Excel BP with saved assumptions...");
     const project = activeProject();
     const payload = await api(`/api/projects/${project.id}/bp/generate`, { method: "POST" });
     state.lastOutput = payload.output;
-    $("modelStatusMetric").textContent = "Generated";
+    if ($("modelStatusMetric")) $("modelStatusMetric").textContent = "Generated";
     setResult("bpBuilderResult", payload.output);
   } catch (_) {
     // saveBpAssumptions already writes the message
@@ -1416,19 +1541,22 @@ function renderMetrics() {
   const project = activeProject();
   const activeCount = state.projects.filter((p) => (p.status || "active") === "active").length;
   const bpReady = project ? "Ready to configure" : "Select dossier";
-  $("projectCount").textContent = activeCount;
-  $("activeProjectMetric").textContent = project ? project.company_name : "None";
+  if ($("projectCount")) $("projectCount").textContent = activeCount;
+  if ($("activeProjectMetric")) $("activeProjectMetric").textContent = project ? project.company_name : "None";
   if ($("dashboardHeroTitle")) $("dashboardHeroTitle").textContent = project ? `${project.company_name}: move from data to outputs.` : "Turn one active dossier into a complete finance pack.";
   if ($("dashboardHeroCopy")) $("dashboardHeroCopy").textContent = project
     ? `${project.project_type} | ${project.currency} | ${project.id}. Continue with source files, assumptions, debt and deliverables.`
     : "Choose the active company, load source files, configure assumptions, then generate Excel and presentation outputs.";
-  if ($("dashboardNextAction")) $("dashboardNextAction").textContent = project ? "Continue BP configuration" : "Create or select a dossier";
-  if ($("dashboardNextActionCopy")) $("dashboardNextActionCopy").textContent = project
-    ? "The fastest path is to review uploaded data, complete the BP Builder, then generate the institutional Excel pack."
-    : "Your projects are saved by account. Start in the library, then continue into data upload and BP setup.";
+  const needsActualsValidation = project && !state.actualsValidation?.validated;
+  if ($("dashboardNextAction")) $("dashboardNextAction").textContent = !project ? "Create or select a dossier" : needsActualsValidation ? "Transfer and validate actuals" : "Continue BP projections";
+  if ($("dashboardNextActionCopy")) $("dashboardNextActionCopy").textContent = !project
+    ? "Your projects are saved by account. Start in the library, then continue into data upload and BP setup."
+    : needsActualsValidation
+      ? "Upload source files, let the silent AI layer map actuals, then perform the analyst validation check before projections unlock."
+      : "Actuals are validated. Complete projections, debt and covenants before generating the model.";
   if ($("dashboardPrimaryAction")) {
-    $("dashboardPrimaryAction").textContent = project ? "Open BP Builder" : "Open project library";
-    $("dashboardPrimaryAction").dataset.viewButton = project ? "bpBuilderView" : "libraryView";
+    $("dashboardPrimaryAction").textContent = !project ? "Open project library" : needsActualsValidation ? "Open actuals transfer" : "Open BP Builder";
+    $("dashboardPrimaryAction").dataset.viewButton = !project ? "libraryView" : needsActualsValidation ? "projectView" : "bpBuilderView";
   }
   if ($("dashboardWorkspaceLabel")) $("dashboardWorkspaceLabel").textContent = project ? project.company_name : "No dossier selected";
   if ($("dashboardWorkspaceMeta")) $("dashboardWorkspaceMeta").textContent = project ? `${project.project_type} | ${project.currency} | updated ${formatDate(project.updated_at)}` : "Select a project to unlock the operating workflow.";
@@ -1445,6 +1573,53 @@ function renderMetrics() {
   if ($("dashboardOutputStatus")) $("dashboardOutputStatus").textContent = project ? "Available after generation" : "No dossier selected";
   if ($("libraryAccountLabel")) $("libraryAccountLabel").textContent = state.user?.email || "License workspace";
   if ($("libraryProjectCount")) $("libraryProjectCount").textContent = `${activeCount} active dossier${activeCount === 1 ? "" : "s"}`;
+  renderWorkflowRail();
+}
+
+function workflowState() {
+  const project = activeProject();
+  const intel = state.aiIntelligence || {};
+  const modules = intel.modules || [];
+  const historicalModule = modules.find((item) => item.name === "Historicals");
+  const docsCount = Number(intel.documents_count || 0);
+  const assumptions = $("bpBuilderWorkspace") ? collectBpBuilder() : null;
+  const revenueReady = assumptions ? assumptions.revenue_streams.some((row) => row.name && row.volume > 0 && row.price > 0) : false;
+  const generationIssues = assumptions ? bpGenerationIssues() : ["BP not loaded"];
+  return [
+    { key: "library", label: "Dossier", view: "libraryView", complete: Boolean(project), locked: false, note: project ? project.company_name : "Create/select project" },
+    { key: "actuals", label: "Actuals transfer", view: "projectView", complete: docsCount > 0 || historicalModule?.status === "Ready", locked: !project, note: docsCount ? `${docsCount} source file${docsCount > 1 ? "s" : ""}` : "Upload files" },
+    { key: "validate", label: "Analyst validation", view: "projectView", complete: Boolean(state.actualsValidation?.validated), locked: !project, note: state.actualsValidation?.validated ? "Validated" : "Manual check required" },
+    { key: "projections", label: "Projection inputs", view: "bpBuilderView", complete: revenueReady && generationIssues.length <= 3, locked: !state.actualsValidation?.validated, note: revenueReady ? "Drivers started" : "Fill assumptions" },
+    { key: "outputs", label: "Outputs", view: "outputsView", complete: generationIssues.length === 0, locked: generationIssues.length > 0, note: generationIssues.length ? `${generationIssues.length} blockers` : "Ready" },
+  ];
+}
+
+function renderWorkflowRail() {
+  const rail = $("workflowRail");
+  if (!rail) return;
+  rail.innerHTML = workflowState().map((step, index) => {
+    const stateClass = step.complete ? "complete" : step.locked ? "locked" : "current";
+    return `<button type="button" class="workflow-step ${stateClass}" data-workflow-view="${escapeHtml(step.view)}" ${step.locked ? "disabled" : ""}>
+      <span>${index + 1}</span>
+      <strong>${escapeHtml(step.label)}</strong>
+      <em>${escapeHtml(step.note)}</em>
+    </button>`;
+  }).join("");
+  rail.querySelectorAll("[data-workflow-view]").forEach((button) => {
+    button.addEventListener("click", () => showView(button.dataset.workflowView));
+  });
+  if ($("actualsValidationStatus")) {
+    $("actualsValidationStatus").textContent = state.actualsValidation?.validated ? "Actuals validated" : "Actuals not validated";
+  }
+  if ($("actualsValidationCopy")) {
+    $("actualsValidationCopy").textContent = state.actualsValidation?.validated
+      ? `Validated by ${state.actualsValidation.reviewer || "Analyst"}. Continue to BP Builder.`
+      : "Review extracted historical rows and confirm that P&L, balance sheet, cash flow, debt and working capital lines are mapped correctly.";
+  }
+  ["validateActualsButton", "validateActualsBuilderButton"].forEach((id) => {
+    const button = $(id);
+    if (button) button.textContent = state.actualsValidation?.validated ? "Actuals validated" : "Validate actuals";
+  });
 }
 
 function renderAiIntelligence() {
@@ -1608,6 +1783,13 @@ function renderClaudeBpBridge(bridge) {
 }
 
 async function showView(viewId) {
+  const guard = viewAccessIssue(viewId);
+  if (guard) {
+    setResult("bpBuilderResult", guard);
+    setResult("outputResult", guard);
+    if ($("uploadResult")) setResult("uploadResult", guard);
+    return;
+  }
   if ((viewId === "bpBuilderView" || viewId === "projectView" || viewId === "outputsView") && !activeProject()) {
     try {
       await loadProjects();
@@ -1632,14 +1814,30 @@ async function showView(viewId) {
   };
   $("pageTitle").textContent = titles[viewId] || "Workspace";
   if (viewId === "bpBuilderView" && activeProject()) {
+    if (!state.actualsValidation?.validated) state.bpStep = 1;
     showBpStep(state.bpStep || 0);
     loadBpAssumptions();
   }
 }
 
+function viewAccessIssue(viewId) {
+  if (viewId === "dashboardView" || viewId === "libraryView") return "";
+  if (!activeProject()) return "Create or select a dossier first.";
+  if (viewId === "outputsView") {
+    const issues = bpGenerationIssues();
+    if (issues.length) return `Outputs are locked until BP inputs are complete:\n- ${issues.join("\n- ")}`;
+  }
+  return "";
+}
+
 function showBpStep(step) {
   const maxStep = 8;
-  state.bpStep = Math.max(0, Math.min(maxStep, Number(step) || 0));
+  const requested = Math.max(0, Math.min(maxStep, Number(step) || 0));
+  const allowed = maxAllowedBpStep();
+  if (requested > allowed) {
+    setResult("bpBuilderResult", allowed < 2 ? "Projection steps are locked until actuals are transferred and manually validated." : "Complete the previous BP inputs before moving forward.");
+  }
+  state.bpStep = Math.min(requested, allowed);
   document.querySelectorAll("[data-bp-step]").forEach((panel) => {
     panel.classList.toggle("active-step", Number(panel.dataset.bpStep) === state.bpStep);
   });
@@ -1649,6 +1847,12 @@ function showBpStep(step) {
   if ($("bpWizardPrevButton")) $("bpWizardPrevButton").disabled = state.bpStep === 0;
   if ($("bpWizardNextButton")) $("bpWizardNextButton").textContent = state.bpStep === maxStep ? "Generate" : "Next";
   updateBpReadiness();
+}
+
+function maxAllowedBpStep() {
+  if (!activeProject()) return 0;
+  if (!state.actualsValidation?.validated) return 1;
+  return 8;
 }
 
 function nextBpStep() {
@@ -1739,6 +1943,8 @@ $("createProjectButton").addEventListener("click", createProject);
 $("uploadButton").addEventListener("click", uploadFile);
 $("extractHistoricalsButton").addEventListener("click", extractHistoricals);
 $("extractHistoricalsBuilderButton").addEventListener("click", extractHistoricals);
+$("validateActualsButton").addEventListener("click", validateActuals);
+$("validateActualsBuilderButton").addEventListener("click", validateActuals);
 $("generateBpButton").addEventListener("click", generateBp);
 $("generateBpOutputButton").addEventListener("click", generateBp);
 $("loadBpAssumptionsButton").addEventListener("click", loadBpAssumptions);
@@ -1774,6 +1980,9 @@ document.querySelectorAll("[data-bp-step-target]").forEach((el) => {
 });
 
 window.addEventListener("pointermove", setPointerGlow, { passive: true });
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) runBackgroundAi("resume");
+});
 setPointerGlow({ clientX: window.innerWidth * 0.72, clientY: window.innerHeight * 0.28 });
 
 $("bpWizardPrevButton").addEventListener("click", previousBpStep);

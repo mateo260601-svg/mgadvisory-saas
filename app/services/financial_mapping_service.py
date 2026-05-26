@@ -1,5 +1,4 @@
 import csv
-import csv
 import json
 from pathlib import Path
 from datetime import date, datetime
@@ -35,7 +34,7 @@ def normalize_project_financials(project_id: str, use_ai: bool = True) -> dict:
         "documents": document_summaries,
     }
 
-    if use_ai:
+    if use_ai and documents:
         ai_result = _run_ai_historical_extraction(project_id, documents, extracted_rows, document_summaries)
         if ai_result:
             normalized = _merge_ai_extraction(normalized, ai_result)

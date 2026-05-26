@@ -1,3 +1,6 @@
+import json
+import time
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -19,10 +22,12 @@ from app.services.financial_mapping_service import (
     normalize_project_financials,
     save_normalized_financials,
 )
-from app.services.project_service import get_project
+from app.services.extraction_service import list_project_documents
+from app.services.project_service import get_project, project_dir
 
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
+AUTO_ORCHESTRATION_TTL_SECONDS = 10 * 60
 
 
 class ChatRequest(BaseModel):
@@ -34,6 +39,11 @@ class ChatRequest(BaseModel):
 class EditMessageRequest(BaseModel):
     content: str
     thread_id: str = DEFAULT_THREAD_ID
+
+
+class ActualsValidationRequest(BaseModel):
+    reviewer: str = Field(default="Analyst", max_length=80)
+    comment: str = Field(default="", max_length=500)
 
 
 @router.get("/status")
@@ -71,10 +81,83 @@ def ai_project_intelligence(project_id: str):
         raise HTTPException(status_code=404, detail="Project not found")
     financials = load_normalized_financials(project_id)
     assumptions = load_bp_assumptions(project_id, project)
+    validation = _actuals_validation(project_id)
+    intelligence = generate_workspace_intelligence(project, financials, assumptions)
+    intelligence["actuals_validation"] = validation
+    intelligence["documents_count"] = len(list_project_documents(project_id))
     return {
         "ok": True,
         "project_id": project_id,
-        "intelligence": generate_workspace_intelligence(project, financials, assumptions),
+        "intelligence": intelligence,
+    }
+
+
+@router.get("/projects/{project_id}/actuals-validation")
+def ai_actuals_validation_status(project_id: str):
+    if not get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"ok": True, "project_id": project_id, "validation": _actuals_validation(project_id)}
+
+
+@router.post("/projects/{project_id}/actuals-validation")
+def ai_validate_actuals(project_id: str, payload: ActualsValidationRequest):
+    if not get_project(project_id):
+        raise HTTPException(status_code=404, detail="Project not found")
+    normalized = load_normalized_financials(project_id)
+    marker = {
+        "validated": True,
+        "reviewer": payload.reviewer.strip() or "Analyst",
+        "comment": payload.comment.strip(),
+        "validated_at": time.time(),
+        "document_signature": _document_signature(project_id)["signature"],
+        "periods": normalized.get("periods", []),
+        "historical_lines": len(normalized.get("historical_detail", []) or []),
+        "documents_count": len(list_project_documents(project_id)),
+    }
+    _write_actuals_validation(project_id, marker)
+    return {"ok": True, "project_id": project_id, "validation": marker}
+
+
+@router.post("/projects/{project_id}/auto-orchestrate")
+def ai_auto_orchestrate_project(project_id: str):
+    project = get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    marker = _auto_marker(project_id)
+    signature = _document_signature(project_id)
+    should_extract = bool(signature["files"]) and (
+        marker.get("signature") != signature["signature"]
+        or time.time() - float(marker.get("last_run", 0) or 0) > AUTO_ORCHESTRATION_TTL_SECONDS
+    )
+    if should_extract:
+        normalized = normalize_project_financials(project_id, use_ai=True)
+        assumptions = _apply_extraction_to_bp_assumptions(
+            project_id,
+            project,
+            _extraction_from_normalized(normalized),
+            normalized,
+            source="Silent Claude orchestration",
+        )
+        marker = {
+            "last_run": time.time(),
+            "signature": signature["signature"],
+            "files": signature["files"],
+            "mode": "extracted",
+        }
+        _write_auto_marker(project_id, marker)
+    else:
+        normalized = load_normalized_financials(project_id)
+        assumptions = load_bp_assumptions(project_id, project)
+        marker = {**marker, "mode": "cached" if signature["files"] else "waiting_for_documents"}
+    intelligence = generate_workspace_intelligence(project, normalized, assumptions)
+    intelligence["actuals_validation"] = _actuals_validation(project_id)
+    intelligence["documents_count"] = len(signature["files"])
+    return {
+        "ok": True,
+        "project_id": project_id,
+        "mode": marker.get("mode", "cached"),
+        "documents": signature["files"],
+        "intelligence": intelligence,
     }
 
 
@@ -406,6 +489,55 @@ def _bp_bridge_summary(assumptions: dict, normalized: dict | None = None) -> dic
         "cost_items": len([row for row in costs if row.get("name")]),
         "debt_tranches": len([row for row in debts if row.get("name")]),
     }
+
+
+def _auto_marker(project_id: str) -> dict:
+    path = project_dir(project_id) / "normalized" / "auto_orchestration.json"
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _write_auto_marker(project_id: str, marker: dict) -> None:
+    path = project_dir(project_id) / "normalized" / "auto_orchestration.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(marker, indent=2), encoding="utf-8")
+
+
+def _document_signature(project_id: str) -> dict:
+    files = []
+    for path in list_project_documents(project_id):
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        files.append({"name": path.name, "size": stat.st_size, "mtime": int(stat.st_mtime)})
+    files = sorted(files, key=lambda item: item["name"])
+    signature = "|".join(f"{item['name']}:{item['size']}:{item['mtime']}" for item in files)
+    return {"signature": signature, "files": files}
+
+
+def _actuals_validation(project_id: str) -> dict:
+    path = project_dir(project_id) / "normalized" / "actuals_validation.json"
+    if not path.exists():
+        return {"validated": False}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        current_signature = _document_signature(project_id)["signature"]
+        if payload.get("document_signature") != current_signature:
+            return {**payload, "validated": False, "stale": True}
+        return {"validated": bool(payload.get("validated")), **payload}
+    except Exception:
+        return {"validated": False}
+
+
+def _write_actuals_validation(project_id: str, payload: dict) -> None:
+    path = project_dir(project_id) / "normalized" / "actuals_validation.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def _contains_any(text: str, keywords: list[str]) -> bool:

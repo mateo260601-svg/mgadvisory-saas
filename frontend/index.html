@@ -233,74 +233,32 @@
             </div>
             <div id="aiActionRail" class="ai-action-rail"></div>
           </section>
-          <section class="dashboard-command-grid">
-            <div class="command-card primary-command">
-              <p class="eyebrow">Next best action</p>
-              <h3 id="dashboardNextAction">Create or select a dossier</h3>
-              <p id="dashboardNextActionCopy" class="muted">Your projects are saved by account. Start in the library, then continue into data upload and BP setup.</p>
-              <button id="dashboardPrimaryAction" data-view-button="libraryView">Open project library</button>
-            </div>
-            <div class="command-card">
-              <p class="eyebrow">Model path</p>
-              <div class="readiness-mini">
-                <span><strong>1</strong>Dossier</span>
-                <span><strong>2</strong>Data</span>
-                <span><strong>3</strong>BP</span>
-                <span><strong>4</strong>Outputs</span>
+          <section class="deal-process-board">
+            <div class="process-head">
+              <div>
+                <p class="eyebrow">Guided BP process</p>
+                <h3 id="dashboardNextAction">Create or select a dossier</h3>
+                <p id="dashboardNextActionCopy" class="muted">The model generation stays locked until the analyst has transferred and validated actuals, then completed the core projections.</p>
               </div>
+              <button id="dashboardPrimaryAction" data-view-button="libraryView">Continue</button>
             </div>
-            <div class="command-card">
-              <p class="eyebrow">Active workspace</p>
-              <h3 id="dashboardWorkspaceLabel">No dossier selected</h3>
-              <p id="dashboardWorkspaceMeta" class="muted">Select a project to unlock the operating workflow.</p>
-              <div class="workspace-health">
-                <span><strong id="dashboardHealthData">Data</strong> source files</span>
-                <span><strong id="dashboardHealthBp">BP</strong> assumptions</span>
-                <span><strong id="dashboardHealthOutputs">Outputs</strong> ready</span>
-              </div>
-            </div>
-          </section>
-          <div class="metric-grid">
-            <div class="metric-card">
-              <span>Active dossiers</span>
-              <strong id="projectCount">0</strong>
-            </div>
-            <div class="metric-card">
-              <span>Selected dossier</span>
-              <strong id="activeProjectMetric">None</strong>
-            </div>
-            <div class="metric-card">
-              <span>BP engine</span>
-              <strong id="modelStatusMetric">59k formulas</strong>
-            </div>
-            <div class="metric-card">
-              <span>Claude layer</span>
-              <strong id="aiStatusMetric">Checking</strong>
-            </div>
-          </div>
-
-          <section class="workbench">
-            <div class="panel wide">
-              <div class="panel-head">
-                <div>
-                  <p class="eyebrow">Dossier pipeline</p>
-                  <h3>Current work queue</h3>
-                </div>
-                <button class="secondary-button" data-view-button="libraryView">Open library</button>
-              </div>
-              <div id="recentProjects" class="project-table"></div>
-            </div>
-
-            <div class="panel">
-              <p class="eyebrow">Next actions</p>
-              <h3>Workspace flow</h3>
-              <div class="action-flow">
-                <button class="flow-step" data-view-button="libraryView"><span>1</span><strong>Project library</strong><em id="dashboardAccountName">Workspace</em></button>
-                <button class="flow-step" data-view-button="projectView"><span>2</span><strong>Upload data room</strong><em id="dashboardActiveProject">No active dossier</em></button>
-                <button class="flow-step" data-view-button="bpBuilderView"><span>3</span><strong>Configure BP</strong><em id="dashboardBpStatus">Select dossier</em></button>
-                <button class="flow-step" data-view-button="outputsView"><span>4</span><strong>Generate outputs</strong><em id="dashboardOutputStatus">No dossier selected</em></button>
-              </div>
-              <div class="flow-note">Use the Claude button in the top bar to extract actuals, then sync them into the BP builder before generating the model.</div>
+            <div id="workflowRail" class="workflow-rail"></div>
+            <div class="dashboard-focus-grid">
+              <article class="focus-card">
+                <span>Active dossier</span>
+                <strong id="dashboardWorkspaceLabel">No dossier selected</strong>
+                <p id="dashboardWorkspaceMeta">Select a project to start the controlled workflow.</p>
+              </article>
+              <article class="focus-card actuals-focus">
+                <span>Critical control</span>
+                <strong id="actualsValidationStatus">Actuals not validated</strong>
+                <p>Transfer actuals first, then run a manual analyst validation before the BP can be generated.</p>
+              </article>
+              <article class="focus-card">
+                <span>System</span>
+                <strong id="aiStatusMetric">Checking</strong>
+                <p>Silent AI layer monitors the dossier and prepares next steps without interrupting the user.</p>
+              </article>
             </div>
           </section>
         </section>
@@ -394,6 +352,14 @@
                   <span><strong>2</strong> Run AI extraction</span>
                   <span><strong>3</strong> Configure BP</span>
                   <span><strong>4</strong> Generate outputs</span>
+                </div>
+                <div class="actuals-validation-card">
+                  <div>
+                    <p class="eyebrow">Analyst validation gate</p>
+                    <h3>Confirm actuals mapping before modelling</h3>
+                    <p id="actualsValidationCopy" class="muted">Review extracted historical rows and confirm that P&L, balance sheet, cash flow, debt and working capital lines are mapped correctly.</p>
+                  </div>
+                  <button id="validateActualsButton" type="button">Validate actuals</button>
                 </div>
                 <div id="uploadResult" class="result-box"></div>
               </div>
@@ -666,6 +632,7 @@
                 </div>
                 <div class="output-grid">
                   <button id="extractHistoricalsBuilderButton" class="secondary-button">Extract + apply to BP</button>
+                  <button id="validateActualsBuilderButton" class="secondary-button">Validate actuals</button>
                   <button id="downloadBpBuilderButton" class="secondary-button hidden">Download BP</button>
                 </div>
                 <div class="model-note">Uploaded PDF/XLSX/CSV files are normalized by the extraction layer and written into the Historical Inputs sheet. Manual lines below override the matching detailed historical line in Excel, then flow into Historical Detail Input, Historical Bridge and the 3FS Detail Output.</div>
