@@ -11,6 +11,7 @@
     <!-- ── Redirect overlay (shown while redirecting to Google) ── -->
     <div id="redirectOverlay" class="redirect-overlay hidden">
       <div class="redirect-card">
+        <span class="mentor-mascot small" aria-hidden="true"><i></i></span>
         <div class="redirect-spinner"></div>
         <p class="redirect-title">Redirecting to Google</p>
         <p class="redirect-sub">You will be returned to this workspace after authentication.</p>
@@ -19,6 +20,7 @@
 
     <div id="workspaceTransition" class="workspace-transition hidden" aria-live="polite">
       <div class="workspace-transition-card">
+        <span class="mentor-mascot transition-mentor" aria-hidden="true"><i></i></span>
         <img src="/frontend/assets/mg-strategic-finance-ai-logo.png" alt="MG Strategic Finance AI" />
         <span id="workspaceTransitionLabel">Preparing workspace</span>
         <div class="processing-stack" aria-hidden="true">
@@ -50,44 +52,20 @@
 
       <div class="login-brand">
         <img class="brand-logo hero-logo" src="/frontend/assets/mg-strategic-finance-ai-logo.png" alt="MG Strategic Finance AI" />
-        <p class="eyebrow">Institutional finance operating system</p>
-        <h1>From source files to banker-grade BP packs.</h1>
-        <p class="login-copy">A controlled SaaS workspace for historical extraction, driver-based business planning, debt modelling, covenant analysis and investment committee outputs.</p>
-        <div class="login-product-preview" aria-hidden="true">
-          <div class="preview-topline">
-            <span>Live model preview</span>
-            <strong>BP engine online</strong>
-          </div>
-          <div class="preview-grid">
-            <div><span>Revenue CAGR</span><strong>14.8%</strong></div>
-            <div><span>EBITDA margin</span><strong>22.4%</strong></div>
-            <div><span>Net debt / EBITDA</span><strong>2.7x</strong></div>
-          </div>
-          <div class="preview-table">
-            <span>Historical actuals</span><i></i><i></i><i></i>
-            <span>Revenue build</span><i></i><i></i><i></i>
-            <span>Debt schedule</span><i></i><i></i><i></i>
-            <span>Covenant checks</span><i></i><i></i><i></i>
-          </div>
-          <div class="model-signal-tape">
-            <span>Actuals mapped</span>
-            <span>Drivers online</span>
-            <span>Manual placeholders linked</span>
-            <span>Checks running</span>
-          </div>
-        </div>
-        <div class="login-proof-grid">
-          <span>59k formulas</span>
-          <span>53 Excel tabs</span>
-          <span>Claude extraction</span>
-          <span>PPTX outputs</span>
+        <p class="eyebrow">MG Advisory Finance OS</p>
+        <h1>Build a bank-grade BP from raw files.</h1>
+        <p class="login-copy">Upload actuals. Validate the mapping. Generate Excel and deck outputs.</p>
+        <div class="login-proof-grid compact-proof">
+          <span>1. Source files</span>
+          <span>2. Analyst validation</span>
+          <span>3. BP outputs</span>
         </div>
       </div>
 
       <form id="loginForm" class="login-card">
         <p class="eyebrow">Secure workspace</p>
-        <h2>Access your finance OS</h2>
-        <p class="login-card-copy">Use Google SSO for a personal workspace, or the demo license for internal testing.</p>
+        <h2>Enter workspace</h2>
+        <p class="login-card-copy">Sign in and continue the guided BP workflow.</p>
 
         <!-- Google SSO button -->
         <button id="googleLoginButton" class="google-button" type="button" disabled>
@@ -411,7 +389,10 @@
               <div class="builder-command-center">
                 <div class="readiness-card">
                   <span>Model readiness</span>
-                  <strong id="bpReadinessScore">0%</strong>
+                  <div class="readiness-score-line">
+                    <span class="mentor-mascot tiny" aria-hidden="true"><i></i></span>
+                    <strong id="bpReadinessScore">0%</strong>
+                  </div>
                   <div class="readiness-bar"><i id="bpReadinessBar"></i></div>
                 </div>
                 <div class="readiness-card">
