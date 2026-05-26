@@ -1564,8 +1564,8 @@ function renderMetrics() {
   if ($("dashboardHealthBp")) $("dashboardHealthBp").textContent = project ? bpReady : "BP";
   if ($("dashboardHealthOutputs")) $("dashboardHealthOutputs").textContent = project ? "Generate" : "Outputs";
   if ($("dashboardAIContext")) $("dashboardAIContext").textContent = project
-    ? `Claude is attached to ${project.company_name}. Use it to extract actuals, challenge assumptions, and push mapped data into the BP builder.`
-    : "Claude can extract actuals, map BP assumptions and identify missing model inputs once a project is active.";
+    ? `Claude is attached to ${project.company_name} and silently prepares actuals mapping, assumptions coverage and next-step diagnostics.`
+    : "Claude monitors documents, actuals, assumptions and missing controls once a project is active.";
   updateClaudeContextLine();
   if ($("dashboardAccountName")) $("dashboardAccountName").textContent = state.user?.email || "License workspace";
   if ($("dashboardActiveProject")) $("dashboardActiveProject").textContent = project ? project.company_name : "No active dossier";
@@ -1599,15 +1599,12 @@ function renderWorkflowRail() {
   if (!rail) return;
   rail.innerHTML = workflowState().map((step, index) => {
     const stateClass = step.complete ? "complete" : step.locked ? "locked" : "current";
-    return `<button type="button" class="workflow-step ${stateClass}" data-workflow-view="${escapeHtml(step.view)}" ${step.locked ? "disabled" : ""}>
+    return `<article class="workflow-step ${stateClass}">
       <span>${index + 1}</span>
       <strong>${escapeHtml(step.label)}</strong>
       <em>${escapeHtml(step.note)}</em>
-    </button>`;
+    </article>`;
   }).join("");
-  rail.querySelectorAll("[data-workflow-view]").forEach((button) => {
-    button.addEventListener("click", () => showView(button.dataset.workflowView));
-  });
   if ($("actualsValidationStatus")) {
     $("actualsValidationStatus").textContent = state.actualsValidation?.validated ? "Actuals validated" : "Actuals not validated";
   }
@@ -1642,12 +1639,6 @@ function renderAiIntelligence() {
       ? risks.map((risk) => `<div class="${severityClass(risk.severity)}"><strong>${escapeHtml(risk.label)}</strong><span>${escapeHtml(risk.detail || "")}</span></div>`).join("")
       : '<div><strong>No active AI risks</strong><span>Select a dossier to run the command diagnostic.</span></div>';
   }
-  if ($("aiActionRail")) {
-    const actions = intel?.actions || [];
-    $("aiActionRail").innerHTML = actions.length
-      ? actions.slice(0, 4).map((action) => `<button type="button" data-ai-view="${escapeHtml(action.view || "bpBuilderView")}" data-claude-prompt="${escapeHtml(action.prompt || "")}"><span>${escapeHtml(action.priority || "Next")}</span>${escapeHtml(action.label || "Run action")}</button>`).join("")
-      : '<button type="button" data-view-button="libraryView"><span>Start</span>Create dossier</button>';
-  }
   if ($("bpAiNudge")) {
     const primary = intel?.actions?.[0] || intel?.next_action;
     const label = primary?.label || "Ask Claude for the next modelling gap";
@@ -1656,19 +1647,6 @@ function renderAiIntelligence() {
     const button = $("bpAiNudge").querySelector("button");
     if (button) button.dataset.claudePrompt = prompt;
   }
-  bindAiActionRail();
-}
-
-function bindAiActionRail() {
-  document.querySelectorAll("[data-ai-view]").forEach((button) => {
-    if (button.dataset.boundAiAction) return;
-    button.dataset.boundAiAction = "true";
-    button.addEventListener("click", async () => {
-      const view = button.dataset.aiView || "bpBuilderView";
-      await showView(view);
-      if (button.dataset.claudePrompt) openClaudeWithPrompt(button.dataset.claudePrompt);
-    });
-  });
 }
 
 function statusClass(status) {
