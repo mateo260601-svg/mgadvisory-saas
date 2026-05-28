@@ -8,10 +8,74 @@ from app.services.project_service import project_dir, touch_project
 
 def default_bp_assumptions(project: dict | None = None) -> dict:
     currency = (project or {}).get("currency", "EUR")
+    scenario = "Base"
     return {
+        "configuration": {
+            "metadata": {
+                "business_model_type": "Mixed revenue",
+                "industry": "General services",
+                "country": "France",
+                "currency": currency,
+                "model_owner": "Analyst",
+            },
+            "scenario": {
+                "type": scenario,
+                "revenue_growth_adjustment": 0.0,
+                "cost_inflation_adjustment": 0.0,
+                "pricing_adjustment": 0.0,
+                "working_capital_stress": 0.0,
+            },
+            "model_structure": {
+                "level_of_detail": "standard",
+                "max_sheets": 10,
+                "include_sheets": [
+                    "Dashboard",
+                    "Config",
+                    "Assumptions",
+                    "Historicals",
+                    "Revenue",
+                    "Costs Payroll",
+                    "Debt",
+                    "3FS",
+                    "Checks",
+                    "AI Notes",
+                ],
+                "excluded_sheets": [],
+                "legacy_deep_model": False,
+            },
+            "formatting_options": {
+                "theme": "institutional_green",
+                "input_cells_blue": True,
+                "show_gridlines": False,
+            },
+            "export_options": {
+                "editable": True,
+                "show_formulas": True,
+                "protect_workbook": False,
+                "include_ai_notes": True,
+                "include_checks": True,
+            },
+            "ai_recommendations": [
+                {
+                    "area": "Actuals validation",
+                    "recommendation": "Confirm that latest actuals reconcile to audited statements before generating the final BP.",
+                    "priority": "High",
+                },
+                {
+                    "area": "Revenue logic",
+                    "recommendation": "Review volume, price and churn drivers by stream rather than applying one blended growth rate.",
+                    "priority": "Medium",
+                },
+                {
+                    "area": "Debt model",
+                    "recommendation": "Validate PIK, cash interest frequency and maturity by tranche against the facility agreement.",
+                    "priority": "High",
+                },
+            ],
+        },
         "model": {
             "currency": currency,
-            "scenario": "Base",
+            "scenario": scenario,
             "model_start_date": "2026-01-31",
             "actuals_end_date": "2025-12-31",
             "historical_source": "Claude extraction",
@@ -20,6 +84,14 @@ def default_bp_assumptions(project: dict | None = None) -> dict:
             "opening_cash": 120000,
             "opening_debt": 500000,
             "minimum_cash": 50000,
+        },
+        "market_assumptions": {
+            "starting_customers": 100,
+            "new_customers_per_month": 5,
+            "monthly_churn": 0.01,
+            "customer_acquisition_cost": 250,
+            "gross_margin_target": 0.60,
+            "annual_price_escalation": 0.025,
         },
         "revenue_streams": [
             {"name": "Core product", "type": "Product", "volume": 100, "price": 1000, "volume_growth": 0.01, "price_growth": 0.002},

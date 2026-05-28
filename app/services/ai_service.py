@@ -269,7 +269,8 @@ def _workspace_intelligence_prompt(project: dict, financials: dict, assumptions:
         "Rules:\n"
         "- Do not invent financial figures.\n"
         "- Be specific to the current project state.\n"
-        "- Prefer workflow actions that move data into the BP builder and then into Excel/PPT outputs.\n"
+        "- Prefer workflow actions that move actuals into the BP builder, validate assumptions, and then generate the configurable Excel/PPT outputs.\n"
+        "- Treat the BP as a config-driven model: business model, industry, country, scenario, level of detail, revenue streams, costs, payroll, tax, working capital, capex and debt structure should be explicit assumptions.\n"
         "- Keep all labels compact and premium.\n\n"
         f"Project:\n{json.dumps(project, indent=2)}\n\n"
         f"Normalized financials:\n{json.dumps(financials, indent=2)[:18000]}\n\n"
@@ -285,10 +286,10 @@ def _chat_prompt(project: dict, financials: dict, message: str, history: list[di
         "Be concise, technical and action-oriented. If the user asks for extraction, explain what you can map into "
         "P&L, balance sheet, cash flow, debt and BP assumptions. Do not invent numbers.\n\n"
         "BP engine context:\n"
-        "- the target output is a Project Bolt-style institutional workbook with Control Panel, Historical Detail Input, "
-        "Historical Bridge, Revenue Drivers, Product Build, Headcount, Opex, Working Capital, Capex D&A, Debt Config, "
-        "Debt Schedule, Financial Statements, Covenants, Sensitivities, Outputs, Checks and manual placeholder rows;\n"
+        "- the target output is a Project Bolt-style institutional workbook simplified into no more than 10 intuitive, editable sheets: Dashboard, Config, Assumptions, Historicals, Revenue, Costs Payroll, Debt, 3FS, Checks and AI Notes;\n"
+        "- the model is config-driven: business model, industry, country/currency, scenario, forecast period, level of detail, sheets to include, protection, revenue streams, cost categories, payroll, tax, churn, pricing, customer acquisition, working capital, capex and debt terms are explicit assumptions;\n"
         "- formulas should be driven by assumptions, not hardcoded values;\n"
+        "- sheets should stay editable and critical formulas should remain visible;\n"
         "- historical actuals should bridge into forecast drivers, debt opening balances, opening cash, working capital and checks;\n"
         "- when documents are incomplete, create a precise missing-data request instead of guessing.\n\n"
         "Conversation style requirements:\n"
@@ -310,10 +311,9 @@ def _chat_extraction_prompt(project: dict, financials: dict, message: str, histo
         "normalized financial data that can feed an Excel BP. Return ONLY valid JSON, no markdown. "
         "Extract only values explicitly provided or strongly evidenced in the conversation/current financials. "
         "Do not invent missing values; use null or omit unknown lines.\n\n"
-        "Target workbook standard: Project Bolt / investment banking BP. Extract enough granularity to populate "
-        "Historical Detail Input and then drive Revenue Drivers, Product Build, Headcount, Opex, Working Capital, "
-        "Capex D&A, Debt Config, Debt Schedule and Financial Statements. Prefer detailed line items over summary-only "
-        "mapping when the source supports it.\n\n"
+        "Target workbook standard: Project Bolt / investment banking BP, simplified into a config-driven workbook with "
+        "no more than 10 editable sheets. Extract enough granularity to populate Historicals, Config, Assumptions, "
+        "Revenue, Costs Payroll, Debt and 3FS. Prefer detailed line items over summary-only mapping when the source supports it.\n\n"
         "Required JSON schema:\n"
         "{\n"
         '  "periods": ["FY2023", "FY2024", "FY2025"],\n'
@@ -496,7 +496,7 @@ def _fallback_workspace_intelligence(project: dict, financials: dict, assumption
     if not source_files:
         risks.append({"label": "No source documents", "severity": "High", "detail": "Claude has no uploaded data room to extract from."})
     if len(detail_lines) < 10:
-        risks.append({"label": "Thin historical mapping", "severity": "High", "detail": "Historical Detail Input needs more rows for a banker-grade BP."})
+        risks.append({"label": "Thin historical mapping", "severity": "High", "detail": "Historicals needs validated actuals before a banker-grade BP can be trusted."})
     if len(revenue_streams) < 2:
         risks.append({"label": "Revenue too aggregated", "severity": "Medium", "detail": "Add product/service lines to unlock proper revenue build."})
     if not debt_tranches:

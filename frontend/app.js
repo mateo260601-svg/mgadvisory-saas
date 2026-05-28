@@ -1008,6 +1008,16 @@ async function generateBpFromBuilder() {
 
 function populateBpBuilder(assumptions) {
   const model = assumptions.model || {};
+  const configuration = assumptions.configuration || {};
+  const metadata = configuration.metadata || {};
+  const structure = configuration.model_structure || {};
+  const exportOptions = configuration.export_options || {};
+  setValue("bpBusinessModelType", metadata.business_model_type || "Mixed revenue");
+  setValue("bpIndustry", metadata.industry || "General services");
+  setValue("bpCountry", metadata.country || "France");
+  setValue("bpLevelOfDetail", structure.level_of_detail || "standard");
+  setValue("bpMaxSheets", structure.max_sheets || 10);
+  setValue("bpProtectWorkbook", exportOptions.protect_workbook ? "Yes" : "No");
   setValue("bpCurrency", model.currency || activeProject()?.currency || "EUR");
   setValue("bpScenario", model.scenario || "Base");
   setValue("bpModelStart", model.model_start_date || "2026-01-31");
@@ -1052,10 +1062,42 @@ function populateBpBuilder(assumptions) {
 }
 
 function collectBpBuilder() {
+  const scenario = getValue("bpScenario", "Base");
+  const maxSheets = Math.min(10, Math.max(3, getNumber("bpMaxSheets", 10)));
   return {
+    configuration: {
+      metadata: {
+        business_model_type: getValue("bpBusinessModelType", "Mixed revenue"),
+        industry: getValue("bpIndustry", "General services"),
+        country: getValue("bpCountry", "France"),
+        currency: getValue("bpCurrency", "EUR"),
+        model_owner: "Analyst",
+      },
+      scenario: {
+        type: scenario,
+        revenue_growth_adjustment: scenario === "Aggressive" || scenario === "Upside" ? 0.01 : scenario === "Conservative" || scenario === "Downside" ? -0.005 : 0,
+        pricing_adjustment: scenario === "Aggressive" || scenario === "Upside" ? 0.002 : 0,
+        cost_inflation_adjustment: scenario === "Conservative" || scenario === "Downside" ? 0.005 : 0,
+        working_capital_stress: scenario === "Conservative" || scenario === "Downside" ? 0.10 : 0,
+      },
+      model_structure: {
+        level_of_detail: getValue("bpLevelOfDetail", "standard"),
+        max_sheets: maxSheets,
+        include_sheets: ["Dashboard", "Config", "Assumptions", "Historicals", "Revenue", "Costs Payroll", "Debt", "3FS", "Checks", "AI Notes"],
+        excluded_sheets: [],
+        legacy_deep_model: false,
+      },
+      export_options: {
+        editable: true,
+        show_formulas: true,
+        protect_workbook: getValue("bpProtectWorkbook", "No") === "Yes",
+        include_ai_notes: true,
+        include_checks: true,
+      },
+    },
     model: {
       currency: getValue("bpCurrency", "EUR"),
-      scenario: getValue("bpScenario", "Base"),
+      scenario,
       model_start_date: getValue("bpModelStart", "2026-01-31"),
       actuals_end_date: getValue("bpActualsEnd", "2025-12-31"),
       historical_source: getValue("bpHistoricalSource", "Claude extraction"),

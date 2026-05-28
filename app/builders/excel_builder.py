@@ -96,8 +96,744 @@ ANNUAL_PLACEHOLDER_INPUT_ROW = {
     summary_row: idx + 12 for idx, (_, summary_row, _, _) in enumerate(ANNUAL_PLACEHOLDER_LINES)
 }
 
+CONFIGURABLE_BP_SHEETS = [
+    "Dashboard",
+    "Config",
+    "Assumptions",
+    "Historicals",
+    "Revenue",
+    "Costs Payroll",
+    "Debt",
+    "3FS",
+    "Checks",
+    "AI Notes",
+]
+
+
+def _build_configurable_bp_workbook(project: dict, financials: dict, output_path: Path, assumptions: dict | None = None) -> None:
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.datavalidation import DataValidation
+    except Exception as exc:
+        raise RuntimeError(f"Excel generation dependency unavailable: {exc}") from exc
+
+    assumptions = assumptions or {}
+    config = _bp_export_config(project, assumptions)
+    model = assumptions.get("model") or {}
+    revenue_streams = _bounded_rows(assumptions.get("revenue_streams"), MAX_REVENUE_STREAMS, _default_revenue_stream)
+    cost_items = _bounded_rows(assumptions.get("cost_items"), MAX_COST_ITEMS, _default_cost_item)
+    headcount = _bounded_rows(assumptions.get("headcount"), MAX_HEADCOUNT_LINES, _default_headcount_line)
+    debt_tranches = _bounded_rows(assumptions.get("debt_tranches"), MAX_DEBT_TRANCHES, _default_debt_tranche)
+    historicals = _bounded_rows(assumptions.get("historical_actuals"), 30, _default_historical_line)
+
+    months = max(12, min(120, _safe_int(model.get("forecast_months"), 60)))
+    sheet_names = _configured_sheet_names(config)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = sheet_names[0]
+    for name in sheet_names[1:]:
+        wb.create_sheet(name)
+
+    styles = _compact_styles(Font, PatternFill, Border, Side, Alignment)
+    period_cols = [get_column_letter(4 + idx) for idx in range(months)]
+    annual_cols = [get_column_letter(3 + idx) for idx in range(5)]
+
+    if "Config" in wb.sheetnames:
+        _build_config_sheet(wb["Config"], project, assumptions, config, months, styles, DataValidation)
+    if "Assumptions" in wb.sheetnames:
+        _build_assumptions_sheet(wb["Assumptions"], revenue_streams, cost_items, headcount, assumptions, styles, DataValidation)
+    if "Historicals" in wb.sheetnames:
+        _build_historicals_sheet(wb["Historicals"], historicals, financials, styles, DataValidation)
+    if "Revenue" in wb.sheetnames:
+        _build_revenue_sheet(wb["Revenue"], revenue_streams, months, period_cols, styles)
+    if "Costs Payroll" in wb.sheetnames:
+        _build_costs_payroll_sheet(wb["Costs Payroll"], cost_items, headcount, months, period_cols, styles)
+    if "Debt" in wb.sheetnames:
+        _build_compact_debt_sheet(wb["Debt"], debt_tranches, months, period_cols, styles, DataValidation)
+    if "3FS" in wb.sheetnames:
+        _build_3fs_sheet(wb["3FS"], months, period_cols, annual_cols, styles)
+    if "Checks" in wb.sheetnames:
+        _build_checks_sheet(wb["Checks"], len(wb.sheetnames), styles)
+    if "AI Notes" in wb.sheetnames:
+        _build_ai_notes_sheet(wb["AI Notes"], config, styles)
+    if "Dashboard" in wb.sheetnames:
+        _build_compact_dashboard(wb["Dashboard"], project, months, period_cols, styles)
+
+    for sheet in wb.worksheets:
+        sheet.protection.sheet = bool(config["export_options"].get("protect_workbook"))
+        sheet.sheet_view.showGridLines = bool(config["formatting_options"].get("show_gridlines"))
+        sheet.freeze_panes = "D4" if sheet.title in {"Revenue", "Costs Payroll", "Debt", "3FS"} else None
+
+    try:
+        wb.calculation.fullCalcOnLoad = True
+        wb.calculation.forceFullCalc = True
+    except Exception:
+        pass
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    wb.save(output_path)
+
+
+def _bp_export_config(project: dict, assumptions: dict) -> dict:
+    model = assumptions.get("model") or {}
+    configuration = assumptions.get("configuration") or {}
+    metadata = configuration.get("metadata") or {}
+    scenario = configuration.get("scenario") or {}
+    structure = configuration.get("model_structure") or {}
+    formatting = configuration.get("formatting_options") or {}
+    export_options = configuration.get("export_options") or {}
+    return {
+        "metadata": {
+            "company": project.get("company_name") or project.get("name") or "Company",
+            "business_model_type": metadata.get("business_model_type") or "Mixed revenue",
+            "industry": metadata.get("industry") or "General services",
+            "country": metadata.get("country") or "France",
+            "currency": model.get("currency") or metadata.get("currency") or project.get("currency") or "EUR",
+            "model_owner": metadata.get("model_owner") or "Analyst",
+            "forecast_months": _safe_int(model.get("forecast_months"), 60),
+            "model_start_date": model.get("model_start_date") or "2026-01-31",
+            "actuals_end_date": model.get("actuals_end_date") or "2025-12-31",
+            "tax_rate": _safe_float(model.get("tax_rate"), 0.25),
+            "opening_cash": _safe_float(model.get("opening_cash"), 120000),
+            "opening_debt": _safe_float(model.get("opening_debt"), 500000),
+            "minimum_cash": _safe_float(model.get("minimum_cash"), 50000),
+        },
+        "scenario": {
+            "type": scenario.get("type") or model.get("scenario") or "Base",
+            "revenue_growth_adjustment": _safe_float(scenario.get("revenue_growth_adjustment"), 0),
+            "cost_inflation_adjustment": _safe_float(scenario.get("cost_inflation_adjustment"), 0),
+            "pricing_adjustment": _safe_float(scenario.get("pricing_adjustment"), 0),
+            "working_capital_stress": _safe_float(scenario.get("working_capital_stress"), 0),
+        },
+        "model_structure": {
+            "level_of_detail": structure.get("level_of_detail") or "standard",
+            "max_sheets": min(10, max(3, _safe_int(structure.get("max_sheets"), 10))),
+            "include_sheets": structure.get("include_sheets") or list(CONFIGURABLE_BP_SHEETS),
+            "excluded_sheets": structure.get("excluded_sheets") or [],
+            "legacy_deep_model": bool(structure.get("legacy_deep_model")),
+        },
+        "formatting_options": {
+            "theme": formatting.get("theme") or "institutional_green",
+            "input_cells_blue": formatting.get("input_cells_blue", True),
+            "show_gridlines": formatting.get("show_gridlines", False),
+        },
+        "export_options": {
+            "editable": export_options.get("editable", True),
+            "show_formulas": export_options.get("show_formulas", True),
+            "protect_workbook": export_options.get("protect_workbook", False),
+            "include_ai_notes": export_options.get("include_ai_notes", True),
+            "include_checks": export_options.get("include_checks", True),
+        },
+        "ai_recommendations": configuration.get("ai_recommendations") or [],
+    }
+
+
+def _configured_sheet_names(config: dict) -> list[str]:
+    include = config["model_structure"].get("include_sheets") or CONFIGURABLE_BP_SHEETS
+    excluded = set(config["model_structure"].get("excluded_sheets") or [])
+    max_sheets = min(10, _safe_int(config["model_structure"].get("max_sheets"), 10))
+    aliases = {
+        "Costs & Payroll": "Costs Payroll",
+        "Costs/Payroll": "Costs Payroll",
+        "Financial Statements": "3FS",
+        "AI": "AI Notes",
+    }
+    cleaned = []
+    for name in include:
+        canonical = aliases.get(str(name), str(name))
+        if canonical in CONFIGURABLE_BP_SHEETS and canonical not in excluded and canonical not in cleaned:
+            cleaned.append(canonical)
+    for required in ["Dashboard", "Config", "Assumptions", "3FS", "Checks"]:
+        if required not in cleaned and required not in excluded:
+            cleaned.insert(min(len(cleaned), CONFIGURABLE_BP_SHEETS.index(required)), required)
+    if "AI Notes" in excluded:
+        cleaned = [name for name in cleaned if name != "AI Notes"]
+    return cleaned[:max_sheets]
+
+
+def _compact_styles(Font, PatternFill, Border, Side, Alignment) -> dict:
+    thin = Side(style="thin", color="D6DDD8")
+    medium = Side(style="medium", color="4D8B57")
+    return {
+        "title": Font(name="Aptos Display", size=18, bold=True, color="13211C"),
+        "subtitle": Font(name="Aptos", size=10, color="52615B"),
+        "header": Font(name="Aptos", size=10, bold=True, color="FFFFFF"),
+        "label": Font(name="Aptos", size=10, color="1F2A26"),
+        "formula": Font(name="Aptos", size=10, color="1F2A26"),
+        "input": Font(name="Aptos", size=10, color="17365D"),
+        "green": PatternFill("solid", fgColor="2F6B3F"),
+        "dark": PatternFill("solid", fgColor="17231F"),
+        "input_fill": PatternFill("solid", fgColor=INPUT_FILL),
+        "formula_fill": PatternFill("solid", fgColor="FFFFFF"),
+        "section_fill": PatternFill("solid", fgColor="E8F1EA"),
+        "output_fill": PatternFill("solid", fgColor="EEF6EF"),
+        "warning_fill": PatternFill("solid", fgColor="FFF2CC"),
+        "border": Border(left=thin, right=thin, top=thin, bottom=thin),
+        "strong_border": Border(bottom=medium),
+        "center": Alignment(horizontal="center", vertical="center"),
+        "left": Alignment(horizontal="left", vertical="center"),
+        "right": Alignment(horizontal="right", vertical="center"),
+        "wrap": Alignment(horizontal="left", vertical="top", wrap_text=True),
+    }
+
+
+def _sheet_title(ws, title: str, subtitle: str, styles: dict) -> None:
+    ws["A1"] = title
+    ws["A1"].font = styles["title"]
+    ws["A2"] = subtitle
+    ws["A2"].font = styles["subtitle"]
+    ws.row_dimensions[1].height = 25
+
+
+def _write_row(ws, row: int, values: list, styles: dict, kind: str = "body") -> None:
+    for col_idx, value in enumerate(values, 1):
+        cell = ws.cell(row, col_idx, value)
+        cell.border = styles["border"]
+        cell.alignment = styles["left"]
+        if kind == "header":
+            cell.fill = styles["green"]
+            cell.font = styles["header"]
+        elif kind == "input":
+            cell.fill = styles["input_fill"]
+            cell.font = styles["input"]
+        elif kind == "section":
+            cell.fill = styles["section_fill"]
+            cell.font = styles["label"]
+        elif kind == "output":
+            cell.fill = styles["output_fill"]
+            cell.font = styles["label"]
+
+
+def _set_input(cell, value, styles: dict):
+    cell.value = value
+    cell.fill = styles["input_fill"]
+    cell.font = styles["input"]
+    cell.border = styles["border"]
+    cell.alignment = styles["left"]
+
+
+def _set_formula(cell, formula: str, styles: dict, output: bool = False):
+    cell.value = formula
+    cell.fill = styles["output_fill"] if output else styles["formula_fill"]
+    cell.font = styles["formula"]
+    cell.border = styles["border"]
+    cell.alignment = styles["right"]
+
+
+def _compact_widths(ws, widths: dict[str, int]) -> None:
+    for col, width in widths.items():
+        ws.column_dimensions[col].width = width
+
+
+def _build_config_sheet(ws, project: dict, assumptions: dict, config: dict, months: int, styles: dict, DataValidation) -> None:
+    _sheet_title(ws, "Config", "Editable model configuration. This sheet drives the workbook structure, scenario and export behavior.", styles)
+    meta = config["metadata"]
+    scenario = config["scenario"]
+    structure = config["model_structure"]
+    export = config["export_options"]
+    rows = [
+        ("Company", meta["company"]),
+        ("Business model type", meta["business_model_type"]),
+        ("Industry", meta["industry"]),
+        ("Country", meta["country"]),
+        ("Currency", meta["currency"]),
+        ("Scenario", scenario["type"]),
+        ("Level of detail", structure["level_of_detail"]),
+        ("Forecast months", months),
+        ("Model start date", meta["model_start_date"]),
+        ("Actuals end date", meta["actuals_end_date"]),
+        ("Tax rate", meta["tax_rate"]),
+        ("Opening cash", meta["opening_cash"]),
+        ("Opening debt", meta["opening_debt"]),
+        ("Minimum cash", meta["minimum_cash"]),
+        ("Max sheets", structure["max_sheets"]),
+        ("Revenue growth adjustment", scenario["revenue_growth_adjustment"]),
+        ("Pricing adjustment", scenario["pricing_adjustment"]),
+        ("Cost inflation adjustment", scenario["cost_inflation_adjustment"]),
+        ("Working capital stress", scenario["working_capital_stress"]),
+        ("Protect workbook", "Yes" if export.get("protect_workbook") else "No"),
+    ]
+    _write_row(ws, 4, ["Parameter", "Input", "Why it matters"], styles, "header")
+    hints = {
+        "Business model type": "Used by the AI layer to suggest the right revenue/cost logic.",
+        "Scenario": "Controls scenario adjustments applied across forecast formulas.",
+        "Level of detail": "Simple, standard or advanced model depth.",
+        "Max sheets": "Workbook generation is capped at 10 intuitive sheets.",
+        "Protect workbook": "Default is No so formulas and inputs stay editable.",
+    }
+    for idx, (label, value) in enumerate(rows, 5):
+        ws.cell(idx, 1, label).border = styles["border"]
+        _set_input(ws.cell(idx, 2), value, styles)
+        ws.cell(idx, 3, hints.get(label, "Editable configuration input used by the model engine.")).border = styles["border"]
+        ws.cell(idx, 3).alignment = styles["wrap"]
+    scenario_dv = DataValidation(type="list", formula1='"Conservative,Base,Aggressive,Downside,Upside,Bank Case,Restructuring Case"', allow_blank=False)
+    detail_dv = DataValidation(type="list", formula1='"simple,standard,advanced"', allow_blank=False)
+    protect_dv = DataValidation(type="list", formula1='"No,Yes"', allow_blank=False)
+    ws.add_data_validation(scenario_dv)
+    ws.add_data_validation(detail_dv)
+    ws.add_data_validation(protect_dv)
+    scenario_dv.add(ws["B10"])
+    detail_dv.add(ws["B11"])
+    protect_dv.add(ws["B24"])
+
+    _write_row(ws, 28, ["Sheet", "Included", "Role"], styles, "header")
+    roles = {
+        "Dashboard": "Executive view and final KPIs",
+        "Config": "Model setup and export controls",
+        "Assumptions": "Editable business drivers",
+        "Historicals": "Actuals imported or validated by analyst",
+        "Revenue": "Revenue build by stream",
+        "Costs Payroll": "COGS, opex and payroll build",
+        "Debt": "Multi-tranche debt schedule",
+        "3FS": "P&L, cash flow and debt outputs",
+        "Checks": "Integrity and completeness controls",
+        "AI Notes": "Claude recommendations and validation notes",
+    }
+    for idx, name in enumerate(CONFIGURABLE_BP_SHEETS, 29):
+        included = "Yes" if name in _configured_sheet_names(config) else "No"
+        _write_row(ws, idx, [name, included, roles[name]], styles, "input" if included == "Yes" else "body")
+    _compact_widths(ws, {"A": 28, "B": 24, "C": 64})
+
+
+def _build_assumptions_sheet(ws, revenue_streams: list[dict], cost_items: list[dict], headcount: list[dict], assumptions: dict, styles: dict, DataValidation) -> None:
+    _sheet_title(ws, "Assumptions", "Blue cells are editable. Formula sheets link back here so the model stays transparent.", styles)
+    _write_row(ws, 4, ["Revenue stream", "Type", "Start volume", "Start price", "Monthly volume growth", "Monthly price growth"], styles, "header")
+    for idx, stream in enumerate(revenue_streams, 5):
+        _write_row(ws, idx, [
+            stream.get("name", ""),
+            stream.get("type", "Product"),
+            _safe_float(stream.get("volume"), 0),
+            _safe_float(stream.get("price"), 0),
+            _safe_float(stream.get("volume_growth"), 0),
+            _safe_float(stream.get("price_growth"), 0),
+        ], styles, "input")
+
+    cost_start = 18
+    _write_row(ws, cost_start, ["Cost category", "Driver", "Monthly fixed", "% revenue", "Cost / FTE"], styles, "header")
+    for offset, item in enumerate(cost_items, 1):
+        _write_row(ws, cost_start + offset, [
+            item.get("name", ""),
+            item.get("driver", "Fixed"),
+            _safe_float(item.get("monthly_fixed"), 0),
+            _safe_float(item.get("percent_revenue"), 0),
+            _safe_float(item.get("cost_per_fte"), 0),
+        ], styles, "input")
+
+    payroll_start = 35
+    _write_row(ws, payroll_start, ["Department", "Opening FTE", "Avg salary / month", "Hiring every N months", "New hires"], styles, "header")
+    for offset, line in enumerate(headcount, 1):
+        _write_row(ws, payroll_start + offset, [
+            line.get("department", ""),
+            _safe_float(line.get("opening_fte"), 0),
+            _safe_float(line.get("avg_salary_month"), 0),
+            _safe_int(line.get("hiring_every_months"), 12),
+            _safe_float(line.get("new_hires"), 0),
+        ], styles, "input")
+
+    market = assumptions.get("market_assumptions") or {}
+    cost = assumptions.get("cost_base") or {}
+    wc = assumptions.get("working_capital") or {}
+    capex = assumptions.get("capex") or {}
+    _write_row(ws, 50, ["Global driver", "Input", "Comment"], styles, "header")
+    global_rows = [
+        ("COGS % revenue", _safe_float(cost.get("cogs_percent"), 0.35), "Used when stream-level COGS is not available."),
+        ("Fulfilment cost / unit", _safe_float(cost.get("fulfilment_cost_per_unit"), 0), "Optional operating cost by unit sold."),
+        ("Starting customers", _safe_float(market.get("starting_customers"), 0), "Customer base for subscription/SaaS cases."),
+        ("New customers / month", _safe_float(market.get("new_customers_per_month"), 0), "Acquisition assumption for customer build."),
+        ("Monthly churn", _safe_float(market.get("monthly_churn"), 0), "Retention stress and recurring revenue logic."),
+        ("Customer acquisition cost", _safe_float(market.get("customer_acquisition_cost"), 0), "Can be linked to marketing spend."),
+        ("Target gross margin", _safe_float(market.get("gross_margin_target"), 0.6), "AI benchmark / target check."),
+        ("DSO", _safe_float(wc.get("dso"), 60), "Receivables days."),
+        ("DIO", _safe_float(wc.get("dio"), 45), "Inventory days."),
+        ("DPO", _safe_float(wc.get("dpo"), 55), "Payables days."),
+        ("Maintenance capex % revenue", _safe_float(capex.get("maintenance_percent_revenue"), 0.015), "Recurring capex driver."),
+        ("Growth capex / month", _safe_float(capex.get("growth_capex_monthly"), 15000), "Expansion capex."),
+        ("Depreciation years", _safe_float(capex.get("depreciation_years"), 7), "D&A driver."),
+    ]
+    for idx, row in enumerate(global_rows, 51):
+        _write_row(ws, idx, list(row), styles, "input")
+
+    driver_dv = DataValidation(type="list", formula1='"Fixed,% Revenue,Per FTE"', allow_blank=True)
+    ws.add_data_validation(driver_dv)
+    driver_dv.add(f"B{cost_start + 1}:B{cost_start + MAX_COST_ITEMS}")
+    _compact_widths(ws, {"A": 28, "B": 20, "C": 18, "D": 20, "E": 20, "F": 22})
+
+
+def _build_historicals_sheet(ws, historicals: list[dict], financials: dict, styles: dict, DataValidation) -> None:
+    _sheet_title(ws, "Historicals", "Actuals landing zone. Claude can pre-map these, but the analyst should validate the final rows.", styles)
+    _write_row(ws, 4, ["Model line", "Detail line", "FY2022", "FY2023", "FY2024", "FY2025", "Latest actual", "Validation"], styles, "header")
+    for idx, line in enumerate(historicals, 5):
+        _write_row(ws, idx, [
+            line.get("model_line", ""),
+            line.get("detail_line", ""),
+            _safe_float(line.get("fy2022"), 0),
+            _safe_float(line.get("fy2023"), 0),
+            _safe_float(line.get("fy2024"), 0),
+            _safe_float(line.get("fy2025"), 0),
+            _safe_float(line.get("latest_actual"), 0),
+            "Analyst review required",
+        ], styles, "input")
+    status_dv = DataValidation(type="list", formula1='"Analyst review required,Validated,Needs remap"', allow_blank=False)
+    ws.add_data_validation(status_dv)
+    status_dv.add("H5:H34")
+    _compact_widths(ws, {"A": 22, "B": 34, "C": 14, "D": 14, "E": 14, "F": 14, "G": 16, "H": 24})
+
+
+def _write_compact_period_headers(ws, months: int, period_cols: list[str], styles: dict) -> None:
+    for idx, col_letter in enumerate(period_cols):
+        cell = ws[f"{col_letter}3"]
+        cell.value = f"=EOMONTH(Config!$B$13,{idx})"
+        cell.number_format = "mmm-yy"
+        cell.fill = styles["green"]
+        cell.font = styles["header"]
+        cell.alignment = styles["center"]
+        cell.border = styles["border"]
+
+
+def _build_revenue_sheet(ws, revenue_streams: list[dict], months: int, period_cols: list[str], styles: dict) -> None:
+    _sheet_title(ws, "Revenue", "Formula-driven revenue build by product/service stream.", styles)
+    _write_row(ws, 3, ["Line", "Type", "Driver"] + [None] * months, styles, "header")
+    _write_compact_period_headers(ws, months, period_cols, styles)
+    for idx in range(MAX_REVENUE_STREAMS):
+        row = 4 + idx
+        assumption_row = 5 + idx
+        ws[f"A{row}"] = f"=Assumptions!A{assumption_row}"
+        ws[f"B{row}"] = f"=Assumptions!B{assumption_row}"
+        ws[f"C{row}"] = "Volume x price"
+        for col_idx, col_letter in enumerate(period_cols):
+            month_index = col_idx
+            _set_formula(
+                ws[f"{col_letter}{row}"],
+                f'=IF(Assumptions!$A{assumption_row}="","",Assumptions!$C{assumption_row}*(1+Assumptions!$E{assumption_row}+Config!$B$20)^({month_index})*Assumptions!$D{assumption_row}*(1+Assumptions!$F{assumption_row}+Config!$B$21)^({month_index}))',
+                styles,
+            )
+    total_row = 16
+    _write_row(ws, total_row, ["Total Revenue", "", "Sum of streams"], styles, "output")
+    for col_letter in period_cols:
+        _set_formula(ws[f"{col_letter}{total_row}"], f"=SUM({col_letter}4:{col_letter}13)", styles, output=True)
+    _compact_widths(ws, {"A": 28, "B": 18, "C": 20})
+
+
+def _build_costs_payroll_sheet(ws, cost_items: list[dict], headcount: list[dict], months: int, period_cols: list[str], styles: dict) -> None:
+    _sheet_title(ws, "Costs Payroll", "COGS, opex and payroll build linked to assumptions.", styles)
+    _write_row(ws, 3, ["Line", "Driver", "Comment"] + [None] * months, styles, "header")
+    _write_compact_period_headers(ws, months, period_cols, styles)
+    rows = {
+        4: ("Total revenue", "Revenue", ""),
+        5: ("COGS", "% Revenue", ""),
+        6: ("Gross profit", "Formula", ""),
+        7: ("Total FTE", "Headcount", ""),
+        8: ("Payroll", "FTE x salary", ""),
+        9: ("Opex excl. payroll", "Cost drivers", ""),
+        10: ("EBITDA", "Formula", ""),
+    }
+    for row, values in rows.items():
+        _write_row(ws, row, list(values), styles, "output" if row in {6, 10} else "body")
+    for col_idx, col_letter in enumerate(period_cols):
+        month = col_idx + 1
+        prev_col = period_cols[col_idx - 1] if col_idx else None
+        _set_formula(ws[f"{col_letter}4"], f"=Revenue!{col_letter}16", styles)
+        _set_formula(ws[f"{col_letter}5"], f"={col_letter}4*Assumptions!$B$51", styles)
+        _set_formula(ws[f"{col_letter}6"], f"={col_letter}4-{col_letter}5", styles, output=True)
+        fte_terms = []
+        payroll_terms = []
+        for idx in range(MAX_HEADCOUNT_LINES):
+            assumption_row = 36 + idx
+            if col_idx == 0:
+                fte_formula = f"Assumptions!$B{assumption_row}"
+            else:
+                fte_formula = f"Costs Payroll!{prev_col}{22 + idx}+IF(AND(Assumptions!$D{assumption_row}>0,MOD({month},Assumptions!$D{assumption_row})=0),Assumptions!$E{assumption_row},0)"
+            fte_row = 22 + idx
+            pay_row = 34 + idx
+            _set_formula(ws[f"{col_letter}{fte_row}"], f"={fte_formula}", styles)
+            _set_formula(ws[f"{col_letter}{pay_row}"], f"={col_letter}{fte_row}*Assumptions!$C{assumption_row}", styles)
+            fte_terms.append(f"{col_letter}{fte_row}")
+            payroll_terms.append(f"{col_letter}{pay_row}")
+        _set_formula(ws[f"{col_letter}7"], "=" + "+".join(fte_terms), styles)
+        _set_formula(ws[f"{col_letter}8"], "=" + "+".join(payroll_terms), styles)
+
+        opex_terms = []
+        for idx in range(MAX_COST_ITEMS):
+            assumption_row = 19 + idx
+            formula = (
+                f'=IF(Assumptions!$B{assumption_row}="Fixed",Assumptions!$C{assumption_row}*(1+Config!$B$22)^({col_idx}),'
+                f'IF(Assumptions!$B{assumption_row}="% Revenue",{col_letter}4*Assumptions!$D{assumption_row},'
+                f'IF(Assumptions!$B{assumption_row}="Per FTE",{col_letter}7*Assumptions!$E{assumption_row},0)))'
+            )
+            line_row = 46 + idx
+            _set_formula(ws[f"{col_letter}{line_row}"], formula, styles)
+            opex_terms.append(f"{col_letter}{line_row}")
+        _set_formula(ws[f"{col_letter}9"], "=" + "+".join(opex_terms), styles)
+        _set_formula(ws[f"{col_letter}10"], f"={col_letter}6-{col_letter}8-{col_letter}9", styles, output=True)
+
+    for idx in range(MAX_HEADCOUNT_LINES):
+        row = 22 + idx
+        ws[f"A{row}"] = f"=Assumptions!A{36 + idx}"
+        ws[f"B{row}"] = "FTE"
+        ws[f"A{34 + idx}"] = f"=Assumptions!A{36 + idx}"
+        ws[f"B{34 + idx}"] = "Payroll"
+    for idx in range(MAX_COST_ITEMS):
+        row = 46 + idx
+        ws[f"A{row}"] = f"=Assumptions!A{19 + idx}"
+        ws[f"B{row}"] = f"=Assumptions!B{19 + idx}"
+    _compact_widths(ws, {"A": 28, "B": 20, "C": 24})
+
+
+def _build_compact_debt_sheet(ws, debt_tranches: list[dict], months: int, period_cols: list[str], styles: dict, DataValidation) -> None:
+    _sheet_title(ws, "Debt", "Multi-tranche schedule with cash interest, PIK, amortisation and closing debt.", styles)
+    _write_row(ws, 3, ["Tranche", "Type", "Opening", "Commitment", "Term", "Moratorium", "Margin", "Base rate", "Amortization", "Interest type", "Pay frequency"], styles, "header")
+    for idx, tranche in enumerate(debt_tranches, 4):
+        _write_row(ws, idx, [
+            tranche.get("name", ""),
+            tranche.get("debt_type", "Senior Term Loan"),
+            _safe_float(tranche.get("opening_balance"), 0),
+            _safe_float(tranche.get("commitment"), 0),
+            _safe_int(tranche.get("term_months"), 60),
+            _safe_int(tranche.get("moratorium_months"), 0),
+            _safe_float(tranche.get("margin"), 0.045),
+            _safe_float(tranche.get("base_rate"), 0.035),
+            tranche.get("amortization", "Linear"),
+            tranche.get("interest_type", "Cash"),
+            tranche.get("cash_pay_frequency", "Monthly"),
+        ], styles, "input")
+    pay_dv = DataValidation(type="list", formula1='"Monthly,Quarterly,Annual"', allow_blank=True)
+    int_dv = DataValidation(type="list", formula1='"Cash,PIK,Cash + PIK"', allow_blank=True)
+    ws.add_data_validation(pay_dv)
+    ws.add_data_validation(int_dv)
+    pay_dv.add("K4:K13")
+    int_dv.add("J4:J13")
+
+    first_schedule_row = 18
+    for idx in range(MAX_DEBT_TRANCHES):
+        base = first_schedule_row + idx * 7
+        tranche_row = 4 + idx
+        labels = ["Opening debt", "Cash interest", "PIK interest", "Scheduled amort.", "Bullet repayment", "Closing debt", "Total cash cost"]
+        for offset, label in enumerate(labels):
+            ws[f"A{base + offset}"] = f"=A{tranche_row}"
+            ws[f"B{base + offset}"] = label
+        for col_idx, col_letter in enumerate(period_cols):
+            month = col_idx + 1
+            prev_col = period_cols[col_idx - 1] if col_idx else None
+            opening = f"=C{tranche_row}" if col_idx == 0 else f"={prev_col}{base + 5}"
+            _set_formula(ws[f"{col_letter}{base}"], opening, styles)
+            _set_formula(ws[f"{col_letter}{base + 1}"], f'=IF(OR($J{tranche_row}="Cash",$J{tranche_row}="Cash + PIK"),{col_letter}{base}*($G{tranche_row}+$H{tranche_row})/12,0)', styles)
+            _set_formula(ws[f"{col_letter}{base + 2}"], f'=IF(OR($J{tranche_row}="PIK",$J{tranche_row}="Cash + PIK"),{col_letter}{base}*($G{tranche_row}+$H{tranche_row})/12,0)', styles)
+            _set_formula(ws[f"{col_letter}{base + 3}"], f'=IF(AND({month}>$F{tranche_row},{month}<=$E{tranche_row},$I{tranche_row}="Linear"),IFERROR($C{tranche_row}/MAX(1,$E{tranche_row}-$F{tranche_row}),0),0)', styles)
+            _set_formula(ws[f"{col_letter}{base + 4}"], f'=IF(AND({month}=$E{tranche_row},$I{tranche_row}<>"Linear"),{col_letter}{base},0)', styles)
+            _set_formula(ws[f"{col_letter}{base + 5}"], f"=MAX(0,{col_letter}{base}+{col_letter}{base + 2}-{col_letter}{base + 3}-{col_letter}{base + 4})", styles, output=True)
+            _set_formula(ws[f"{col_letter}{base + 6}"], f"={col_letter}{base + 1}+{col_letter}{base + 3}+{col_letter}{base + 4}", styles)
+
+    aggregate_row = first_schedule_row + MAX_DEBT_TRANCHES * 7 + 2
+    _write_row(ws, aggregate_row, ["Aggregate closing debt", "", ""], styles, "output")
+    _write_row(ws, aggregate_row + 1, ["Aggregate cash interest", "", ""], styles, "output")
+    _write_row(ws, aggregate_row + 2, ["Aggregate debt repayment", "", ""], styles, "output")
+    for col_letter in period_cols:
+        closing_terms = [f"{col_letter}{first_schedule_row + idx * 7 + 5}" for idx in range(MAX_DEBT_TRANCHES)]
+        interest_terms = [f"{col_letter}{first_schedule_row + idx * 7 + 1}" for idx in range(MAX_DEBT_TRANCHES)]
+        repayment_terms = [f"{col_letter}{first_schedule_row + idx * 7 + 3}+{col_letter}{first_schedule_row + idx * 7 + 4}" for idx in range(MAX_DEBT_TRANCHES)]
+        _set_formula(ws[f"{col_letter}{aggregate_row}"], "=" + "+".join(closing_terms), styles, output=True)
+        _set_formula(ws[f"{col_letter}{aggregate_row + 1}"], "=" + "+".join(interest_terms), styles, output=True)
+        _set_formula(ws[f"{col_letter}{aggregate_row + 2}"], "=" + "+".join(repayment_terms), styles, output=True)
+    _compact_widths(ws, {"A": 26, "B": 22, "C": 16, "D": 16, "E": 12, "F": 14, "G": 12, "H": 12, "I": 16, "J": 14, "K": 14})
+
+
+def _build_3fs_sheet(ws, months: int, period_cols: list[str], annual_cols: list[str], styles: dict) -> None:
+    from openpyxl.utils import get_column_letter
+
+    _sheet_title(ws, "3FS", "Three-statement output with annual view on the left and monthly detail to the right.", styles)
+    monthly_cols = [get_column_letter(8 + idx) for idx in range(months)]
+    _write_row(ws, 3, ["Line", "Type"] + [None] * 5 + [None] * months, styles, "header")
+    for idx, annual_col in enumerate(annual_cols):
+        ws[f"{annual_col}3"] = f"FY{2026 + idx}"
+        ws[f"{annual_col}3"].fill = styles["green"]
+        ws[f"{annual_col}3"].font = styles["header"]
+    _write_compact_period_headers(ws, months, monthly_cols, styles)
+    rows = {
+        4: ("Revenue", "P&L"),
+        5: ("COGS", "P&L"),
+        6: ("Gross Profit", "P&L"),
+        7: ("Payroll", "P&L"),
+        8: ("Opex excl. payroll", "P&L"),
+        9: ("EBITDA", "P&L"),
+        10: ("D&A", "P&L"),
+        11: ("EBIT", "P&L"),
+        12: ("Cash Interest", "P&L"),
+        13: ("PBT", "P&L"),
+        14: ("Tax", "P&L"),
+        15: ("Net Income", "P&L"),
+        17: ("Capex", "Cash Flow"),
+        18: ("Change in NWC", "Cash Flow"),
+        19: ("Debt repayment", "Cash Flow"),
+        20: ("Free Cash Flow", "Cash Flow"),
+        21: ("Closing Cash", "Balance Sheet"),
+        22: ("Closing Debt", "Balance Sheet"),
+        23: ("Net Debt", "Balance Sheet"),
+    }
+    for row, values in rows.items():
+        _write_row(ws, row, list(values), styles, "output" if row in {9, 15, 20, 21, 22, 23} else "body")
+    debt_aggregate_row = 18 + MAX_DEBT_TRANCHES * 7 + 2
+    for col_idx, col_letter in enumerate(monthly_cols):
+        source_col = period_cols[col_idx]
+        prev_col = monthly_cols[col_idx - 1] if col_idx else None
+        _set_formula(ws[f"{col_letter}4"], f"=Revenue!{source_col}16", styles)
+        _set_formula(ws[f"{col_letter}5"], f"='Costs Payroll'!{source_col}5", styles)
+        _set_formula(ws[f"{col_letter}6"], f"={col_letter}4-{col_letter}5", styles)
+        _set_formula(ws[f"{col_letter}7"], f"='Costs Payroll'!{source_col}8", styles)
+        _set_formula(ws[f"{col_letter}8"], f"='Costs Payroll'!{source_col}9", styles)
+        _set_formula(ws[f"{col_letter}9"], f"={col_letter}6-{col_letter}7-{col_letter}8", styles, output=True)
+        _set_formula(ws[f"{col_letter}10"], f"=MAX(0,(Revenue!{source_col}16*Assumptions!$B$61+Assumptions!$B$62)/(Assumptions!$B$63*12))", styles)
+        _set_formula(ws[f"{col_letter}11"], f"={col_letter}9-{col_letter}10", styles)
+        _set_formula(ws[f"{col_letter}12"], f"=Debt!{source_col}{debt_aggregate_row + 1}", styles)
+        _set_formula(ws[f"{col_letter}13"], f"={col_letter}11-{col_letter}12", styles)
+        _set_formula(ws[f"{col_letter}14"], f"=MAX(0,{col_letter}13)*Config!$B$15", styles)
+        _set_formula(ws[f"{col_letter}15"], f"={col_letter}13-{col_letter}14", styles, output=True)
+        _set_formula(ws[f"{col_letter}17"], f"=Revenue!{source_col}16*Assumptions!$B$61+Assumptions!$B$62", styles)
+        _set_formula(ws[f"{col_letter}18"], f"=Revenue!{source_col}16*(Assumptions!$B$58-Assumptions!$B$60)/30*0.08*(1+Config!$B$23)", styles)
+        _set_formula(ws[f"{col_letter}19"], f"=Debt!{source_col}{debt_aggregate_row + 2}", styles)
+        _set_formula(ws[f"{col_letter}20"], f"={col_letter}15+{col_letter}10-{col_letter}17-{col_letter}18-{col_letter}19", styles, output=True)
+        _set_formula(ws[f"{col_letter}21"], f"=Config!$B$16+{col_letter}20" if col_idx == 0 else f"={prev_col}21+{col_letter}20", styles, output=True)
+        _set_formula(ws[f"{col_letter}22"], f"=Debt!{source_col}{debt_aggregate_row}", styles, output=True)
+        _set_formula(ws[f"{col_letter}23"], f"={col_letter}22-{col_letter}21", styles, output=True)
+
+    for annual_idx, annual_col in enumerate(annual_cols):
+        start_month = annual_idx * 12
+        month_slice = monthly_cols[start_month:start_month + 12]
+        for row in [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20]:
+            if month_slice:
+                _set_formula(ws[f"{annual_col}{row}"], "=" + "+".join(f"{col}{row}" for col in month_slice), styles, output=row in {9, 15, 20})
+        for row in [21, 22, 23]:
+            if month_slice:
+                _set_formula(ws[f"{annual_col}{row}"], f"={month_slice[-1]}{row}", styles, output=True)
+    _compact_widths(ws, {"A": 28, "B": 16, "C": 14, "D": 14, "E": 14, "F": 14, "G": 14})
+
+
+def _build_checks_sheet(ws, sheet_count: int, styles: dict) -> None:
+    _sheet_title(ws, "Checks", "Workbook integrity checks. Generation should be reviewed before use in an IC or lender pack.", styles)
+    _write_row(ws, 4, ["Check", "Formula / test", "Status"], styles, "header")
+    checks = [
+        ("Sheet count <= 10", f"={sheet_count}<=10"),
+        ("Revenue streams populated", '=COUNTA(Assumptions!A5:A14)>0'),
+        ("Actuals reviewed", '=COUNTIF(Historicals!H5:H34,"Validated")>=1'),
+        ("Cash non-negative first year", '=MIN(\'3FS\'!H21:S21)>=0'),
+        ("Debt linked", '=SUM(Debt!D4:D13)>=0'),
+        ("EBITDA populated", '=COUNTA(\'3FS\'!H9:S9)=12'),
+        ("Inputs editable", '=Config!B24="No"'),
+    ]
+    for idx, (label, formula) in enumerate(checks, 5):
+        ws.cell(idx, 1, label).border = styles["border"]
+        ws.cell(idx, 2, formula).border = styles["border"]
+        _set_formula(ws.cell(idx, 3), f'=IF({formula[1:]},"OK","Review")', styles, output=True)
+    _compact_widths(ws, {"A": 30, "B": 46, "C": 16})
+
+
+def _build_ai_notes_sheet(ws, config: dict, styles: dict) -> None:
+    _sheet_title(ws, "AI Notes", "Claude-generated modeling guidance. These notes support the analyst; they do not hide model logic.", styles)
+    _write_row(ws, 4, ["Area", "Recommendation", "Priority"], styles, "header")
+    notes = config.get("ai_recommendations") or []
+    if not notes:
+        notes = [{"area": "Model review", "recommendation": "No AI recommendations saved yet. Use the Claude assistant to review missing assumptions and actuals mapping.", "priority": "Medium"}]
+    for idx, note in enumerate(notes, 5):
+        _write_row(ws, idx, [
+            note.get("area", "Model review"),
+            note.get("recommendation", ""),
+            note.get("priority", "Medium"),
+        ], styles, "body")
+        ws.cell(idx, 2).alignment = styles["wrap"]
+    _write_row(ws, 16, ["Transparency principle", "All generated output tabs remain editable. Critical formulas are visible and linked to Config / Assumptions / Historicals.", "High"], styles, "output")
+    _compact_widths(ws, {"A": 24, "B": 86, "C": 16})
+
+
+def _build_compact_dashboard(ws, project: dict, months: int, period_cols: list[str], styles: dict) -> None:
+    from openpyxl.utils import get_column_letter
+
+    _sheet_title(ws, "Dashboard", "Investor-ready BP summary linked to the underlying model.", styles)
+    last_col = get_column_letter(8 + min(months, 60) - 1)
+    _write_row(ws, 4, ["KPI", "Current output", "Formula source", "Interpretation"], styles, "header")
+    kpis = [
+        ("Revenue run-rate", f"='3FS'!{last_col}4*12", "3FS monthly revenue", "Latest forecast month annualised revenue."),
+        ("EBITDA", f"='3FS'!{last_col}9", "3FS EBITDA", "Monthly profitability after payroll and opex."),
+        ("EBITDA margin", f"=IFERROR('3FS'!{last_col}9/'3FS'!{last_col}4,0)", "3FS EBITDA / Revenue", "Profitability quality."),
+        ("Free cash flow", f"='3FS'!{last_col}20", "3FS FCF", "Cash generation after capex and debt service."),
+        ("Closing cash", f"='3FS'!{last_col}21", "3FS cash roll-forward", "Liquidity at the end of the period."),
+        ("Closing debt", f"='3FS'!{last_col}22", "Debt schedule", "Gross debt balance."),
+        ("Net debt", f"='3FS'!{last_col}23", "Debt less cash", "Leverage signal."),
+        ("Checks status", '=IF(COUNTIF(Checks!C5:C11,"Review")=0,"OK","Review")', "Checks tab", "Manual review required if not OK."),
+    ]
+    for idx, (label, formula, source, comment) in enumerate(kpis, 5):
+        ws.cell(idx, 1, label).border = styles["border"]
+        _set_formula(ws.cell(idx, 2), formula, styles, output=True)
+        ws.cell(idx, 3, source).border = styles["border"]
+        ws.cell(idx, 4, comment).border = styles["border"]
+    ws["A16"] = "Recommended workflow"
+    ws["A16"].font = styles["header"]
+    ws["A16"].fill = styles["green"]
+    workflow = [
+        "1. Configure model setup in Config.",
+        "2. Validate actuals in Historicals.",
+        "3. Edit drivers in Assumptions.",
+        "4. Review Revenue, Costs Payroll and Debt formulas.",
+        "5. Check 3FS and resolve Checks before sharing.",
+    ]
+    for idx, item in enumerate(workflow, 17):
+        ws.cell(idx, 1, item).alignment = styles["wrap"]
+    _compact_widths(ws, {"A": 28, "B": 20, "C": 30, "D": 52})
+
+
+def _bounded_rows(rows, max_rows: int, default_factory) -> list[dict]:
+    clean = [row for row in (rows or []) if isinstance(row, dict)]
+    while len(clean) < max_rows:
+        clean.append(default_factory(len(clean)))
+    return clean[:max_rows]
+
+
+def _default_revenue_stream(idx: int) -> dict:
+    return {"name": f"Placeholder revenue {idx + 1}", "type": "Other", "volume": 0, "price": 0, "volume_growth": 0, "price_growth": 0}
+
+
+def _default_cost_item(idx: int) -> dict:
+    return {"name": f"Placeholder cost {idx + 1}", "driver": "Fixed", "monthly_fixed": 0, "percent_revenue": 0, "cost_per_fte": 0}
+
+
+def _default_headcount_line(idx: int) -> dict:
+    return {"department": f"Placeholder team {idx + 1}", "opening_fte": 0, "avg_salary_month": 0, "hiring_every_months": 12, "new_hires": 0}
+
+
+def _default_debt_tranche(idx: int) -> dict:
+    return {"name": f"Placeholder debt {idx + 1}", "debt_type": "Senior Term Loan", "opening_balance": 0, "commitment": 0, "term_months": 60, "moratorium_months": 0, "margin": 0, "base_rate": 0, "amortization": "Bullet", "interest_type": "Cash", "cash_pay_frequency": "Monthly"}
+
+
+def _default_historical_line(idx: int) -> dict:
+    labels = ["Revenue", "COGS", "Payroll", "Opex", "Cash", "Closing Debt", "Capex", "Working Capital"]
+    label = labels[idx % len(labels)]
+    return {"model_line": label, "detail_line": f"{label} detail {idx + 1}", "fy2022": 0, "fy2023": 0, "fy2024": 0, "fy2025": 0, "latest_actual": 0}
+
+
+def _safe_float(value, default: float = 0.0) -> float:
+    try:
+        if value in ("", None):
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        if value in ("", None):
+            return default
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
 
 def build_business_plan_workbook(project: dict, financials: dict, output_path: Path, assumptions: dict | None = None) -> None:
+    assumptions = assumptions or {}
+    if not (assumptions.get("configuration") or {}).get("model_structure", {}).get("legacy_deep_model"):
+        return _build_configurable_bp_workbook(project, financials, output_path, assumptions)
+
     try:
         from openpyxl import Workbook
         from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -105,7 +841,6 @@ def build_business_plan_workbook(project: dict, financials: dict, output_path: P
     except Exception as exc:
         raise RuntimeError(f"Excel generation dependency unavailable: {exc}") from exc
 
-    assumptions = assumptions or {}
     wb = Workbook()
     wb.remove(wb.active)
     styles = _styles(Font, PatternFill, Border, Side, Alignment)

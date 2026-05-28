@@ -379,7 +379,7 @@
                 </div>
                 <div class="readiness-card">
                   <span>Excel output</span>
-                  <strong>53 tabs / 59k formulas</strong>
+                  <strong>&lt;=10 editable sheets</strong>
                 </div>
               </div>
               <div id="bpAiNudge" class="bp-ai-nudge">
@@ -407,15 +407,19 @@
                 <h3>Model setup</h3>
                 <div class="step-impact">
                   <span>Excel impact</span>
-                  <strong>Control Panel, Macro Inputs, Lists & Dates, all monthly output headers</strong>
+                  <strong>Config, Assumptions, Historicals, 3FS and Checks</strong>
                 </div>
                 <div class="assumption-guide">
                   <strong>Purpose</strong>
                   <span>Set the modelling perimeter used by every downstream sheet: dates, currency, scenario, tax, opening liquidity and opening leverage.</span>
                 </div>
                 <div class="compact-grid">
+                  <label>Business model<span class="field-hint">Used by Claude to suggest relevant drivers</span><input id="bpBusinessModelType" placeholder="Mixed revenue" /></label>
+                  <label>Industry<span class="field-hint">Sector benchmark context for AI review</span><input id="bpIndustry" placeholder="General services" /></label>
+                  <label>Country<span class="field-hint">Tax, currency and market context</span><input id="bpCountry" placeholder="France" /></label>
+                  <label>Level of detail<span class="field-hint">Controls how granular the export should be</span><select id="bpLevelOfDetail"><option value="simple">simple</option><option value="standard">standard</option><option value="advanced">advanced</option></select></label>
                   <label>Reporting currency<span class="field-hint">Workbook currency label, e.g. EUR</span><input id="bpCurrency" value="EUR" placeholder="EUR" /></label>
-                  <label>Scenario case<span class="field-hint">Case shown in Control Panel and outputs</span><select id="bpScenario"><option>Base</option><option>Downside</option><option>Upside</option><option>Bank Case</option><option>IC Case</option><option>Restructuring Case</option></select></label>
+                  <label>Scenario case<span class="field-hint">Case shown in Config and outputs</span><select id="bpScenario"><option>Base</option><option>Conservative</option><option>Aggressive</option><option>Downside</option><option>Upside</option><option>Bank Case</option><option>IC Case</option><option>Restructuring Case</option></select></label>
                   <label>Forecast start date<span class="field-hint">First monthly forecast period</span><input id="bpModelStart" type="date" /></label>
                   <label>Last actuals date<span class="field-hint">Latest historical period extracted from documents</span><input id="bpActualsEnd" type="date" /></label>
                   <label>Historical source<span class="field-hint">Choose manual inputs or Claude-normalized uploads as model base</span><select id="bpHistoricalSource"><option>Claude extraction</option><option>Manual input</option><option>Hybrid review</option></select></label>
@@ -424,6 +428,8 @@
                   <label>Opening cash balance<span class="field-hint">Cash at forecast start, full currency amount</span><input id="bpOpeningCash" type="number" step="1000" placeholder="120000" /></label>
                   <label>Opening gross debt<span class="field-hint">Total debt before tranche split, full amount</span><input id="bpOpeningDebt" type="number" step="1000" placeholder="500000" /></label>
                   <label>Minimum operating cash<span class="field-hint">Liquidity floor used for sweeps/covenants</span><input id="bpMinimumCash" type="number" step="1000" placeholder="50000" /></label>
+                  <label>Max workbook sheets<span class="field-hint">Generation is capped at 10 for clarity</span><input id="bpMaxSheets" type="number" min="3" max="10" placeholder="10" /></label>
+                  <label>Workbook protection<span class="field-hint">Keep No so formulas stay editable</span><select id="bpProtectWorkbook"><option>No</option><option>Yes</option></select></label>
                 </div>
               </div>
 
@@ -580,7 +586,7 @@
                   <button id="validateActualsBuilderButton" class="secondary-button">Validate actuals</button>
                   <button id="downloadBpBuilderButton" class="secondary-button hidden">Download BP</button>
                 </div>
-                <div class="model-note">Uploaded PDF/XLSX/CSV files are normalized by the extraction layer and written into the Historical Inputs sheet. Manual lines below override the matching detailed historical line in Excel, then flow into Historical Detail Input, Historical Bridge and the 3FS Detail Output.</div>
+                <div class="model-note">Uploaded PDF/XLSX/CSV files are normalized by the extraction layer and written into the Historicals sheet. Manual lines below override the matching actuals line, then flow into the configurable Revenue, Costs/Payroll, Debt and 3FS tabs.</div>
                 <div class="assumption-guide">
                   <strong>Manual actuals bridge</strong>
                   <span>Use this table when Claude extraction needs review or when you want to force the latest actuals. Match the detail line names to the Excel historical detail template where possible.</span>
@@ -652,7 +658,7 @@
                 </div>
               </details>
               <div class="model-note">
-                The Excel BP model is a monthly formula-driven workbook with admin, group assumptions, 180-line historical detail input, formula-driven 3FS detail output, historical bridge, assumption map, detailed forecast lines, multi-entity inputs, monthly and annual outputs, revenue drivers, product economics, headcount, opex, working capital, capex, 10-tranche debt modelling, covenants, debt capacity, sensitivity matrix, restructuring options, IC summary and checks.
+                The Excel BP model is now a compact, configurable and editable workbook: Dashboard, Config, Assumptions, Historicals, Revenue, Costs/Payroll, Debt, 3FS, Checks and AI Notes. It keeps formulas visible and avoids black-box calculations.
               </div>
               <div id="outputResult" class="result-box"></div>
             </div>
@@ -661,7 +667,7 @@
               <p class="eyebrow">Module map</p>
               <h3>What each module does</h3>
               <div class="module-stack">
-                <div><strong>BP engine</strong><span>Builds monthly 3FS, assumptions, checks and outputs.</span><em>53 tabs</em></div>
+                <div><strong>BP engine</strong><span>Builds configurable monthly 3FS, assumptions, checks and outputs.</span><em>&lt;=10 sheets</em></div>
                 <div><strong>Claude layer</strong><span>Extracts historicals, proposes mappings and deck logic.</span><em id="aiTemplateStatus">Checking</em></div>
                 <div><strong>Debt engine</strong><span>Models tranches, PIK/cash interest, maturities and covenants.</span><em>75 instruments</em></div>
                 <div><strong>Deck builder</strong><span>Creates lender and IM packs from model outputs.</span><em>PPTX</em></div>
