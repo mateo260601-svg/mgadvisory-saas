@@ -8,6 +8,7 @@ const state = {
   projects: [],
   lastOutput: null,
   user: null,
+  account: null,
   googleConfigured: false,
   aiIntelligence: null,
   actualsValidation: { validated: false },
@@ -125,12 +126,48 @@ async function login(event) {
     });
     state.unlocked = payload.ok;
     state.user = { name: "License user", email: "license:local-demo", picture: "" };
+    state.account = { status: "license", plan_name: "Demo", billing_status: "license" };
     enterWorkspace("License active");
   } catch (error) {
     $("loginMessage").textContent = error.message;
   } finally {
     setButtonBusy(btn, false);
   }
+}
+
+async function createAccount() {
+  const btn = $("createAccountButton");
+  setButtonBusy(btn, true, "Creating...");
+  try {
+    const payload = await api("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: getValue("signupName", ""),
+        email: getValue("signupEmail", ""),
+        company: getValue("signupCompany", ""),
+        plan: getValue("signupPlan", "professional"),
+      }),
+    });
+    state.unlocked = true;
+    state.user = payload.user;
+    state.account = payload.account;
+    enterWorkspace(`${payload.account?.plan_name || "Trial"} trial active`);
+  } catch (error) {
+    $("loginMessage").textContent = error.message;
+  } finally {
+    setButtonBusy(btn, false);
+  }
+}
+
+function switchAuthMode(mode) {
+  const isSignup = mode === "signup";
+  $("signupPanel").classList.toggle("hidden", !isSignup);
+  $("signinPanel").classList.toggle("hidden", isSignup);
+  document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.authMode === mode);
+  });
+  $("loginMessage").textContent = "";
 }
 
 // ── Auth: Google SSO ──────────────────────────────────────────────────────────
@@ -157,6 +194,7 @@ async function unlockFromGoogle() {
     const payload = await api("/api/auth/google/me");
     state.unlocked = true;
     state.user = payload.user;
+    state.account = payload.account || null;
     window.history.replaceState({}, document.title, "/");
     enterWorkspace(payload.user?.email || "Google active");
   } catch (error) {
@@ -177,6 +215,7 @@ async function logout() {
   localStorage.removeItem(ACTIVE_PROJECT_STORAGE_KEY);
   state.projects = [];
   state.user = null;
+  state.account = null;
   stopBackgroundAi();
   renderUserBadge();
   $("loginView").classList.remove("login-view-exit");
@@ -220,6 +259,7 @@ async function bootAuthState() {
     if (!payload.ok) return;
     state.unlocked = true;
     state.user = payload.user;
+    state.account = payload.account || null;
     enterWorkspace(payload.user?.email || "Google active");
   } catch (_) {
     state.unlocked = false;
@@ -264,6 +304,7 @@ async function enterWorkspace(statusLabel) {
   $("licenseStatus").textContent = statusLabel;
   hideOverlay();
   renderUserBadge();
+  refreshAccountStatus();
   try {
     await refreshWorkspace();
     startBackgroundAi();
@@ -1577,6 +1618,23 @@ function renderUserBadge() {
   } else {
     $("userAvatar").textContent = initials(state.user.name || state.user.email || "MG");
   }
+  if ($("licenseStatus")) {
+    const account = state.account || {};
+    const plan = account.plan_name || (state.user.email === "license:local-demo" ? "Demo" : "Account");
+    const trial = Number.isFinite(account.trial_days_left) ? ` | ${account.trial_days_left}d trial` : "";
+    $("licenseStatus").textContent = `${plan}${trial}`;
+  }
+}
+
+async function refreshAccountStatus() {
+  if (!state.unlocked) return;
+  try {
+    const payload = await api("/api/auth/account");
+    state.account = payload.account;
+    renderUserBadge();
+  } catch (_) {
+    // Account metadata is commercial context only; core SaaS should still run.
+  }
 }
 
 function renderMetrics() {
@@ -1926,6 +1984,10 @@ function initials(value) {
 
 // ── Event listeners ───────────────────────────────────────────────────────────
 $("loginForm").addEventListener("submit", login);
+$("createAccountButton").addEventListener("click", createAccount);
+document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+  button.addEventListener("click", () => switchAuthMode(button.dataset.authMode));
+});
 $("googleLoginButton").addEventListener("click", startGoogleLogin);
 $("logoutButton").addEventListener("click", logout);
 $("claudeNavButton").addEventListener("click", () => toggleClaudePanel());

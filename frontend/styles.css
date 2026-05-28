@@ -262,6 +262,106 @@ h3 {
   margin-top: 14px;
 }
 
+.commercial-strip {
+  display: grid;
+  gap: 4px;
+  max-width: 560px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(191, 242, 142, 0.34);
+  border-radius: 8px;
+  background: rgba(191, 242, 142, 0.08);
+  color: #f2fbf5;
+}
+
+.commercial-strip strong {
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.commercial-strip span {
+  color: #d8e6dd;
+  font-size: 13px;
+}
+
+.account-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 18px 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef3ef;
+}
+
+.account-mode-switch button {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  font-size: 13px;
+  padding: 10px 12px;
+}
+
+.account-mode-switch button.active {
+  background: #ffffff;
+  color: var(--ink);
+  box-shadow: 0 8px 20px rgba(27, 50, 38, 0.1);
+}
+
+.signup-panel,
+.signin-panel {
+  display: grid;
+  gap: 9px;
+}
+
+.pricing-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pricing-preview article {
+  min-height: 92px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: #f8faf8;
+}
+
+.pricing-preview article.featured {
+  border-color: #4d8b57;
+  box-shadow: inset 0 0 0 1px rgba(77, 139, 87, 0.18);
+}
+
+.pricing-preview strong,
+.pricing-preview span,
+.pricing-preview em {
+  display: block;
+}
+
+.pricing-preview strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.pricing-preview span {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+.pricing-preview em {
+  color: #2f6b3f;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  margin-top: 8px;
+}
+
 .finance-backdrop {
   position: absolute;
   inset: 0;

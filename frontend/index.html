@@ -60,6 +60,10 @@
           <span>2. Analyst validation</span>
           <span>3. BP outputs</span>
         </div>
+        <div class="commercial-strip">
+          <strong>Commercial access ready</strong>
+          <span>Trial workspace, plan selection, account library and billing status foundation.</span>
+        </div>
         <div class="mentor-callout">
           <span class="mentor-mascot login-mentor" aria-hidden="true"><i></i></span>
           <strong>Guided mode</strong>
@@ -69,8 +73,49 @@
 
       <form id="loginForm" class="login-card">
         <p class="eyebrow">Secure workspace</p>
-        <h2>Enter workspace</h2>
-        <p class="login-card-copy">Sign in and continue the guided BP workflow.</p>
+        <h2>Create your finance workspace</h2>
+        <p class="login-card-copy">Start a 14-day trial, then connect Google or a paid plan when ready.</p>
+
+        <div class="account-mode-switch" role="tablist" aria-label="Access mode">
+          <button class="active" type="button" data-auth-mode="signup">Create account</button>
+          <button type="button" data-auth-mode="signin">Sign in</button>
+        </div>
+
+        <section id="signupPanel" class="signup-panel">
+          <label for="signupName">Full name</label>
+          <input id="signupName" placeholder="Mateo Girard" autocomplete="name" />
+          <label for="signupEmail">Professional email</label>
+          <input id="signupEmail" type="email" placeholder="you@company.com" autocomplete="email" />
+          <label for="signupCompany">Company / fund</label>
+          <input id="signupCompany" placeholder="JRC Corporate Consulting" autocomplete="organization" />
+          <label for="signupPlan">Plan</label>
+          <select id="signupPlan">
+            <option value="professional">Professional - EUR 1,490/mo after trial</option>
+            <option value="starter">Starter - EUR 490/mo after trial</option>
+            <option value="enterprise">Enterprise - custom</option>
+          </select>
+          <button id="createAccountButton" type="button">Start 14-day trial</button>
+          <div class="pricing-preview">
+            <article>
+              <strong>Starter</strong>
+              <span>3 dossiers</span>
+              <em>EUR 490/mo</em>
+            </article>
+            <article class="featured">
+              <strong>Professional</strong>
+              <span>15 dossiers + Claude</span>
+              <em>EUR 1,490/mo</em>
+            </article>
+            <article>
+              <strong>Enterprise</strong>
+              <span>Team + templates</span>
+              <em>Custom</em>
+            </article>
+          </div>
+        </section>
+
+        <section id="signinPanel" class="signin-panel hidden">
+          <p class="login-card-copy">Already have access? Continue with Google or use a license key.</p>
 
         <!-- Google SSO button -->
         <button id="googleLoginButton" class="google-button" type="button" disabled>
@@ -95,10 +140,12 @@
         <label for="licenseKey">License key</label>
         <input id="licenseKey" type="password" value="MG-ADVISORY-DEMO-2026" autocomplete="current-password" />
         <button type="submit" id="licenseSubmitButton">Enter workspace</button>
+        </section>
+
         <div class="login-assurance">
+          <span id="billingAssurance">Trial account</span>
           <span>Project-level storage</span>
-          <span>Formula-driven Excel</span>
-          <span>Railway-ready deployment</span>
+          <span>Stripe-ready billing layer</span>
         </div>
 
         <p id="loginMessage" class="message"></p>

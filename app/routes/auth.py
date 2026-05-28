@@ -1,5 +1,4 @@
 import base64
-import base64
 import hashlib
 import hmac
 import json
@@ -9,7 +8,7 @@ import urllib.parse
 import urllib.request
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
 
 from app.config import (
@@ -20,6 +19,7 @@ from app.config import (
     GOOGLE_REDIRECT_URI,
     LICENSE_KEY,
 )
+from app.services.account_service import account_summary, create_trial_account
 
 
 router = APIRouter(tags=["auth"])
@@ -36,11 +36,53 @@ class LoginRequest(BaseModel):
     license_key: str
 
 
+class RegisterRequest(BaseModel):
+    name: str = ""
+    email: str
+    company: str = ""
+    plan: str = "professional"
+
+
 @router.post("/api/auth/login")
 def login(payload: LoginRequest):
     if payload.license_key.strip() != LICENSE_KEY:
         raise HTTPException(status_code=401, detail="Invalid license key")
     return {"ok": True, "token": "local-demo-token", "license": "valid"}
+
+
+@router.post("/api/auth/register")
+def register(payload: RegisterRequest):
+    try:
+        account = create_trial_account(payload.name, payload.email, payload.company, payload.plan)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    response = JSONResponse(
+        {
+            "ok": True,
+            "user": {
+                "email": account["email"],
+                "name": account["name"],
+                "picture": "",
+            },
+            "account": account_summary(account["email"]),
+        }
+    )
+    response.set_cookie(
+        COOKIE_NAME,
+        _sign_payload(
+            {
+                "email": account["email"],
+                "name": account["name"],
+                "picture": "",
+                "ts": int(time.time()),
+            }
+        ),
+        httponly=True,
+        secure=GOOGLE_REDIRECT_URI.startswith("https://"),
+        samesite="lax",
+        max_age=7 * 24 * 60 * 60,
+    )
+    return response
 
 
 @router.get("/api/auth/google/status")
@@ -148,7 +190,12 @@ def session(request: Request):
     payload = _verify_signed_payload(cookie, max_age_seconds=7 * 24 * 60 * 60) if cookie else None
     if not payload:
         return {"ok": False, "method": None, "user": None}
-    return {"ok": True, "method": "google", "user": payload}
+    return {"ok": True, "method": "google", "user": payload, "account": account_summary(payload.get("email"))}
+
+
+@router.get("/api/auth/account")
+def account_status(request: Request):
+    return {"ok": True, "account": account_summary(account_from_request(request))}
 
 
 def account_from_request(request: Request) -> str:
